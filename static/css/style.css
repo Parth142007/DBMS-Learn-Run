@@ -526,11 +526,94 @@ body {
 }
 
 #er-canvas-container {
-    background: radial-gradient(circle, #eef2f5 10%, transparent 11%);
-    background-size: 16px 16px;
-    background-color: #fafbfc;
+    background: radial-gradient(circle, #cbd5e1 10%, transparent 11%);
+    background-size: 18px 18px;
+    background-color: #f8fafc;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+    cursor: grab;
+    transition: box-shadow 0.2s ease;
+}
+
+#er-canvas-container.panning,
+#er-canvas-container:active {
+    cursor: grabbing;
+}
+
+#er-builder-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 #er-builder-svg text {
     user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+}
+
+.er-node {
+    cursor: pointer;
+    transition: filter 0.15s ease, stroke 0.15s ease;
+}
+
+.er-node:hover {
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.16));
+}
+
+.er-node.er-selected {
+    stroke: #0284c7 !important;
+    stroke-width: 2.8px !important;
+    filter: drop-shadow(0 0 7px rgba(2, 132, 199, 0.55)) !important;
+}
+
+.er-connecting-line {
+    transition: stroke 0.15s ease, stroke-width 0.15s ease;
+}
+
+.er-connecting-line:hover {
+    stroke: #0284c7 !important;
+    stroke-width: 2.5px !important;
+}
+
+.er-connecting-line.er-selected {
+    stroke: #0284c7 !important;
+    stroke-width: 3px !important;
+}
+
+.er-toolbar-btn {
+    padding: 0.28rem 0.55rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    border-radius: 4px;
+}
+
+.er-canvas-watermark {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    pointer-events: none;
+    z-index: 5;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.er-zoom-badge {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 0.72rem;
+    color: #475569;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 5;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }

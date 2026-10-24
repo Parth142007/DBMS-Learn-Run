@@ -671,40 +671,194 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ====================================================================
-    // 7. INTERACTIVE ER DIAGRAM BUILDER & SCHEMA GENERATOR
+    // 7. FUNCTIONAL VISUAL ER DIAGRAM BUILDER & SCHEMA GENERATOR
     // ====================================================================
-    // Default starting college management system graph model
-    let erModel = {
+    const DEFAULT_COLLEGE_MODEL = {
         entities: [
-            { id: "e1", name: "STUDENT", isWeak: false, x: 80, y: 150 },
-            { id: "e2", name: "DEPARTMENT", isWeak: false, x: 350, y: 150 },
-            { id: "e3", name: "COURSE", isWeak: false, x: 580, y: 150 }
+            { id: "e1", name: "STUDENT", isWeak: false, x: 200, y: 170 },
+            { id: "e2", name: "DEPARTMENT", isWeak: false, x: 580, y: 170 },
+            { id: "e3", name: "COURSE", isWeak: false, x: 200, y: 440 },
+            { id: "e4", name: "DEPENDENT", isWeak: true, x: 580, y: 440 }
         ],
         attributes: [
-            { id: "a1", entityId: "e1", name: "StudentID", type: "key" },
-            { id: "a2", entityId: "e1", name: "StudentName", type: "simple" },
-            { id: "a3", entityId: "e1", name: "GPA", type: "simple" },
-            { id: "a4", entityId: "e2", name: "DepartmentID", type: "key" },
-            { id: "a5", entityId: "e2", name: "DepartmentName", type: "simple" },
-            { id: "a6", entityId: "e3", name: "CourseID", type: "key" },
-            { id: "a7", entityId: "e3", name: "CourseName", type: "simple" }
+            { id: "a1", entityId: "e1", name: "StudentID", type: "key", parentAttrId: null },
+            { id: "a2", entityId: "e1", name: "StudentName", type: "simple", parentAttrId: null },
+            { id: "a3", entityId: "e1", name: "GPA", type: "simple", parentAttrId: null },
+            { id: "a4", entityId: "e1", name: "PhoneNumbers", type: "multivalued", parentAttrId: null },
+            { id: "a5", entityId: "e1", name: "Age", type: "derived", parentAttrId: null },
+            { id: "a6", entityId: "e1", name: "Address", type: "composite", parentAttrId: null },
+            { id: "a7", entityId: "e1", name: "City", type: "simple", parentAttrId: "a6" },
+            { id: "a8", entityId: "e1", name: "Pincode", type: "simple", parentAttrId: "a6" },
+            { id: "a9", entityId: "e2", name: "DepartmentID", type: "key", parentAttrId: null },
+            { id: "a10", entityId: "e2", name: "DepartmentName", type: "simple", parentAttrId: null },
+            { id: "a11", entityId: "e2", name: "Budget", type: "simple", parentAttrId: null },
+            { id: "a12", entityId: "e3", name: "CourseID", type: "key", parentAttrId: null },
+            { id: "a13", entityId: "e3", name: "CourseTitle", type: "simple", parentAttrId: null },
+            { id: "a14", entityId: "e3", name: "Credits", type: "simple", parentAttrId: null },
+            { id: "a15", entityId: "e4", name: "DependentName", type: "partial_key", parentAttrId: null },
+            { id: "a16", entityId: "e4", name: "Relationship", type: "simple", parentAttrId: null }
         ],
         relationships: [
-            { id: "r1", name: "Belongs_To", e1Id: "e1", e2Id: "e2", cardinality: "N:1", participation: "total" },
-            { id: "r2", name: "Offers", e1Id: "e2", e2Id: "e3", cardinality: "1:N", participation: "total" }
+            {
+                id: "r1",
+                name: "Belongs_To",
+                e1Id: "e1",
+                e2Id: "e2",
+                cardinality: "N:1",
+                e1Participation: "total",
+                e2Participation: "partial",
+                x: 390,
+                y: 170
+            },
+            {
+                id: "r2",
+                name: "Enrolls",
+                e1Id: "e1",
+                e2Id: "e3",
+                cardinality: "M:N",
+                e1Participation: "partial",
+                e2Participation: "partial",
+                x: 200,
+                y: 305
+            },
+            {
+                id: "r3",
+                name: "Offers",
+                e1Id: "e2",
+                e2Id: "e3",
+                cardinality: "1:N",
+                e1Participation: "partial",
+                e2Participation: "total",
+                x: 390,
+                y: 305
+            },
+            {
+                id: "r4",
+                name: "Has_Dependent",
+                e1Id: "e1",
+                e2Id: "e4",
+                cardinality: "1:N",
+                e1Participation: "partial",
+                e2Participation: "total",
+                x: 390,
+                y: 440
+            }
         ]
     };
 
+    // Active ER Model State
+    let erModel = JSON.parse(JSON.stringify(DEFAULT_COLLEGE_MODEL));
+
+    // Selection & Interaction State
+    let selectedItem = null; // { type: 'entity'|'attribute'|'relationship', id: string }
+    let activeDrag = null;   // { type, id, startMouseX, startMouseY, origX, origY, hasMoved }
+    let isPanning = false;
+    let panStart = { x: 0, y: 0, origPanX: 0, origPanY: 0 };
+
+    // Viewport Zoom & Pan State
+    let viewport = {
+        zoom: 1.0,
+        panX: 0,
+        panY: 0
+    };
+
+    // Undo / Redo History
+    let historyStack = [];
+    let historyIndex = -1;
+    const MAX_HISTORY = 30;
+
+    function pushHistory(actionName) {
+        if (historyIndex < historyStack.length - 1) {
+            historyStack = historyStack.slice(0, historyIndex + 1);
+        }
+        historyStack.push(JSON.stringify(erModel));
+        if (historyStack.length > MAX_HISTORY) {
+            historyStack.shift();
+        } else {
+            historyIndex++;
+        }
+        updateUndoRedoButtons();
+    }
+
+    function undo() {
+        if (historyIndex > 0) {
+            historyIndex--;
+            erModel = JSON.parse(historyStack[historyIndex]);
+            selectedItem = null;
+            renderErDiagramCanvas();
+            populateBuilderSelects();
+            updateInspectorUI();
+            generateRelationalSchemaFromModel(false);
+            updateUndoRedoButtons();
+            showToast("Undo applied.");
+        }
+    }
+
+    function redo() {
+        if (historyIndex < historyStack.length - 1) {
+            historyIndex++;
+            erModel = JSON.parse(historyStack[historyIndex]);
+            selectedItem = null;
+            renderErDiagramCanvas();
+            populateBuilderSelects();
+            updateInspectorUI();
+            generateRelationalSchemaFromModel(false);
+            updateUndoRedoButtons();
+            showToast("Redo applied.");
+        }
+    }
+
+    function updateUndoRedoButtons() {
+        const btnUndo = document.getElementById("btn-tool-undo");
+        const btnRedo = document.getElementById("btn-tool-redo");
+        if (btnUndo) btnUndo.disabled = (historyIndex <= 0);
+        if (btnRedo) btnRedo.disabled = (historyIndex >= historyStack.length - 1);
+    }
+
     function initErDiagramBuilder() {
+        // Try restoring from local storage if available
+        try {
+            const saved = localStorage.getItem("dbms_phase6_er_diagram");
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed && Array.isArray(parsed.entities) && parsed.entities.length > 0) {
+                    erModel = parsed;
+                }
+            }
+        } catch (e) {}
+
+        // Initial snapshot in history
+        historyStack = [JSON.stringify(erModel)];
+        historyIndex = 0;
+        updateUndoRedoButtons();
+
         populateBuilderSelects();
         renderErDiagramCanvas();
+        updateInspectorUI();
+        generateRelationalSchemaFromModel(false);
 
+        // Bind Left Panel Forms & Controls
+        bindAddForms();
+
+        // Bind Visual Editor Toolbar
+        bindToolbarControls();
+
+        // Bind Canvas Mouse/Pointer Interaction (Drag, Pan, Zoom, Selection)
+        bindCanvasInteractions();
+
+        // Bind Global Keyboard Shortcuts
+        bindKeyboardShortcuts();
+
+        // Bind Schema & File Export Buttons
+        bindExportAndPersistence();
+    }
+
+    // ====================================================================
+    // A. LEFT PANEL FORMS BINDING
+    // ====================================================================
+    function bindAddForms() {
+        // 1. Add Entity
         const btnAddEntity = document.getElementById("btn-builder-add-entity");
-        const btnAddAttr = document.getElementById("btn-builder-add-attr");
-        const btnAddRel = document.getElementById("btn-builder-add-rel");
-        const btnGenerateSchema = document.getElementById("btn-builder-generate-schema");
-        const btnResetAll = document.getElementById("btn-builder-reset-all");
-
         if (btnAddEntity) {
             btnAddEntity.addEventListener("click", function () {
                 const nameInput = document.getElementById("builder-entity-name");
@@ -712,31 +866,47 @@ document.addEventListener("DOMContentLoaded", function () {
                 const name = (nameInput.value || "").trim().toUpperCase().replace(/[^A-Z0-9_]/g, "");
 
                 if (!name) {
-                    alert("Please provide a valid alphanumeric Entity name.");
+                    alert("Please provide an alphanumeric Entity name.");
                     return;
                 }
-                if (erModel.entities.some(e => e.name === name)) {
+                if (erModel.entities.some(e => e.name.toUpperCase() === name)) {
                     alert(`Entity '${name}' already exists.`);
                     return;
                 }
 
-                // Place dynamically across canvas
-                const nextX = 80 + (erModel.entities.length * 150) % 550;
-                const nextY = 150 + ((erModel.entities.length % 2) * 50);
-
-                erModel.entities.push({
+                // Compute smart initial position avoiding existing entities
+                const newPos = getNextEntityPosition();
+                const newEnt = {
                     id: `e_${Date.now()}`,
                     name: name,
                     isWeak: isWeak,
-                    x: nextX,
-                    y: nextY
-                });
+                    x: newPos.x,
+                    y: newPos.y
+                };
+
+                erModel.entities.push(newEnt);
+                selectedItem = { type: "entity", id: newEnt.id };
+                pushHistory("Add Entity");
 
                 nameInput.value = "";
                 document.getElementById("builder-entity-is-weak").checked = false;
+
                 populateBuilderSelects();
                 renderErDiagramCanvas();
-                showToast(`Entity '${name}' added.`);
+                updateInspectorUI();
+                generateRelationalSchemaFromModel(false);
+                showToast(`Entity '${name}' created and selected.`);
+            });
+        }
+
+        // 2. Add Attribute
+        const btnAddAttr = document.getElementById("btn-builder-add-attr");
+        const selectAttrType = document.getElementById("builder-attr-type");
+        const compParentCont = document.getElementById("builder-attr-composite-parent-container");
+
+        if (selectAttrType && compParentCont) {
+            selectAttrType.addEventListener("change", function () {
+                updateCompositeParentOptions();
             });
         }
 
@@ -746,32 +916,53 @@ document.addEventListener("DOMContentLoaded", function () {
                 const attrNameInput = document.getElementById("builder-attr-name");
                 const attrType = document.getElementById("builder-attr-type").value;
                 const attrName = (attrNameInput.value || "").trim().replace(/[^a-zA-Z0-9_]/g, "");
+                const parentCompSelect = document.getElementById("builder-attr-composite-parent");
+                const parentAttrId = (compParentCont && !compParentCont.classList.contains("d-none") && parentCompSelect)
+                    ? (parentCompSelect.value || null)
+                    : null;
 
                 if (!targetEntityId || !attrName) {
-                    alert("Select an entity and provide an attribute name.");
+                    alert("Select an entity and provide a valid attribute name.");
                     return;
                 }
 
-                erModel.attributes.push({
+                const existing = erModel.attributes.filter(a => a.entityId === targetEntityId);
+                if (existing.some(a => a.name.toLowerCase() === attrName.toLowerCase())) {
+                    alert(`Attribute '${attrName}' already exists on this entity.`);
+                    return;
+                }
+
+                const newAttr = {
                     id: `a_${Date.now()}`,
                     entityId: targetEntityId,
                     name: attrName,
-                    type: attrType
-                });
+                    type: attrType,
+                    parentAttrId: parentAttrId
+                };
+
+                erModel.attributes.push(newAttr);
+                selectedItem = { type: "attribute", id: newAttr.id };
+                pushHistory("Add Attribute");
 
                 attrNameInput.value = "";
                 renderErDiagramCanvas();
+                updateCompositeParentOptions();
+                updateInspectorUI();
+                generateRelationalSchemaFromModel(false);
                 showToast(`Attribute '${attrName}' attached.`);
             });
         }
 
+        // 3. Add Relationship
+        const btnAddRel = document.getElementById("btn-builder-add-rel");
         if (btnAddRel) {
             btnAddRel.addEventListener("click", function () {
                 const relNameInput = document.getElementById("builder-rel-name");
                 const e1Id = document.getElementById("builder-rel-e1").value;
                 const e2Id = document.getElementById("builder-rel-e2").value;
                 const card = document.getElementById("builder-rel-card").value;
-                const part = document.getElementById("builder-rel-part").value;
+                const partE1 = (document.getElementById("builder-rel-part-e1")?.value) || "partial";
+                const partE2 = (document.getElementById("builder-rel-part-e2")?.value) || "partial";
                 const relName = (relNameInput.value || "").trim().replace(/[^a-zA-Z0-9_]/g, "") || "Relates";
 
                 if (!e1Id || !e2Id || e1Id === e2Id) {
@@ -779,54 +970,947 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                erModel.relationships.push({
+                const e1 = erModel.entities.find(e => e.id === e1Id);
+                const e2 = erModel.entities.find(e => e.id === e2Id);
+                const midX = Math.round((e1.x + e2.x) / 2);
+                const midY = Math.round((e1.y + e2.y) / 2);
+
+                const newRel = {
                     id: `r_${Date.now()}`,
                     name: relName,
                     e1Id: e1Id,
                     e2Id: e2Id,
                     cardinality: card,
-                    participation: part
-                });
+                    e1Participation: partE1,
+                    e2Participation: partE2,
+                    x: midX,
+                    y: midY
+                };
+
+                erModel.relationships.push(newRel);
+                selectedItem = { type: "relationship", id: newRel.id };
+                pushHistory("Add Relationship");
 
                 relNameInput.value = "";
                 renderErDiagramCanvas();
+                updateInspectorUI();
+                generateRelationalSchemaFromModel(false);
                 showToast(`Relationship '${relName}' connected.`);
             });
         }
+    }
 
-        if (btnGenerateSchema) {
-            btnGenerateSchema.addEventListener("click", generateRelationalSchemaFromModel);
+    function getNextEntityPosition() {
+        const count = erModel.entities.length;
+        if (count === 0) return { x: 300, y: 200 };
+        const cols = 3;
+        const row = Math.floor(count / cols);
+        const col = count % cols;
+        return {
+            x: 180 + col * 260,
+            y: 160 + row * 220
+        };
+    }
+
+    function updateCompositeParentOptions() {
+        const targetEntityId = document.getElementById("builder-attr-target")?.value;
+        const compParentCont = document.getElementById("builder-attr-composite-parent-container");
+        const parentCompSelect = document.getElementById("builder-attr-composite-parent");
+        if (!compParentCont || !parentCompSelect) return;
+
+        const compositeAttrs = erModel.attributes.filter(a => a.entityId === targetEntityId && a.type === "composite");
+        if (compositeAttrs.length > 0) {
+            compParentCont.classList.remove("d-none");
+            parentCompSelect.innerHTML = `<option value="">-- None (Top-Level Child) --</option>`;
+            compositeAttrs.forEach(ca => {
+                const opt = document.createElement("option");
+                opt.value = ca.id;
+                opt.textContent = ca.name;
+                parentCompSelect.appendChild(opt);
+            });
+        } else {
+            compParentCont.classList.add("d-none");
+        }
+    }
+
+    // ====================================================================
+    // B. SELECTION INSPECTOR
+    // ====================================================================
+    function updateInspectorUI() {
+        const titleElem = document.getElementById("builder-inspector-title");
+        const placeholder = document.getElementById("builder-inspector-placeholder");
+        const btnDelete = document.getElementById("btn-builder-delete-selected");
+        const btnDeselect = document.getElementById("btn-builder-deselect");
+
+        const formEntity = document.getElementById("inspector-entity-form");
+        const formAttr = document.getElementById("inspector-attr-form");
+        const formRel = document.getElementById("inspector-rel-form");
+
+        [formEntity, formAttr, formRel].forEach(f => f && f.classList.add("d-none"));
+
+        if (!selectedItem) {
+            if (titleElem) titleElem.innerHTML = `<i class="bi bi-cursor-fill me-1"></i> Selection Inspector`;
+            if (placeholder) placeholder.classList.remove("d-none");
+            if (btnDelete) btnDelete.classList.add("d-none");
+            if (btnDeselect) btnDeselect.classList.add("d-none");
+            return;
         }
 
-        if (btnResetAll) {
-            btnResetAll.addEventListener("click", function () {
-                erModel = {
-                    entities: [
-                        { id: "e1", name: "STUDENT", isWeak: false, x: 80, y: 150 },
-                        { id: "e2", name: "DEPARTMENT", isWeak: false, x: 350, y: 150 },
-                        { id: "e3", name: "COURSE", isWeak: false, x: 580, y: 150 }
-                    ],
-                    attributes: [
-                        { id: "a1", entityId: "e1", name: "StudentID", type: "key" },
-                        { id: "a2", entityId: "e1", name: "StudentName", type: "simple" },
-                        { id: "a3", entityId: "e1", name: "GPA", type: "simple" },
-                        { id: "a4", entityId: "e2", name: "DepartmentID", type: "key" },
-                        { id: "a5", entityId: "e2", name: "DepartmentName", type: "simple" },
-                        { id: "a6", entityId: "e3", name: "CourseID", type: "key" },
-                        { id: "a7", entityId: "e3", name: "CourseName", type: "simple" }
-                    ],
-                    relationships: [
-                        { id: "r1", name: "Belongs_To", e1Id: "e1", e2Id: "e2", cardinality: "N:1", participation: "total" },
-                        { id: "r2", name: "Offers", e1Id: "e2", e2Id: "e3", cardinality: "1:N", participation: "total" }
-                    ]
+        if (placeholder) placeholder.classList.add("d-none");
+        if (btnDelete) btnDelete.classList.remove("d-none");
+        if (btnDeselect) btnDeselect.classList.remove("d-none");
+
+        if (selectedItem.type === "entity") {
+            const ent = erModel.entities.find(e => e.id === selectedItem.id);
+            if (!ent) { selectedItem = null; updateInspectorUI(); return; }
+
+            if (titleElem) titleElem.innerHTML = `<i class="bi bi-square me-1 text-success"></i> Entity: <strong>${ent.name}</strong>`;
+            if (formEntity) {
+                formEntity.classList.remove("d-none");
+                const nameInput = document.getElementById("inspector-entity-name");
+                const weakCheck = document.getElementById("inspector-entity-weak");
+                const summary = document.getElementById("inspector-entity-summary");
+
+                if (nameInput) nameInput.value = ent.name;
+                if (weakCheck) weakCheck.checked = ent.isWeak;
+                const attachedAttrs = erModel.attributes.filter(a => a.entityId === ent.id);
+                const attachedRels = erModel.relationships.filter(r => r.e1Id === ent.id || r.e2Id === ent.id);
+                if (summary) {
+                    summary.textContent = `${attachedAttrs.length} attribute(s) & ${attachedRels.length} relationship(s) connected.`;
+                }
+
+                // Bind instant updater
+                nameInput.oninput = () => {
+                    const newName = nameInput.value.trim().toUpperCase().replace(/[^A-Z0-9_]/g, "");
+                    if (newName) {
+                        ent.name = newName;
+                        renderErDiagramCanvas(false);
+                        populateBuilderSelects();
+                    }
                 };
+                nameInput.onchange = () => {
+                    pushHistory("Rename Entity");
+                    generateRelationalSchemaFromModel(false);
+                };
+                weakCheck.onchange = () => {
+                    ent.isWeak = weakCheck.checked;
+                    pushHistory("Toggle Weak Entity");
+                    renderErDiagramCanvas();
+                    populateBuilderSelects();
+                    generateRelationalSchemaFromModel(false);
+                };
+            }
+        } else if (selectedItem.type === "attribute") {
+            const attr = erModel.attributes.find(a => a.id === selectedItem.id);
+            if (!attr) { selectedItem = null; updateInspectorUI(); return; }
+
+            const parentEnt = erModel.entities.find(e => e.id === attr.entityId);
+            if (titleElem) titleElem.innerHTML = `<i class="bi bi-tag-fill me-1 text-info"></i> Attribute: <strong>${attr.name}</strong>`;
+            if (formAttr) {
+                formAttr.classList.remove("d-none");
+                const nameInput = document.getElementById("inspector-attr-name");
+                const typeSelect = document.getElementById("inspector-attr-type");
+                const summary = document.getElementById("inspector-attr-summary");
+
+                if (nameInput) nameInput.value = attr.name;
+                if (typeSelect) typeSelect.value = attr.type;
+                if (summary) {
+                    summary.textContent = `Belongs to entity '${parentEnt ? parentEnt.name : "Unknown"}'.`;
+                }
+
+                nameInput.oninput = () => {
+                    const newName = nameInput.value.trim().replace(/[^a-zA-Z0-9_]/g, "");
+                    if (newName) {
+                        attr.name = newName;
+                        renderErDiagramCanvas(false);
+                    }
+                };
+                nameInput.onchange = () => {
+                    pushHistory("Rename Attribute");
+                    generateRelationalSchemaFromModel(false);
+                };
+                typeSelect.onchange = () => {
+                    attr.type = typeSelect.value;
+                    pushHistory("Change Attribute Type");
+                    renderErDiagramCanvas();
+                    generateRelationalSchemaFromModel(false);
+                };
+            }
+        } else if (selectedItem.type === "relationship") {
+            const rel = erModel.relationships.find(r => r.id === selectedItem.id);
+            if (!rel) { selectedItem = null; updateInspectorUI(); return; }
+
+            const e1 = erModel.entities.find(e => e.id === rel.e1Id);
+            const e2 = erModel.entities.find(e => e.id === rel.e2Id);
+
+            if (titleElem) titleElem.innerHTML = `<i class="bi bi-diamond-fill me-1 text-warning"></i> Relationship: <strong>${rel.name}</strong>`;
+            if (formRel) {
+                formRel.classList.remove("d-none");
+                const nameInput = document.getElementById("inspector-rel-name");
+                const cardSelect = document.getElementById("inspector-rel-card");
+                const e1Label = document.getElementById("inspector-rel-e1-label");
+                const e2Label = document.getElementById("inspector-rel-e2-label");
+                const partE1Select = document.getElementById("inspector-rel-part-e1");
+                const partE2Select = document.getElementById("inspector-rel-part-e2");
+                const summary = document.getElementById("inspector-rel-summary");
+
+                if (nameInput) nameInput.value = rel.name;
+                if (cardSelect) cardSelect.value = rel.cardinality;
+                if (e1Label) e1Label.textContent = `${e1 ? e1.name : "E1"} Part.:`;
+                if (e2Label) e2Label.textContent = `${e2 ? e2.name : "E2"} Part.:`;
+                if (partE1Select) partE1Select.value = rel.e1Participation || "partial";
+                if (partE2Select) partE2Select.value = rel.e2Participation || "partial";
+                if (summary) {
+                    summary.textContent = `Links '${e1 ? e1.name : "E1"}' and '${e2 ? e2.name : "E2"}'.`;
+                }
+
+                nameInput.oninput = () => {
+                    const newName = nameInput.value.trim().replace(/[^a-zA-Z0-9_]/g, "");
+                    if (newName) {
+                        rel.name = newName;
+                        renderErDiagramCanvas(false);
+                    }
+                };
+                nameInput.onchange = () => {
+                    pushHistory("Rename Relationship");
+                    generateRelationalSchemaFromModel(false);
+                };
+                cardSelect.onchange = () => {
+                    rel.cardinality = cardSelect.value;
+                    pushHistory("Change Cardinality");
+                    renderErDiagramCanvas();
+                    generateRelationalSchemaFromModel(false);
+                };
+                partE1Select.onchange = () => {
+                    rel.e1Participation = partE1Select.value;
+                    pushHistory("Change E1 Participation");
+                    renderErDiagramCanvas();
+                    generateRelationalSchemaFromModel(false);
+                };
+                partE2Select.onchange = () => {
+                    rel.e2Participation = partE2Select.value;
+                    pushHistory("Change E2 Participation");
+                    renderErDiagramCanvas();
+                    generateRelationalSchemaFromModel(false);
+                };
+            }
+        }
+    }
+
+    function deleteSelectedItem() {
+        if (!selectedItem) return;
+
+        if (selectedItem.type === "entity") {
+            const ent = erModel.entities.find(e => e.id === selectedItem.id);
+            if (!ent) return;
+            const connectedAttrs = erModel.attributes.filter(a => a.entityId === ent.id);
+            const connectedRels = erModel.relationships.filter(r => r.e1Id === ent.id || r.e2Id === ent.id);
+
+            const msg = `Delete entity '${ent.name}'? This will also remove its ${connectedAttrs.length} attribute(s) and ${connectedRels.length} relationship(s).`;
+            if (confirm(msg)) {
+                erModel.entities = erModel.entities.filter(e => e.id !== ent.id);
+                erModel.attributes = erModel.attributes.filter(a => a.entityId !== ent.id);
+                erModel.relationships = erModel.relationships.filter(r => r.e1Id !== ent.id && r.e2Id !== ent.id);
+                selectedItem = null;
+                pushHistory("Delete Entity");
                 populateBuilderSelects();
                 renderErDiagramCanvas();
-                const output = document.getElementById("builder-schema-output");
-                if (output) output.textContent = "-- Reset to default college model. Click 'Generate Relational Schema' to view SQL tables.";
-                showToast("Default College ER Model restored.");
-            });
+                updateInspectorUI();
+                generateRelationalSchemaFromModel(false);
+                showToast(`Entity '${ent.name}' deleted.`);
+            }
+        } else if (selectedItem.type === "attribute") {
+            const attr = erModel.attributes.find(a => a.id === selectedItem.id);
+            if (!attr) return;
+            erModel.attributes = erModel.attributes.filter(a => a.id !== attr.id && a.parentAttrId !== attr.id);
+            selectedItem = null;
+            pushHistory("Delete Attribute");
+            renderErDiagramCanvas();
+            updateInspectorUI();
+            generateRelationalSchemaFromModel(false);
+            showToast(`Attribute '${attr.name}' deleted.`);
+        } else if (selectedItem.type === "relationship") {
+            const rel = erModel.relationships.find(r => r.id === selectedItem.id);
+            if (!rel) return;
+            erModel.relationships = erModel.relationships.filter(r => r.id !== rel.id);
+            selectedItem = null;
+            pushHistory("Delete Relationship");
+            renderErDiagramCanvas();
+            updateInspectorUI();
+            generateRelationalSchemaFromModel(false);
+            showToast(`Relationship '${rel.name}' deleted.`);
         }
+    }
+
+    // ====================================================================
+    // C. TOOLBAR CONTROLS & SHORTCUTS
+    // ====================================================================
+    function bindToolbarControls() {
+        // Deselect & Delete in Inspector
+        document.getElementById("btn-builder-deselect")?.addEventListener("click", () => {
+            selectedItem = null;
+            renderErDiagramCanvas();
+            updateInspectorUI();
+        });
+        document.getElementById("btn-builder-delete-selected")?.addEventListener("click", deleteSelectedItem);
+        document.getElementById("btn-tool-delete")?.addEventListener("click", deleteSelectedItem);
+
+        // Undo & Redo
+        document.getElementById("btn-tool-undo")?.addEventListener("click", undo);
+        document.getElementById("btn-tool-redo")?.addEventListener("click", redo);
+
+        // Zoom & Pan
+        document.getElementById("btn-tool-zoom-in")?.addEventListener("click", () => {
+            const container = document.getElementById("er-canvas-container");
+            const w = container ? container.clientWidth / 2 : 400;
+            const h = container ? container.clientHeight / 2 : 250;
+            setZoom(viewport.zoom * 1.2, w, h);
+        });
+        document.getElementById("btn-tool-zoom-out")?.addEventListener("click", () => {
+            const container = document.getElementById("er-canvas-container");
+            const w = container ? container.clientWidth / 2 : 400;
+            const h = container ? container.clientHeight / 2 : 250;
+            setZoom(viewport.zoom / 1.2, w, h);
+        });
+        document.getElementById("btn-tool-zoom-reset")?.addEventListener("click", resetZoom);
+        document.getElementById("btn-tool-fit-view")?.addEventListener("click", fitView);
+
+        // Auto Arrange
+        document.getElementById("btn-tool-auto-arrange")?.addEventListener("click", autoArrangeLayout);
+    }
+
+    function autoArrangeLayout() {
+        if (erModel.entities.length === 0) return;
+        const count = erModel.entities.length;
+        const centerX = 400;
+        const centerY = 280;
+        const radiusX = Math.max(220, count * 60);
+        const radiusY = Math.max(140, count * 40);
+
+        erModel.entities.forEach((ent, idx) => {
+            const angle = (2 * Math.PI * idx) / count - Math.PI / 2;
+            ent.x = Math.round(centerX + radiusX * Math.cos(angle));
+            ent.y = Math.round(centerY + radiusY * Math.sin(angle));
+        });
+
+        // Reposition relationship diamonds at geometric midpoints
+        erModel.relationships.forEach(rel => {
+            const e1 = erModel.entities.find(e => e.id === rel.e1Id);
+            const e2 = erModel.entities.find(e => e.id === rel.e2Id);
+            if (e1 && e2) {
+                rel.x = Math.round((e1.x + e2.x) / 2);
+                rel.y = Math.round((e1.y + e2.y) / 2);
+            }
+        });
+
+        pushHistory("Auto Arrange Layout");
+        renderErDiagramCanvas();
+        fitView();
+        showToast("Auto-arranged diagram layout.");
+    }
+
+    function bindKeyboardShortcuts() {
+        window.addEventListener("keydown", function (e) {
+            // Ignore if active inside an editable input/textarea
+            const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : "";
+            if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+            // Only trigger if topic10 (ER builder section) is active
+            if (currentTopic !== "topic10") return;
+
+            // Ctrl+Z or Cmd+Z -> Undo
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+                e.preventDefault();
+                undo();
+            }
+            // Ctrl+Y or Ctrl+Shift+Z or Cmd+Shift+Z -> Redo
+            else if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") ||
+                     ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "z")) {
+                e.preventDefault();
+                redo();
+            }
+            // Delete or Backspace -> Delete Selected Element
+            else if (e.key === "Delete" || e.key === "Backspace") {
+                if (selectedItem) {
+                    e.preventDefault();
+                    deleteSelectedItem();
+                }
+            }
+            // Escape -> Clear Selection
+            else if (e.key === "Escape") {
+                if (selectedItem) {
+                    selectedItem = null;
+                    renderErDiagramCanvas();
+                    updateInspectorUI();
+                }
+            }
+        });
+    }
+
+    // ====================================================================
+    // D. CANVAS POINTER INTERACTIONS (DRAG, PAN, ZOOM, SELECTION)
+    // ====================================================================
+    function bindCanvasInteractions() {
+        const svg = document.getElementById("er-builder-svg");
+        const container = document.getElementById("er-canvas-container");
+        if (!svg || !container) return;
+
+        // Pointer Down
+        svg.addEventListener("pointerdown", function (e) {
+            const pt = screenToSvgCoords(e.clientX, e.clientY);
+            const target = e.target;
+
+            // Check if clicked an Entity
+            const entGroup = target.closest("[data-entity-id]");
+            if (entGroup) {
+                const entId = entGroup.getAttribute("data-entity-id");
+                const ent = erModel.entities.find(e => e.id === entId);
+                if (ent) {
+                    selectedItem = { type: "entity", id: ent.id };
+                    activeDrag = {
+                        type: "entity",
+                        id: ent.id,
+                        startMouseX: pt.x,
+                        startMouseY: pt.y,
+                        origX: ent.x,
+                        origY: ent.y,
+                        hasMoved: false
+                    };
+                    renderErDiagramCanvas(false);
+                    updateInspectorUI();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
+            // Check if clicked an Attribute
+            const attrGroup = target.closest("[data-attr-id]");
+            if (attrGroup) {
+                const attrId = attrGroup.getAttribute("data-attr-id");
+                const attr = erModel.attributes.find(a => a.id === attrId);
+                if (attr) {
+                    selectedItem = { type: "attribute", id: attr.id };
+                    renderErDiagramCanvas(false);
+                    updateInspectorUI();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
+            // Check if clicked a Relationship
+            const relGroup = target.closest("[data-rel-id]");
+            if (relGroup) {
+                const relId = relGroup.getAttribute("data-rel-id");
+                const rel = erModel.relationships.find(r => r.id === relId);
+                if (rel) {
+                    selectedItem = { type: "relationship", id: rel.id };
+                    const e1 = erModel.entities.find(e => e.id === rel.e1Id);
+                    const e2 = erModel.entities.find(e => e.id === rel.e2Id);
+                    const curX = (rel.x !== null && rel.x !== undefined) ? rel.x : (e1 && e2 ? (e1.x + e2.x) / 2 : 300);
+                    const curY = (rel.y !== null && rel.y !== undefined) ? rel.y : (e1 && e2 ? (e1.y + e2.y) / 2 : 200);
+
+                    activeDrag = {
+                        type: "relationship",
+                        id: rel.id,
+                        startMouseX: pt.x,
+                        startMouseY: pt.y,
+                        origX: curX,
+                        origY: curY,
+                        hasMoved: false
+                    };
+                    renderErDiagramCanvas(false);
+                    updateInspectorUI();
+                    e.stopPropagation();
+                    return;
+                }
+            }
+
+            // Otherwise, clicked canvas background -> Deselect and Pan
+            selectedItem = null;
+            renderErDiagramCanvas(false);
+            updateInspectorUI();
+
+            isPanning = true;
+            panStart = {
+                x: e.clientX,
+                y: e.clientY,
+                origPanX: viewport.panX,
+                origPanY: viewport.panY
+            };
+            container.classList.add("panning");
+        });
+
+        // Window Pointer Move
+        window.addEventListener("pointermove", function (e) {
+            if (isPanning) {
+                viewport.panX = panStart.origPanX + (e.clientX - panStart.x);
+                viewport.panY = panStart.origPanY + (e.clientY - panStart.y);
+                updateViewportTransform();
+                return;
+            }
+
+            if (activeDrag) {
+                const pt = screenToSvgCoords(e.clientX, e.clientY);
+                const dx = pt.x - activeDrag.startMouseX;
+                const dy = pt.y - activeDrag.startMouseY;
+
+                if (Math.hypot(dx, dy) > 2) {
+                    activeDrag.hasMoved = true;
+                }
+
+                if (activeDrag.type === "entity") {
+                    const ent = erModel.entities.find(e => e.id === activeDrag.id);
+                    if (ent) {
+                        ent.x = Math.round(activeDrag.origX + dx);
+                        ent.y = Math.round(activeDrag.origY + dy);
+                        renderErDiagramCanvas(false);
+                    }
+                } else if (activeDrag.type === "relationship") {
+                    const rel = erModel.relationships.find(r => r.id === activeDrag.id);
+                    if (rel) {
+                        rel.x = Math.round(activeDrag.origX + dx);
+                        rel.y = Math.round(activeDrag.origY + dy);
+                        renderErDiagramCanvas(false);
+                    }
+                }
+            }
+        });
+
+        // Window Pointer Up
+        window.addEventListener("pointerup", function () {
+            if (isPanning) {
+                isPanning = false;
+                container.classList.remove("panning");
+            }
+            if (activeDrag) {
+                if (activeDrag.hasMoved) {
+                    pushHistory(`Move ${activeDrag.type}`);
+                    generateRelationalSchemaFromModel(false);
+                }
+                activeDrag = null;
+            }
+        });
+
+        // Mouse Wheel Zoom
+        container.addEventListener("wheel", function (e) {
+            e.preventDefault();
+            const rect = container.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const zoomDelta = e.deltaY < 0 ? 1.12 : 0.89;
+            setZoom(viewport.zoom * zoomDelta, mouseX, mouseY);
+        }, { passive: false });
+    }
+
+    function screenToSvgCoords(clientX, clientY) {
+        const svg = document.getElementById("er-builder-svg");
+        if (!svg) return { x: clientX, y: clientY };
+        const rect = svg.getBoundingClientRect();
+        return {
+            x: (clientX - rect.left - viewport.panX) / viewport.zoom,
+            y: (clientY - rect.top - viewport.panY) / viewport.zoom
+        };
+    }
+
+    // ====================================================================
+    // E. SVG CANVAS RENDERING (CHEN NOTATION)
+    // ====================================================================
+    function renderErDiagramCanvas(shouldFit = false) {
+        const svg = document.getElementById("er-builder-svg");
+        const activeElemBadge = document.getElementById("builder-active-elements");
+        if (!svg) return;
+
+        let vpGroup = document.getElementById("er-viewport");
+        if (!vpGroup) {
+            svg.innerHTML = `
+                <defs>
+                    <pattern id="er-canvas-grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                        <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.8"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#er-canvas-grid-pattern)" id="er-canvas-bg"></rect>
+                <g id="er-viewport">
+                    <g id="er-lines-layer"></g>
+                    <g id="er-relationships-layer"></g>
+                    <g id="er-entities-layer"></g>
+                    <g id="er-attributes-layer"></g>
+                    <g id="er-selection-layer"></g>
+                </g>
+            `;
+            vpGroup = document.getElementById("er-viewport");
+        }
+
+        updateViewportTransform();
+
+        const linesLayer = document.getElementById("er-lines-layer");
+        const relsLayer = document.getElementById("er-relationships-layer");
+        const entsLayer = document.getElementById("er-entities-layer");
+        const attrsLayer = document.getElementById("er-attributes-layer");
+        const selLayer = document.getElementById("er-selection-layer");
+
+        if (linesLayer) linesLayer.innerHTML = "";
+        if (relsLayer) relsLayer.innerHTML = "";
+        if (entsLayer) entsLayer.innerHTML = "";
+        if (attrsLayer) attrsLayer.innerHTML = "";
+        if (selLayer) selLayer.innerHTML = "";
+
+        if (activeElemBadge) {
+            activeElemBadge.textContent = `${erModel.entities.length} Entities, ${erModel.attributes.length} Attrs, ${erModel.relationships.length} Rels`;
+        }
+
+        // Entity dimensions
+        const ENT_W = 110;
+        const ENT_H = 46;
+
+        // 1. Compute Attribute Coordinate Positions per Entity
+        const attributeCoords = {}; // attrId -> { x, y }
+
+        erModel.entities.forEach(ent => {
+            const directAttrs = erModel.attributes.filter(a => a.entityId === ent.id && !a.parentAttrId);
+            const total = directAttrs.length;
+
+            directAttrs.forEach((attr, idx) => {
+                // Distribute attributes in an arc above / around the entity
+                const startAngle = -Math.PI * 0.85;
+                const sweep = Math.PI * 1.7;
+                const angle = total === 1 ? -Math.PI / 2 : startAngle + (idx * sweep) / (total - 1);
+                const dist = 76 + (idx % 2) * 22;
+
+                const ax = Math.round(ent.x + dist * Math.cos(angle));
+                const ay = Math.round(ent.y + dist * Math.sin(angle));
+                attributeCoords[attr.id] = { x: ax, y: ay };
+
+                // Draw connector line from entity to attribute
+                const isSelected = (selectedItem && selectedItem.type === "attribute" && selectedItem.id === attr.id);
+                const line = createSvgElement("line", {
+                    x1: ent.x, y1: ent.y,
+                    x2: ax, y2: ay,
+                    stroke: isSelected ? "#0284c7" : "#64748b",
+                    "stroke-width": isSelected ? 2 : 1.3,
+                    class: "er-connecting-line"
+                });
+                linesLayer.appendChild(line);
+
+                // Check for composite sub-attributes
+                const subAttrs = erModel.attributes.filter(a => a.parentAttrId === attr.id);
+                subAttrs.forEach((sub, sIdx) => {
+                    const subAngle = angle - 0.45 + (sIdx * 0.9) / Math.max(subAttrs.length - 1, 1);
+                    const subDist = 48;
+                    const sax = Math.round(ax + subDist * Math.cos(subAngle));
+                    const say = Math.round(ay + subDist * Math.sin(subAngle));
+                    attributeCoords[sub.id] = { x: sax, y: say };
+
+                    const subLine = createSvgElement("line", {
+                        x1: ax, y1: ay,
+                        x2: sax, y2: say,
+                        stroke: "#94a3b8",
+                        "stroke-width": 1.2,
+                        "stroke-dasharray": "3,2"
+                    });
+                    linesLayer.appendChild(subLine);
+                });
+            });
+        });
+
+        // 2. Render Relationships & Connector Lines to Entities
+        erModel.relationships.forEach(rel => {
+            const e1 = erModel.entities.find(e => e.id === rel.e1Id);
+            const e2 = erModel.entities.find(e => e.id === rel.e2Id);
+            if (!e1 || !e2) return;
+
+            // Diamond Center Coordinate
+            const rx = (rel.x !== null && rel.x !== undefined) ? rel.x : Math.round((e1.x + e2.x) / 2);
+            const ry = (rel.y !== null && rel.y !== undefined) ? rel.y : Math.round((e1.y + e2.y) / 2);
+
+            const isRelSelected = (selectedItem && selectedItem.type === "relationship" && selectedItem.id === rel.id);
+
+            // Connect e1 to (rx, ry)
+            drawRelationshipConnector(linesLayer, e1.x, e1.y, rx, ry, rel.e1Participation, isRelSelected);
+            // Connect e2 to (rx, ry)
+            drawRelationshipConnector(linesLayer, e2.x, e2.y, rx, ry, rel.e2Participation, isRelSelected);
+
+            // Cardinality Labels
+            const cardInfo = parseCardinality(rel.cardinality);
+            drawCardinalityLabel(linesLayer, e1.x, e1.y, rx, ry, cardInfo.e1Label);
+            drawCardinalityLabel(linesLayer, e2.x, e2.y, rx, ry, cardInfo.e2Label);
+
+            // Relationship Diamond Group
+            const relG = createSvgElement("g", {
+                "data-rel-id": rel.id,
+                class: `er-node er-relationship ${isRelSelected ? "er-selected" : ""}`,
+                transform: `translate(${rx}, ${ry})`
+            });
+
+            const dw = 38;
+            const dh = 24;
+            const diamondPoints = `0,${-dh} ${dw},0 0,${dh} ${-dw},0`;
+
+            // Check if identifying relationship (connecting a weak entity)
+            const isIdentifying = (e1.isWeak || e2.isWeak);
+
+            if (isIdentifying) {
+                // Outer Diamond
+                const outerDiamond = createSvgElement("polygon", {
+                    points: diamondPoints,
+                    fill: "#eff6ff",
+                    stroke: isRelSelected ? "#0284c7" : "#2563eb",
+                    "stroke-width": isRelSelected ? 2.5 : 2
+                });
+                // Inner Diamond
+                const innerPoints = `0,${-dh + 4} ${dw - 6},0 0,${dh - 4} ${-dw + 6},0`;
+                const innerDiamond = createSvgElement("polygon", {
+                    points: innerPoints,
+                    fill: "none",
+                    stroke: isRelSelected ? "#0284c7" : "#2563eb",
+                    "stroke-width": 1.4
+                });
+                relG.appendChild(outerDiamond);
+                relG.appendChild(innerDiamond);
+            } else {
+                const diamond = createSvgElement("polygon", {
+                    points: diamondPoints,
+                    fill: "#eff6ff",
+                    stroke: isRelSelected ? "#0284c7" : "#2563eb",
+                    "stroke-width": isRelSelected ? 2.5 : 2
+                });
+                relG.appendChild(diamond);
+            }
+
+            // Relationship Name Text
+            const relText = createSvgElement("text", {
+                x: 0,
+                y: 4,
+                "font-size": 10,
+                "font-weight": "bold",
+                fill: "#1e3a8a",
+                "text-anchor": "middle"
+            });
+            relText.textContent = rel.name;
+            relG.appendChild(relText);
+
+            relsLayer.appendChild(relG);
+        });
+
+        // 3. Render Entities
+        erModel.entities.forEach(ent => {
+            const isEntSelected = (selectedItem && selectedItem.type === "entity" && selectedItem.id === ent.id);
+            const entG = createSvgElement("g", {
+                "data-entity-id": ent.id,
+                class: `er-node er-entity ${isEntSelected ? "er-selected" : ""}`,
+                transform: `translate(${ent.x - ENT_W / 2}, ${ent.y - ENT_H / 2})`
+            });
+
+            if (ent.isWeak) {
+                // Weak Entity: Double Rectangle
+                const outerRect = createSvgElement("rect", {
+                    x: -4, y: -4,
+                    width: ENT_W + 8, height: ENT_H + 8,
+                    rx: 5,
+                    fill: "#fff7ed",
+                    stroke: isEntSelected ? "#0284c7" : "#ea580c",
+                    "stroke-width": isEntSelected ? 2.5 : 2
+                });
+                const innerRect = createSvgElement("rect", {
+                    x: 0, y: 0,
+                    width: ENT_W, height: ENT_H,
+                    rx: 3,
+                    fill: "none",
+                    stroke: isEntSelected ? "#0284c7" : "#ea580c",
+                    "stroke-width": 1.5
+                });
+                entG.appendChild(outerRect);
+                entG.appendChild(innerRect);
+            } else {
+                // Strong Entity: Standard Rectangle
+                const rect = createSvgElement("rect", {
+                    x: 0, y: 0,
+                    width: ENT_W, height: ENT_H,
+                    rx: 4,
+                    fill: "#f0fdf4",
+                    stroke: isEntSelected ? "#0284c7" : "#16a34a",
+                    "stroke-width": isEntSelected ? 2.5 : 2
+                });
+                entG.appendChild(rect);
+            }
+
+            // Entity Name Label
+            const text = createSvgElement("text", {
+                x: ENT_W / 2,
+                y: ENT_H / 2 + 5,
+                "font-size": 12,
+                "font-weight": "bold",
+                fill: ent.isWeak ? "#9a3412" : "#14532d",
+                "text-anchor": "middle"
+            });
+            text.textContent = ent.name;
+            entG.appendChild(text);
+
+            entsLayer.appendChild(entG);
+        });
+
+        // 4. Render Attributes
+        erModel.attributes.forEach(attr => {
+            const coords = attributeCoords[attr.id];
+            if (!coords) return;
+
+            const isAttrSelected = (selectedItem && selectedItem.type === "attribute" && selectedItem.id === attr.id);
+            const attrG = createSvgElement("g", {
+                "data-attr-id": attr.id,
+                class: `er-node er-attribute ${isAttrSelected ? "er-selected" : ""}`,
+                transform: `translate(${coords.x}, ${coords.y})`
+            });
+
+            const rw = (attr.name.length > 9 ? 38 : 33);
+            const rh = 16;
+
+            if (attr.type === "multivalued") {
+                // Multivalued Attribute: Double Oval
+                const outerOval = createSvgElement("ellipse", {
+                    cx: 0, cy: 0, rx: rw + 4, ry: rh + 3,
+                    fill: "#ffffff",
+                    stroke: isAttrSelected ? "#0284c7" : "#334155",
+                    "stroke-width": isAttrSelected ? 2.2 : 1.5
+                });
+                const innerOval = createSvgElement("ellipse", {
+                    cx: 0, cy: 0, rx: rw, ry: rh,
+                    fill: "none",
+                    stroke: isAttrSelected ? "#0284c7" : "#334155",
+                    "stroke-width": 1.2
+                });
+                attrG.appendChild(outerOval);
+                attrG.appendChild(innerOval);
+            } else if (attr.type === "derived") {
+                // Derived Attribute: Dashed Oval
+                const oval = createSvgElement("ellipse", {
+                    cx: 0, cy: 0, rx: rw, ry: rh,
+                    fill: "#f8fafc",
+                    stroke: isAttrSelected ? "#0284c7" : "#64748b",
+                    "stroke-width": isAttrSelected ? 2.2 : 1.5,
+                    "stroke-dasharray": "4,3"
+                });
+                attrG.appendChild(oval);
+            } else if (attr.type === "composite") {
+                // Composite Parent Attribute
+                const oval = createSvgElement("ellipse", {
+                    cx: 0, cy: 0, rx: rw + 2, ry: rh + 1,
+                    fill: "#f1f5f9",
+                    stroke: isAttrSelected ? "#0284c7" : "#475569",
+                    "stroke-width": isAttrSelected ? 2.2 : 1.5
+                });
+                attrG.appendChild(oval);
+            } else {
+                // Simple, Key, or Partial Key
+                const oval = createSvgElement("ellipse", {
+                    cx: 0, cy: 0, rx: rw, ry: rh,
+                    fill: "#ffffff",
+                    stroke: isAttrSelected ? "#0284c7" : "#334155",
+                    "stroke-width": isAttrSelected ? 2.2 : 1.5
+                });
+                attrG.appendChild(oval);
+            }
+
+            // Attribute Text Label
+            const text = createSvgElement("text", {
+                x: 0,
+                y: 4,
+                "font-size": 9.5,
+                "font-weight": (attr.type === "key" || attr.type === "partial_key") ? "bold" : "normal",
+                fill: "#0f172a",
+                "text-anchor": "middle",
+                "text-decoration": (attr.type === "key") ? "underline" : "none"
+            });
+            text.textContent = attr.name;
+            attrG.appendChild(text);
+
+            // Partial Key: Dashed Underline
+            if (attr.type === "partial_key") {
+                const textHalfW = Math.min(rw - 4, attr.name.length * 3.2);
+                const dashLine = createSvgElement("line", {
+                    x1: -textHalfW, y1: 7,
+                    x2: textHalfW, y2: 7,
+                    stroke: "#0f172a",
+                    "stroke-width": 1.2,
+                    "stroke-dasharray": "3,2"
+                });
+                attrG.appendChild(dashLine);
+            }
+
+            attrsLayer.appendChild(attrG);
+        });
+
+        if (shouldFit) {
+            fitView();
+        }
+    }
+
+    function drawRelationshipConnector(layer, x1, y1, x2, y2, participation, isSelected) {
+        const strokeColor = isSelected ? "#0284c7" : "#334155";
+        if (participation === "total") {
+            // Double line for total participation (offset parallel lines)
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const perpAngle = angle + Math.PI / 2;
+            const off = 2.5;
+            const dx = off * Math.cos(perpAngle);
+            const dy = off * Math.sin(perpAngle);
+
+            const line1 = createSvgElement("line", {
+                x1: x1 + dx, y1: y1 + dy,
+                x2: x2 + dx, y2: y2 + dy,
+                stroke: strokeColor,
+                "stroke-width": 1.6
+            });
+            const line2 = createSvgElement("line", {
+                x1: x1 - dx, y1: y1 - dy,
+                x2: x2 - dx, y2: y2 - dy,
+                stroke: strokeColor,
+                "stroke-width": 1.6
+            });
+            layer.appendChild(line1);
+            layer.appendChild(line2);
+        } else {
+            // Single line for partial participation
+            const line = createSvgElement("line", {
+                x1: x1, y1: y1,
+                x2: x2, y2: y2,
+                stroke: strokeColor,
+                "stroke-width": isSelected ? 2.5 : 1.8
+            });
+            layer.appendChild(line);
+        }
+    }
+
+    function parseCardinality(cardStr) {
+        const parts = (cardStr || "1:N").toUpperCase().split(":");
+        return {
+            e1Label: parts[0] || "1",
+            e2Label: parts[1] || "N"
+        };
+    }
+
+    function drawCardinalityLabel(layer, ex, ey, rx, ry, labelText) {
+        // Place label along line between entity and relationship diamond, closer to entity
+        const lx = ex + (rx - ex) * 0.38;
+        const ly = ey + (ry - ey) * 0.38 - 8;
+
+        const text = createSvgElement("text", {
+            x: lx,
+            y: ly,
+            "font-size": 12,
+            "font-weight": "bold",
+            fill: "#dc2626",
+            "text-anchor": "middle"
+        });
+        text.textContent = labelText;
+        layer.appendChild(text);
+    }
+
+    function createSvgElement(tag, attrs) {
+        const elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        for (let k in attrs) {
+            elem.setAttribute(k, attrs[k]);
+        }
+        return elem;
     }
 
     function populateBuilderSelects() {
@@ -839,6 +1923,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         [selTarget, selE1, selE2].forEach(sel => {
             if (!sel) return;
+            const prevVal = sel.value;
             sel.innerHTML = "";
             erModel.entities.forEach(ent => {
                 const opt = document.createElement("option");
@@ -846,261 +1931,233 @@ document.addEventListener("DOMContentLoaded", function () {
                 opt.textContent = `${ent.name} ${ent.isWeak ? "(Weak)" : ""}`;
                 sel.appendChild(opt);
             });
+            if (prevVal && erModel.entities.some(e => e.id === prevVal)) {
+                sel.value = prevVal;
+            }
         });
 
-        if (selE2 && selE2.options.length > 1) {
-            selE2.selectedIndex = 1;
-        }
-    }
-
-    function renderErDiagramCanvas() {
-        const svg = document.getElementById("er-builder-svg");
-        const activeElemBadge = document.getElementById("builder-active-elements");
-        if (!svg) return;
-
-        svg.innerHTML = "";
-        if (activeElemBadge) {
-            activeElemBadge.textContent = `${erModel.entities.length} Entities, ${erModel.relationships.length} Relationships`;
+        if (selE2 && selE2.options.length > 1 && selE2.selectedIndex === selE1.selectedIndex) {
+            selE2.selectedIndex = (selE1.selectedIndex + 1) % selE2.options.length;
         }
 
-        // Dynamically compute layout positions for entities
-        const count = erModel.entities.length;
-        const width = 700;
-        const spacing = width / (count + 1);
-
-        erModel.entities.forEach((ent, idx) => {
-            ent.x = spacing * (idx + 1);
-            ent.y = 150 + ((idx % 2 === 0 ? 0 : 30));
-        });
-
-        // 1. Render Relationships & Connecting Lines
-        erModel.relationships.forEach(rel => {
-            const e1 = erModel.entities.find(e => e.id === rel.e1Id);
-            const e2 = erModel.entities.find(e => e.id === rel.e2Id);
-            if (!e1 || !e2) return;
-
-            const midX = (e1.x + e2.x) / 2;
-            const midY = (e1.y + e2.y) / 2 - 20;
-
-            // Connection Lines
-            const isTotal = (rel.participation === "total");
-            if (isTotal) {
-                // Double line for total participation
-                const line1 = createSvgElement("line", { x1: e1.x, y1: e1.y - 2, x2: midX, y2: midY - 2, stroke: "#333", "stroke-width": 1.5 });
-                const line2 = createSvgElement("line", { x1: e1.x, y1: e1.y + 2, x2: midX, y2: midY + 2, stroke: "#333", "stroke-width": 1.5 });
-                svg.appendChild(line1);
-                svg.appendChild(line2);
-            } else {
-                const line = createSvgElement("line", { x1: e1.x, y1: e1.y, x2: midX, y2: midY, stroke: "#333", "stroke-width": 2 });
-                svg.appendChild(line);
-            }
-
-            const lineToE2 = createSvgElement("line", { x1: midX, y1: midY, x2: e2.x, y2: e2.y, stroke: "#333", "stroke-width": 2 });
-            svg.appendChild(lineToE2);
-
-            // Cardinality Label
-            const cardText = createSvgElement("text", {
-                x: (midX + e2.x) / 2,
-                y: (midY + e2.y) / 2 - 8,
-                "font-size": 11,
-                "font-weight": "bold",
-                fill: "#d32f2f",
-                "text-anchor": "middle"
-            });
-            cardText.textContent = rel.cardinality;
-            svg.appendChild(cardText);
-
-            // Diamond Symbol (Double Diamond if either entity is weak)
-            const isWeakRel = (e1.isWeak || e2.isWeak);
-            const diamondPoints = `${midX},${midY - 22} ${midX + 35},${midY} ${midX},${midY + 22} ${midX - 35},${midY}`;
-            const diamond = createSvgElement("polygon", {
-                points: diamondPoints,
-                fill: "#e3f2fd",
-                stroke: "#1565c0",
-                "stroke-width": 2
-            });
-            svg.appendChild(diamond);
-
-            if (isWeakRel) {
-                const innerPoints = `${midX},${midY - 17} ${midX + 28},${midY} ${midX},${midY + 17} ${midX - 28},${midY}`;
-                const innerDiamond = createSvgElement("polygon", {
-                    points: innerPoints,
-                    fill: "none",
-                    stroke: "#1565c0",
-                    "stroke-width": 1.5
-                });
-                svg.appendChild(innerDiamond);
-            }
-
-            const relLabel = createSvgElement("text", {
-                x: midX,
-                y: midY + 4,
-                "font-size": 10,
-                "font-weight": "bold",
-                fill: "#0d47a1",
-                "text-anchor": "middle"
-            });
-            relLabel.textContent = rel.name;
-            svg.appendChild(relLabel);
-        });
-
-        // 2. Render Entities and their Attributes
-        erModel.entities.forEach(ent => {
-            // Draw Entity Box
-            const boxW = 100;
-            const boxH = 44;
-            const rx = ent.x - boxW / 2;
-            const ry = ent.y - boxH / 2;
-
-            if (ent.isWeak) {
-                const outerRect = createSvgElement("rect", {
-                    x: rx - 3, y: ry - 3, width: boxW + 6, height: boxH + 6,
-                    fill: "#fff3e0", stroke: "#e65100", "stroke-width": 2, rx: 4
-                });
-                const innerRect = createSvgElement("rect", {
-                    x: rx, y: ry, width: boxW, height: boxH,
-                    fill: "none", stroke: "#e65100", "stroke-width": 1.5, rx: 3
-                });
-                svg.appendChild(outerRect);
-                svg.appendChild(innerRect);
-            } else {
-                const rect = createSvgElement("rect", {
-                    x: rx, y: ry, width: boxW, height: boxH,
-                    fill: "#e8f5e9", stroke: "#2e7d32", "stroke-width": 2, rx: 4
-                });
-                svg.appendChild(rect);
-            }
-
-            const text = createSvgElement("text", {
-                x: ent.x, y: ent.y + 5,
-                "font-size": 12, "font-weight": "bold",
-                fill: ent.isWeak ? "#e65100" : "#1b5e20",
-                "text-anchor": "middle"
-            });
-            text.textContent = ent.name;
-            svg.appendChild(text);
-
-            // Draw Attached Attributes as Ovals
-            const attrs = erModel.attributes.filter(a => a.entityId === ent.id);
-            attrs.forEach((attr, aIdx) => {
-                const angle = -140 + (aIdx * (280 / Math.max(attrs.length - 1, 1)));
-                const rad = (angle * Math.PI) / 180;
-                const dist = 65 + (aIdx % 2) * 20;
-                const ax = ent.x + dist * Math.cos(rad);
-                const ay = ent.y - Math.abs(dist * Math.sin(rad));
-
-                // Connector line
-                const line = createSvgElement("line", {
-                    x1: ent.x, y1: ry, x2: ax, y2: ay + 8,
-                    stroke: "#777", "stroke-width": 1.2
-                });
-                svg.appendChild(line);
-
-                // Attribute Oval
-                const ovalParams = {
-                    cx: ax, cy: ay, rx: 32, ry: 15,
-                    fill: "#ffffff", stroke: "#333", "stroke-width": 1.5
-                };
-                if (attr.type === "derived") {
-                    ovalParams["stroke-dasharray"] = "3,2";
-                }
-
-                const oval = createSvgElement("ellipse", ovalParams);
-                svg.appendChild(oval);
-
-                if (attr.type === "multivalued") {
-                    const innerOval = createSvgElement("ellipse", {
-                        cx: ax, cy: ay, rx: 27, ry: 11,
-                        fill: "none", stroke: "#333", "stroke-width": 1.2
-                    });
-                    svg.appendChild(innerOval);
-                }
-
-                // Attribute Label
-                const label = createSvgElement("text", {
-                    x: ax, y: ay + 4,
-                    "font-size": 9,
-                    "font-weight": attr.type === "key" ? "bold" : "normal",
-                    fill: "#000",
-                    "text-anchor": "middle",
-                    "text-decoration": attr.type === "key" ? "underline" : "none"
-                });
-                label.textContent = attr.name;
-                svg.appendChild(label);
-            });
-        });
+        updateCompositeParentOptions();
     }
 
-    function createSvgElement(tag, attrs) {
-        const elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
-        for (let k in attrs) {
-            elem.setAttribute(k, attrs[k]);
-        }
-        return elem;
-    }
-
-    function generateRelationalSchemaFromModel() {
+    // ====================================================================
+    // F. RELATIONAL SCHEMA & MYSQL 8 DDL GENERATION
+    // ====================================================================
+    function generateRelationalSchemaFromModel(showSuccessToast = true) {
         const output = document.getElementById("builder-schema-output");
+        const warningsBox = document.getElementById("builder-schema-warnings");
+        const warningsText = document.getElementById("builder-schema-warnings-text");
+        const validationBadge = document.getElementById("builder-validation-badge");
         if (!output) return;
 
         let ddlStatements = [];
         let relationalNotation = [];
+        let warnings = [];
 
-        // Step 1 & 2 & 3: Map Entities into Relations
+        // Validation Checks
         erModel.entities.forEach(ent => {
             const attrs = erModel.attributes.filter(a => a.entityId === ent.id);
             const keyAttrs = attrs.filter(a => a.type === "key");
+            const partKeys = attrs.filter(a => a.type === "partial_key");
+
+            if (!ent.isWeak && keyAttrs.length === 0) {
+                warnings.push(`Entity '${ent.name}' has no Primary Key attribute.`);
+            }
+            if (ent.isWeak && partKeys.length === 0) {
+                warnings.push(`Weak Entity '${ent.name}' has no Partial Key (discriminator).`);
+            }
+        });
+
+        if (warningsBox && warningsText && validationBadge) {
+            if (warnings.length > 0) {
+                warningsBox.classList.remove("d-none");
+                warningsText.innerHTML = `<strong>Model Design Warnings:</strong> ${warnings.join(" &bull; ")}`;
+                validationBadge.className = "badge bg-warning text-dark";
+                validationBadge.textContent = "Has Warnings";
+            } else {
+                warningsBox.classList.add("d-none");
+                validationBadge.className = "badge bg-success";
+                validationBadge.textContent = "Model Validated";
+            }
+        }
+
+        // Map Strong and Weak Entities
+        erModel.entities.forEach(ent => {
+            const attrs = erModel.attributes.filter(a => a.entityId === ent.id && !a.parentAttrId);
+            const keyAttrs = attrs.filter(a => a.type === "key");
             const simpleAttrs = attrs.filter(a => a.type === "simple");
             const multiAttrs = attrs.filter(a => a.type === "multivalued");
+            const derivedAttrs = attrs.filter(a => a.type === "derived");
+            const compAttrs = attrs.filter(a => a.type === "composite");
+            const partKeys = attrs.filter(a => a.type === "partial_key");
 
             let colDefs = [];
-            let pkCols = keyAttrs.map(k => k.name.toLowerCase());
+            let pkCols = [];
+            let notationPkCols = [];
+            let notationAttrList = [];
 
-            keyAttrs.forEach(k => {
-                colDefs.push(`    ${k.name.toLowerCase()} INT NOT NULL`);
-            });
+            // 1. Primary Keys (for Strong Entities)
+            if (!ent.isWeak) {
+                if (keyAttrs.length > 0) {
+                    keyAttrs.forEach(k => {
+                        const colName = sanitizeSqlCol(k.name);
+                        const colType = inferSqlDataType(k.name);
+                        colDefs.push(`    \`${colName}\` ${colType} NOT NULL`);
+                        pkCols.push(`\`${colName}\``);
+                        notationPkCols.push(`<u>${colName}</u>`);
+                    });
+                } else {
+                    // Fallback surrogate key
+                    const fallbackPk = `${ent.name.toLowerCase()}_id`;
+                    colDefs.push(`    \`${fallbackPk}\` INT NOT NULL AUTO_INCREMENT`);
+                    pkCols.push(`\`${fallbackPk}\``);
+                    notationPkCols.push(`<u>${fallbackPk}</u>`);
+                }
+            } else {
+                // Weak Entity: Include Owner's Foreign Key + Partial Key
+                const identifyingRel = erModel.relationships.find(r => r.e2Id === ent.id || r.e1Id === ent.id);
+                let ownerEntity = null;
+                if (identifyingRel) {
+                    const ownerId = (identifyingRel.e1Id === ent.id) ? identifyingRel.e2Id : identifyingRel.e1Id;
+                    ownerEntity = erModel.entities.find(e => e.id === ownerId);
+                }
+
+                const ownerPkName = ownerEntity ? `${ownerEntity.name.toLowerCase()}_id` : "owner_id";
+                colDefs.push(`    \`${ownerPkName}\` INT NOT NULL -- FK from Owner Entity`);
+                pkCols.push(`\`${ownerPkName}\``);
+                notationPkCols.push(`<u>${ownerPkName}</u>`);
+
+                if (partKeys.length > 0) {
+                    partKeys.forEach(pk => {
+                        const pkCol = sanitizeSqlCol(pk.name);
+                        colDefs.push(`    \`${pkCol}\` VARCHAR(100) NOT NULL -- Partial Key`);
+                        pkCols.push(`\`${pkCol}\``);
+                        notationPkCols.push(`<u>${pkCol}</u>`);
+                    });
+                }
+            }
+
+            // 2. Simple Attributes
             simpleAttrs.forEach(s => {
-                colDefs.push(`    ${s.name.toLowerCase()} VARCHAR(100) NOT NULL`);
+                const colName = sanitizeSqlCol(s.name);
+                const colType = inferSqlDataType(s.name);
+                colDefs.push(`    \`${colName}\` ${colType} NOT NULL`);
+                notationAttrList.push(colName);
             });
 
-            // Check if 1:N foreign keys should be added here
+            // 3. Composite Attributes (Flatten into table columns)
+            compAttrs.forEach(ca => {
+                const subAttrs = erModel.attributes.filter(a => a.parentAttrId === ca.id);
+                if (subAttrs.length > 0) {
+                    subAttrs.forEach(sub => {
+                        const flatCol = sanitizeSqlCol(`${ca.name}_${sub.name}`);
+                        colDefs.push(`    \`${flatCol}\` VARCHAR(100) NOT NULL -- Flattened from ${ca.name}`);
+                        notationAttrList.push(flatCol);
+                    });
+                } else {
+                    const colName = sanitizeSqlCol(ca.name);
+                    colDefs.push(`    \`${colName}\` VARCHAR(150) NOT NULL`);
+                    notationAttrList.push(colName);
+                }
+            });
+
+            // 4. Foreign Keys from 1:N Relationships (FK on the Many side)
             erModel.relationships.forEach(rel => {
-                // If this entity is on the N side of a 1:N relationship
                 if (rel.cardinality === "1:N" && rel.e2Id === ent.id) {
                     const parent = erModel.entities.find(e => e.id === rel.e1Id);
                     if (parent) {
                         const fkCol = `${parent.name.toLowerCase()}_id`;
-                        colDefs.push(`    ${fkCol} INT NOT NULL -- FK from 1:N ${rel.name}`);
+                        const isMandatory = (rel.e2Participation === "total");
+                        colDefs.push(`    \`${fkCol}\` INT ${isMandatory ? "NOT NULL" : "DEFAULT NULL"} -- FK from 1:N \`${rel.name}\``);
+                        notationAttrList.push(fkCol);
                     }
                 } else if (rel.cardinality === "N:1" && rel.e1Id === ent.id) {
                     const parent = erModel.entities.find(e => e.id === rel.e2Id);
                     if (parent) {
                         const fkCol = `${parent.name.toLowerCase()}_id`;
-                        colDefs.push(`    ${fkCol} INT NOT NULL -- FK from N:1 ${rel.name}`);
+                        const isMandatory = (rel.e1Participation === "total");
+                        colDefs.push(`    \`${fkCol}\` INT ${isMandatory ? "NOT NULL" : "DEFAULT NULL"} -- FK from N:1 \`${rel.name}\``);
+                        notationAttrList.push(fkCol);
+                    }
+                } else if (rel.cardinality === "1:1") {
+                    // Place FK on side with Total participation, or e1
+                    const isE1 = (rel.e1Id === ent.id);
+                    const shouldPlaceHere = isE1
+                        ? (rel.e1Participation === "total" || rel.e2Participation !== "total")
+                        : (rel.e2Participation === "total" && rel.e1Participation !== "total");
+
+                    if (shouldPlaceHere) {
+                        const otherEnt = erModel.entities.find(e => e.id === (isE1 ? rel.e2Id : rel.e1Id));
+                        if (otherEnt) {
+                            const fkCol = `${otherEnt.name.toLowerCase()}_id`;
+                            colDefs.push(`    \`${fkCol}\` INT NOT NULL UNIQUE -- 1:1 FK to \`${otherEnt.name}\``);
+                            notationAttrList.push(fkCol);
+                        }
                     }
                 }
             });
 
+            // Primary Key Clause
             if (pkCols.length > 0) {
                 colDefs.push(`    PRIMARY KEY (${pkCols.join(", ")})`);
             }
 
-            const tableName = ent.name.toLowerCase() + "s";
-            ddlStatements.push(`-- Table: ${ent.name} (${ent.isWeak ? "Weak Entity" : "Strong Entity"})\nCREATE TABLE ${tableName} (\n${colDefs.join(",\n")}\n);`);
-            relationalNotation.push(`${tableName.toUpperCase()}(<u>${pkCols.join(", ")}</u>${simpleAttrs.length ? ", " + simpleAttrs.map(s => s.name.toLowerCase()).join(", ") : ""})`);
+            // Foreign Key Constraints
+            if (ent.isWeak) {
+                const identifyingRel = erModel.relationships.find(r => r.e2Id === ent.id || r.e1Id === ent.id);
+                if (identifyingRel) {
+                    const ownerId = (identifyingRel.e1Id === ent.id) ? identifyingRel.e2Id : identifyingRel.e1Id;
+                    const owner = erModel.entities.find(e => e.id === ownerId);
+                    if (owner) {
+                        const ownerTable = owner.name.toLowerCase() + "s";
+                        const ownerPkCol = `${owner.name.toLowerCase()}_id`;
+                        colDefs.push(`    FOREIGN KEY (\`${ownerPkCol}\`) REFERENCES \`${ownerTable}\`(\`${ownerPkCol}\`) ON DELETE CASCADE`);
+                    }
+                }
+            }
 
-            // Step 7: Handle Multivalued Attributes (Separate Table)
+            const tableName = ent.name.toLowerCase() + "s";
+            let ddl = `-- ========================================================\n` +
+                      `-- Table: ${tableName} (${ent.isWeak ? "Weak Entity" : "Strong Entity"})\n` +
+                      `-- ========================================================\n` +
+                      `CREATE TABLE \`${tableName}\` (\n${colDefs.join(",\n")}\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`;
+
+            // Derived Attributes Explanation Note
+            if (derivedAttrs.length > 0) {
+                const notes = derivedAttrs.map(da => `-- Note: '${da.name}' is a DERIVED attribute. Computed via expression/view; not physically stored to avoid update anomalies.`);
+                ddl += `\n${notes.join("\n")}`;
+            }
+
+            ddlStatements.push(ddl);
+
+            const notationStr = `${tableName.toUpperCase()}(${[...notationPkCols, ...notationAttrList].join(", ")})`;
+            relationalNotation.push(notationStr);
+
+            // 5. Multivalued Attributes -> Separate Junction Table
             multiAttrs.forEach(ma => {
                 const multiTableName = `${ent.name.toLowerCase()}_${ma.name.toLowerCase()}`;
-                const ownerPkCol = pkCols[0] || `${ent.name.toLowerCase()}_id`;
-                const maCol = ma.name.toLowerCase();
+                const ownerPk = `${ent.name.toLowerCase()}_id`;
+                const valCol = sanitizeSqlCol(ma.name.toLowerCase());
 
-                ddlStatements.push(`-- Multivalued Attribute Table for ${ma.name}\nCREATE TABLE ${multiTableName} (\n    ${ownerPkCol} INT NOT NULL,\n    ${maCol} VARCHAR(100) NOT NULL,\n    PRIMARY KEY (${ownerPkCol}, ${maCol}),\n    FOREIGN KEY (${ownerPkCol}) REFERENCES ${tableName}(${ownerPkCol}) ON DELETE CASCADE\n);`);
-                relationalNotation.push(`${multiTableName.toUpperCase()}(<u>${ownerPkCol}</u>, <u>${maCol}</u>)`);
+                const multiDdl = `-- ========================================================\n` +
+                                 `-- Multivalued Attribute Table for ${ent.name}.${ma.name}\n` +
+                                 `-- ========================================================\n` +
+                                 `CREATE TABLE \`${multiTableName}\` (\n` +
+                                 `    \`${ownerPk}\` INT NOT NULL,\n` +
+                                 `    \`${valCol}\` VARCHAR(100) NOT NULL,\n` +
+                                 `    PRIMARY KEY (\`${ownerPk}\`, \`${valCol}\`),\n` +
+                                 `    FOREIGN KEY (\`${ownerPk}\`) REFERENCES \`${tableName}\`(\`${ownerPk}\`) ON DELETE CASCADE\n` +
+                                 `) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`;
+
+                ddlStatements.push(multiDdl);
+                relationalNotation.push(`${multiTableName.toUpperCase()}(<u>${ownerPk}</u>, <u>${valCol}</u>)`);
             });
         });
 
-        // Step 6: Map M:N Relationships into Junction Tables
+        // Map M:N Relationships into Associative Junction Tables
         erModel.relationships.forEach(rel => {
             if (rel.cardinality === "M:N") {
                 const e1 = erModel.entities.find(e => e.id === rel.e1Id);
@@ -1110,9 +2167,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 const jTableName = `${rel.name.toLowerCase()}_junction`;
                 const fk1 = `${e1.name.toLowerCase()}_id`;
                 const fk2 = `${e2.name.toLowerCase()}_id`;
+                const t1 = `${e1.name.toLowerCase()}s`;
+                const t2 = `${e2.name.toLowerCase()}s`;
 
-                ddlStatements.push(`-- M:N Associative Junction Table: ${rel.name}\nCREATE TABLE ${jTableName} (\n    ${fk1} INT NOT NULL,\n    ${fk2} INT NOT NULL,\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n    PRIMARY KEY (${fk1}, ${fk2}),\n    FOREIGN KEY (${fk1}) REFERENCES ${e1.name.toLowerCase()}s(${fk1}),\n    FOREIGN KEY (${fk2}) REFERENCES ${e2.name.toLowerCase()}s(${fk2})\n);`);
-                relationalNotation.push(`${jTableName.toUpperCase()}(<u>${fk1}</u>, <u>${fk2}</u>, created_at)`);
+                const jDdl = `-- ========================================================\n` +
+                             `-- Associative Junction Table for M:N Relationship: ${rel.name}\n` +
+                             `-- ========================================================\n` +
+                             `CREATE TABLE \`${jTableName}\` (\n` +
+                             `    \`${fk1}\` INT NOT NULL,\n` +
+                             `    \`${fk2}\` INT NOT NULL,\n` +
+                             `    \`enrolled_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n` +
+                             `    PRIMARY KEY (\`${fk1}\`, \`${fk2}\`),\n` +
+                             `    FOREIGN KEY (\`${fk1}\`) REFERENCES \`${t1}\`(\`${fk1}\`) ON DELETE CASCADE,\n` +
+                             `    FOREIGN KEY (\`${fk2}\`) REFERENCES \`${t2}\`(\`${fk2}\`) ON DELETE CASCADE\n` +
+                             `) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`;
+
+                ddlStatements.push(jDdl);
+                relationalNotation.push(`${jTableName.toUpperCase()}(<u>${fk1}</u>, <u>${fk2}</u>, enrolled_at)`);
             }
         });
 
@@ -1125,7 +2196,170 @@ document.addEventListener("DOMContentLoaded", function () {
             ddlStatements.join("\n\n");
 
         output.textContent = fullOutput;
-        showToast("Relational Schema successfully generated!");
+        if (showSuccessToast) {
+            showToast("Relational Schema successfully generated!");
+        }
+    }
+
+    function sanitizeSqlCol(str) {
+        return (str || "col").toLowerCase().replace(/[^a-z0-9_]/g, "_");
+    }
+
+    function inferSqlDataType(name) {
+        const lower = (name || "").toLowerCase();
+        if (lower.endsWith("id") || lower.endsWith("num") || lower.endsWith("code")) return "INT";
+        if (lower.includes("gpa") || lower.includes("salary") || lower.includes("price") || lower.includes("budget")) return "DECIMAL(10, 2)";
+        if (lower.includes("credits") || lower.includes("hours") || lower.includes("age") || lower.includes("year")) return "INT";
+        if (lower.includes("date") || lower.includes("dob")) return "DATE";
+        return "VARCHAR(100)";
+    }
+
+    // ====================================================================
+    // G. EXPORT, IMPORT & LOCAL PERSISTENCE
+    // ====================================================================
+    function bindExportAndPersistence() {
+        // Copy SQL
+        document.getElementById("btn-copy-generated-sql")?.addEventListener("click", function () {
+            const output = document.getElementById("builder-schema-output");
+            if (output && output.textContent) {
+                navigator.clipboard.writeText(output.textContent).then(() => {
+                    showToast("SQL DDL copied to clipboard!");
+                }).catch(() => {
+                    alert("Copy failed. Please manually select and copy.");
+                });
+            }
+        });
+
+        // Download SQL
+        document.getElementById("btn-download-generated-sql")?.addEventListener("click", function () {
+            const output = document.getElementById("builder-schema-output");
+            if (!output || !output.textContent) return;
+            downloadBlob(output.textContent, "application/sql", "schema_generated.sql");
+            showToast("Downloaded schema_generated.sql.");
+        });
+
+        // Save LocalStorage
+        document.getElementById("btn-builder-save-local")?.addEventListener("click", function () {
+            try {
+                localStorage.setItem("dbms_phase6_er_diagram", JSON.stringify(erModel));
+                showToast("Diagram saved in browser local storage.");
+            } catch (e) {
+                alert("Failed to save diagram: " + e.message);
+            }
+        });
+
+        // Restore LocalStorage
+        document.getElementById("btn-builder-load-local")?.addEventListener("click", function () {
+            try {
+                const saved = localStorage.getItem("dbms_phase6_er_diagram");
+                if (saved) {
+                    erModel = JSON.parse(saved);
+                    selectedItem = null;
+                    pushHistory("Restore Saved Diagram");
+                    renderErDiagramCanvas();
+                    populateBuilderSelects();
+                    updateInspectorUI();
+                    fitView();
+                    generateRelationalSchemaFromModel(false);
+                    showToast("Saved diagram restored.");
+                } else {
+                    alert("No saved diagram found in local storage.");
+                }
+            } catch (e) {
+                alert("Failed to restore diagram: " + e.message);
+            }
+        });
+
+        // Export JSON
+        document.getElementById("btn-builder-export-json")?.addEventListener("click", function () {
+            const jsonText = JSON.stringify(erModel, null, 2);
+            downloadBlob(jsonText, "application/json", "er_model.json");
+            showToast("Exported er_model.json.");
+        });
+
+        // Import JSON
+        const fileInput = document.getElementById("builder-import-json-file");
+        if (fileInput) {
+            fileInput.addEventListener("change", function (e) {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (ev) {
+                    try {
+                        const parsed = JSON.parse(ev.target.result);
+                        if (!parsed || !Array.isArray(parsed.entities) || !Array.isArray(parsed.attributes) || !Array.isArray(parsed.relationships)) {
+                            throw new Error("Invalid ER diagram schema. Expected { entities: [], attributes: [], relationships: [] }.");
+                        }
+                        erModel = parsed;
+                        selectedItem = null;
+                        pushHistory("Import Diagram JSON");
+                        renderErDiagramCanvas();
+                        populateBuilderSelects();
+                        updateInspectorUI();
+                        fitView();
+                        generateRelationalSchemaFromModel(false);
+                        showToast(`Imported ${erModel.entities.length} entities successfully.`);
+                    } catch (err) {
+                        alert("Failed to import JSON file: " + err.message);
+                    }
+                    fileInput.value = "";
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        // Export SVG
+        document.getElementById("btn-builder-export-svg")?.addEventListener("click", function () {
+            const svg = document.getElementById("er-builder-svg");
+            if (!svg) return;
+            const serializer = new XMLSerializer();
+            const source = serializer.serializeToString(svg);
+            const fullSvg = `<?xml version="1.0" encoding="utf-8"?>\n<!-- Generated by DBMS Learn & Run ER Visual Editor -->\n${source}`;
+            downloadBlob(fullSvg, "image/svg+xml", "er_diagram.svg");
+            showToast("Exported er_diagram.svg.");
+        });
+
+        // Load Sample College Model
+        document.getElementById("btn-builder-load-sample")?.addEventListener("click", function () {
+            if (confirm("Load full College Management System sample diagram? Current unsaved edits will be replaced.")) {
+                erModel = JSON.parse(JSON.stringify(DEFAULT_COLLEGE_MODEL));
+                selectedItem = null;
+                pushHistory("Load Sample College Model");
+                renderErDiagramCanvas();
+                populateBuilderSelects();
+                updateInspectorUI();
+                fitView();
+                generateRelationalSchemaFromModel(false);
+                showToast("Sample College ER Diagram loaded.");
+            }
+        });
+
+        // Reset Diagram Canvas
+        document.getElementById("btn-builder-reset-all")?.addEventListener("click", function () {
+            if (confirm("Reset canvas to blank state? All entities, attributes, and relationships will be cleared.")) {
+                erModel = { entities: [], attributes: [], relationships: [] };
+                selectedItem = null;
+                pushHistory("Clear Diagram Canvas");
+                renderErDiagramCanvas();
+                populateBuilderSelects();
+                updateInspectorUI();
+                generateRelationalSchemaFromModel(false);
+                showToast("Canvas cleared.");
+            }
+        });
+    }
+
+    function downloadBlob(content, mimeType, filename) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     // Helper Toast

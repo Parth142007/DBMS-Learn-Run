@@ -224,10 +224,98 @@
             </div>
 
             <div class="row g-4">
-                <!-- Controls Column: Entity, Attribute, Relationship Modals/Forms -->
+                <!-- Controls Column: Selection Inspector, Add Entity, Add Attribute, Add Relationship, Actions -->
                 <div class="col-lg-4">
+                    <!-- Dynamic Selection Inspector Card -->
+                    <div class="card border mb-3 shadow-none border-primary-subtle" id="builder-selection-card">
+                        <div class="card-header bg-primary-subtle py-2 d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold small text-primary" id="builder-inspector-title">
+                                <i class="bi bi-cursor-fill me-1"></i> Selection Inspector
+                            </span>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-outline-danger btn-sm py-0 px-2 d-none" id="btn-builder-delete-selected" title="Delete selected element (Del)">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm py-0 px-2 d-none" id="btn-builder-deselect" title="Deselect element (Esc)">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-3" id="builder-inspector-body">
+                            <p class="small text-muted mb-0" id="builder-inspector-placeholder">
+                                <i class="bi bi-info-circle me-1 text-primary"></i> Click any entity, attribute, or relationship on the canvas to inspect, rename, reposition, or configure its properties.
+                            </p>
+                            <!-- Dynamic Entity Inspector Form -->
+                            <div id="inspector-entity-form" class="d-none">
+                                <div class="mb-2">
+                                    <label class="form-label small text-muted mb-1">Entity Name:</label>
+                                    <input type="text" class="form-control form-control-sm font-monospace" id="inspector-entity-name">
+                                </div>
+                                <div class="form-check form-check-inline small mb-2">
+                                    <input class="form-check-input" type="checkbox" id="inspector-entity-weak">
+                                    <label class="form-check-label text-dark" for="inspector-entity-weak">Weak Entity (Double Rectangle)</label>
+                                </div>
+                                <div class="small text-muted" id="inspector-entity-summary"></div>
+                            </div>
+
+                            <!-- Dynamic Attribute Inspector Form -->
+                            <div id="inspector-attr-form" class="d-none">
+                                <div class="mb-2">
+                                    <label class="form-label small text-muted mb-1">Attribute Name:</label>
+                                    <input type="text" class="form-control form-control-sm font-monospace" id="inspector-attr-name">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small text-muted mb-1">Attribute Type:</label>
+                                    <select class="form-select form-select-sm" id="inspector-attr-type">
+                                        <option value="simple">Simple (Regular)</option>
+                                        <option value="key">Key Attribute (Primary Key - Underlined)</option>
+                                        <option value="partial_key">Partial Key (Weak Discriminator - Dashed Underline)</option>
+                                        <option value="multivalued">Multivalued (Double Oval)</option>
+                                        <option value="derived">Derived (Dashed Oval)</option>
+                                        <option value="composite">Composite Parent</option>
+                                    </select>
+                                </div>
+                                <div class="small text-muted" id="inspector-attr-summary"></div>
+                            </div>
+
+                            <!-- Dynamic Relationship Inspector Form -->
+                            <div id="inspector-rel-form" class="d-none">
+                                <div class="mb-2">
+                                    <label class="form-label small text-muted mb-1">Relationship Name:</label>
+                                    <input type="text" class="form-control form-control-sm font-monospace" id="inspector-rel-name">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small text-muted mb-1">Cardinality Ratio:</label>
+                                    <select class="form-select form-select-sm" id="inspector-rel-card">
+                                        <option value="1:1">1:1 (One-to-One)</option>
+                                        <option value="1:N">1:N (One-to-Many)</option>
+                                        <option value="N:1">N:1 (Many-to-One)</option>
+                                        <option value="M:N">M:N (Many-to-Many)</option>
+                                    </select>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <label class="form-label small text-muted mb-1" id="inspector-rel-e1-label">E1 Participation:</label>
+                                        <select class="form-select form-select-sm" id="inspector-rel-part-e1">
+                                            <option value="partial">Partial (Single Line)</option>
+                                            <option value="total">Total (Double Line)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small text-muted mb-1" id="inspector-rel-e2-label">E2 Participation:</label>
+                                        <select class="form-select form-select-sm" id="inspector-rel-part-e2">
+                                            <option value="partial">Partial (Single Line)</option>
+                                            <option value="total">Total (Double Line)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="small text-muted" id="inspector-rel-summary"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Add Entity Card -->
-                    <div class="card border mb-3 shadow-none">
+                    <div class="card border mb-3 shadow-none" id="card-builder-add-entity">
                         <div class="card-header bg-light py-2 fw-semibold small text-dark d-flex justify-content-between align-items-center">
                             <span><i class="bi bi-plus-square text-success me-1"></i> Add Entity</span>
                             <span class="badge bg-secondary" id="builder-entity-count">3 Entities</span>
@@ -239,13 +327,13 @@
                             </div>
                             <div class="form-check form-check-inline small">
                                 <input class="form-check-input" type="checkbox" id="builder-entity-is-weak">
-                                <label class="form-check-label text-muted" for="builder-entity-is-weak">Weak Entity</label>
+                                <label class="form-check-label text-muted" for="builder-entity-is-weak">Weak Entity (Double Rectangle)</label>
                             </div>
                         </div>
                     </div>
 
                     <!-- Add Attribute Card -->
-                    <div class="card border mb-3 shadow-none">
+                    <div class="card border mb-3 shadow-none" id="card-builder-add-attr">
                         <div class="card-header bg-light py-2 fw-semibold small text-dark">
                             <i class="bi bi-tag text-info me-1"></i> Add Attribute to Entity
                         </div>
@@ -259,9 +347,15 @@
                                 <select class="form-select" id="builder-attr-type">
                                     <option value="simple" selected>Simple (Regular)</option>
                                     <option value="key">Key Attribute (PK)</option>
-                                    <option value="multivalued">Multivalued</option>
-                                    <option value="derived">Derived</option>
+                                    <option value="partial_key">Partial Key (Weak Discriminator)</option>
+                                    <option value="multivalued">Multivalued (Double Oval)</option>
+                                    <option value="derived">Derived (Dashed Oval)</option>
+                                    <option value="composite">Composite Parent</option>
                                 </select>
+                            </div>
+                            <div class="mb-2 d-none" id="builder-attr-composite-parent-container">
+                                <label class="form-label small text-muted mb-1">Parent Composite Attribute:</label>
+                                <select class="form-select form-select-sm" id="builder-attr-composite-parent"></select>
                             </div>
                             <button class="btn btn-outline-primary btn-sm w-100" id="btn-builder-add-attr">
                                 <i class="bi bi-plus-circle me-1"></i> Attach Attribute
@@ -270,7 +364,7 @@
                     </div>
 
                     <!-- Add Relationship Card -->
-                    <div class="card border mb-3 shadow-none">
+                    <div class="card border mb-3 shadow-none" id="card-builder-add-rel">
                         <div class="card-header bg-light py-2 fw-semibold small text-dark">
                             <i class="bi bi-link-45deg text-warning me-1"></i> Add Relationship
                         </div>
@@ -289,65 +383,179 @@
                                 </div>
                             </div>
                             <div class="row g-2 mb-2">
-                                <div class="col-6">
-                                    <label class="form-label small text-muted mb-1">Cardinality:</label>
+                                <div class="col-12">
+                                    <label class="form-label small text-muted mb-1">Cardinality Ratio:</label>
                                     <select class="form-select form-select-sm" id="builder-rel-card">
                                         <option value="1:1">1:1 (One-to-One)</option>
                                         <option value="1:N">1:N (One-to-Many)</option>
+                                        <option value="N:1">N:1 (Many-to-One)</option>
                                         <option value="M:N" selected>M:N (Many-to-Many)</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div class="row g-2 mb-2">
                                 <div class="col-6">
-                                    <label class="form-label small text-muted mb-1">Participation:</label>
-                                    <select class="form-select form-select-sm" id="builder-rel-part">
+                                    <label class="form-label small text-muted mb-1">E1 Participation:</label>
+                                    <select class="form-select form-select-sm" id="builder-rel-part-e1">
+                                        <option value="partial" selected>Partial (Optional)</option>
+                                        <option value="total">Total (Mandatory)</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small text-muted mb-1">E2 Participation:</label>
+                                    <select class="form-select form-select-sm" id="builder-rel-part-e2">
                                         <option value="partial" selected>Partial (Optional)</option>
                                         <option value="total">Total (Mandatory)</option>
                                     </select>
                                 </div>
                             </div>
+                            <!-- Hidden legacy field for backward compatibility -->
+                            <input type="hidden" id="builder-rel-part" value="partial">
                             <button class="btn btn-outline-warning text-dark btn-sm w-100" id="btn-builder-add-rel">
                                 <i class="bi bi-link me-1"></i> Connect Relationship
                             </button>
                         </div>
                     </div>
 
-                    <!-- Builder Action Buttons -->
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-gfg btn-sm" id="btn-builder-generate-schema">
-                            <i class="bi bi-file-earmark-code me-1"></i> Generate Relational Schema
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm" id="btn-builder-reset-all">
-                            <i class="bi bi-trash me-1"></i> Reset to Default College Model
-                        </button>
+                    <!-- Builder Action Buttons & Data Management -->
+                    <div class="card border mb-3 shadow-none bg-light">
+                        <div class="card-body p-3">
+                            <button class="btn btn-gfg btn-sm w-100 mb-2 fw-semibold" id="btn-builder-generate-schema">
+                                <i class="bi bi-file-earmark-code me-1"></i> Generate Relational Schema
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm w-100 mb-2" id="btn-builder-load-sample">
+                                <i class="bi bi-mortarboard me-1"></i> Load College Sample Diagram
+                            </button>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <button class="btn btn-outline-secondary btn-sm w-100" id="btn-builder-save-local" title="Save diagram to browser local storage">
+                                        <i class="bi bi-floppy me-1"></i> Save
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-secondary btn-sm w-100" id="btn-builder-load-local" title="Restore diagram from browser local storage">
+                                        <i class="bi bi-arrow-clockwise me-1"></i> Restore
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-4">
+                                    <button class="btn btn-outline-dark btn-sm w-100" id="btn-builder-export-json" title="Download model as JSON file">
+                                        <i class="bi bi-download me-1"></i> JSON
+                                    </button>
+                                </div>
+                                <div class="col-4">
+                                    <label class="btn btn-outline-dark btn-sm w-100 mb-0" id="btn-builder-import-json" title="Import model from JSON file">
+                                        <i class="bi bi-upload me-1"></i> Import
+                                        <input type="file" id="builder-import-json-file" accept=".json" class="d-none">
+                                    </label>
+                                </div>
+                                <div class="col-4">
+                                    <button class="btn btn-outline-dark btn-sm w-100" id="btn-builder-export-svg" title="Export diagram as SVG file">
+                                        <i class="bi bi-filetype-svg me-1"></i> SVG
+                                    </button>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm w-100" id="btn-builder-reset-all">
+                                <i class="bi bi-trash me-1"></i> Reset Diagram Canvas
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Canvas & Output Column -->
                 <div class="col-lg-8">
-                    <!-- Live SVG Diagram Viewer -->
+                    <!-- Live SVG Diagram Viewer with Interactive Visual Toolbar -->
                     <div class="card border mb-3 shadow-none">
-                        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-                            <span class="fw-semibold small text-dark"><i class="bi bi-eye text-success me-1"></i> Live Chen ER Diagram Visualizer</span>
-                            <span class="badge bg-white border text-secondary" id="builder-active-elements">3 Entities, 2 Relationships</span>
-                        </div>
-                        <div class="card-body p-2 text-center bg-white">
-                            <div class="border rounded bg-light p-2 overflow-auto" style="min-height: 340px;" id="er-canvas-container">
-                                <svg id="er-builder-svg" viewBox="0 0 700 340" width="100%" height="340" xmlns="http://www.w3.org/2000/svg" style="max-width: 700px; font-family: sans-serif;"></svg>
+                        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-semibold small text-dark"><i class="bi bi-eye text-success me-1"></i> Live Chen ER Diagram Visualizer</span>
+                                <span class="badge bg-white border text-secondary" id="builder-active-elements">3 Entities, 2 Relationships</span>
                             </div>
-                            <span class="small text-muted mt-2 d-block">
-                                Standard Chen Notation: Rectangles = Entities, Ovals = Attributes, Diamonds = Relationships. Double borders represent weak entities/identifying relationships.
-                            </span>
+                            <!-- Compact Visual Editor Toolbar -->
+                            <div class="btn-group btn-group-sm bg-white border rounded shadow-xs p-1" role="toolbar" aria-label="Visual Editor Toolbar">
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn active text-primary" id="btn-tool-select" title="Selection &amp; Dragging Tool">
+                                    <i class="bi bi-cursor-fill"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn" id="btn-tool-undo" title="Undo (Ctrl+Z)">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn" id="btn-tool-redo" title="Redo (Ctrl+Y)">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn" id="btn-tool-zoom-in" title="Zoom In (+)">
+                                    <i class="bi bi-zoom-in"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn" id="btn-tool-zoom-reset" title="Reset Zoom (100%)">
+                                    <i class="bi bi-aspect-ratio"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn" id="btn-tool-zoom-out" title="Zoom Out (-)">
+                                    <i class="bi bi-zoom-out"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn" id="btn-tool-fit-view" title="Fit Diagram to View">
+                                    <i class="bi bi-arrows-fullscreen"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn text-success" id="btn-tool-auto-arrange" title="Auto-Arrange Diagram Layout">
+                                    <i class="bi bi-grid-3x3-gap"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn text-danger" id="btn-tool-delete" title="Delete Selected Element (Del)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-2 text-center bg-white position-relative">
+                            <!-- Responsive Canvas Container -->
+                            <div class="border rounded p-0 overflow-hidden position-relative" style="min-height: 480px; height: 500px;" id="er-canvas-container">
+                                <span class="er-zoom-badge" id="er-zoom-level-badge">Zoom: 100%</span>
+                                <span class="er-canvas-watermark">Chen Notation Visual Editor &bull; Drag to Pan &bull; Wheel to Zoom</span>
+                                <svg id="er-builder-svg" xmlns="http://www.w3.org/2000/svg" style="font-family: system-ui, -apple-system, sans-serif;">
+                                    <defs>
+                                        <pattern id="er-canvas-grid-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                                            <circle cx="2" cy="2" r="1" fill="#cbd5e1" opacity="0.8"/>
+                                        </pattern>
+                                    </defs>
+                                    <rect width="100%" height="100%" fill="url(#er-canvas-grid-pattern)" id="er-canvas-bg"></rect>
+                                    <g id="er-viewport">
+                                        <g id="er-lines-layer"></g>
+                                        <g id="er-relationships-layer"></g>
+                                        <g id="er-entities-layer"></g>
+                                        <g id="er-attributes-layer"></g>
+                                        <g id="er-selection-layer"></g>
+                                    </g>
+                                </svg>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2 small text-muted flex-wrap px-1">
+                                <span>
+                                    <i class="bi bi-info-circle me-1"></i> Standard Chen Notation: Rectangles = Entities, Ovals = Attributes, Diamonds = Relationships. Double lines = Total participation.
+                                </span>
+                                <span>
+                                    <kbd class="bg-light text-dark border">Drag</kbd> move &bull; <kbd class="bg-light text-dark border">Wheel</kbd> zoom &bull; <kbd class="bg-light text-dark border">Ctrl+Z</kbd> undo &bull; <kbd class="bg-light text-dark border">Del</kbd> delete
+                                </span>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Generated Relational Schema Card -->
                     <div class="card border shadow-none" id="builder-generated-schema-card">
-                        <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
-                            <span class="small fw-semibold"><i class="bi bi-terminal me-1"></i> Generated Relational Schema &amp; MySQL 8 DDL</span>
-                            <span class="badge bg-success">Automated Mapping</span>
+                        <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="small fw-semibold"><i class="bi bi-terminal me-1"></i> Generated Relational Schema &amp; MySQL 8 DDL</span>
+                                <span class="badge bg-success" id="builder-validation-badge">Model Validated</span>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-outline-light btn-sm py-0 px-2 font-monospace" id="btn-copy-generated-sql" title="Copy SQL to clipboard">
+                                    <i class="bi bi-clipboard me-1"></i> Copy SQL
+                                </button>
+                                <button class="btn btn-outline-light btn-sm py-0 px-2 font-monospace" id="btn-download-generated-sql" title="Download .sql file">
+                                    <i class="bi bi-download me-1"></i> Download .sql
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body p-3">
-                            <pre class="bg-light p-3 border rounded font-monospace small mb-0 text-dark" id="builder-schema-output" style="max-height: 200px; overflow-y: auto;"><code>-- Click "Generate Relational Schema" above to inspect generated SQL DDL tables.</code></pre>
+                            <div class="alert alert-warning small py-2 px-3 mb-2 d-none" id="builder-schema-warnings">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> <span id="builder-schema-warnings-text"></span>
+                            </div>
+                            <pre class="bg-light p-3 border rounded font-monospace small mb-0 text-dark" id="builder-schema-output" style="max-height: 240px; overflow-y: auto;"><code>-- Click "Generate Relational Schema" above to inspect generated SQL DDL tables.</code></pre>
                         </div>
                     </div>
                 </div>

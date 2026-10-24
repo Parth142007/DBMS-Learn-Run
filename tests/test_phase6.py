@@ -34,6 +34,50 @@ class TestPhase6ErAndRelationalModel(unittest.TestCase):
         self.assertIn("static/js/phase6.js", html)
         self.assertIn("interactive-er-builder-section", html)
 
+    def test_er_visual_editor_elements(self):
+        """Verify that all functional visual editor controls, toolbar buttons, and inspector exist in the rendered HTML."""
+        response = self.client.get("/phase-6?topic=topic10")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+
+        # 1. Selection Inspector
+        self.assertIn("builder-selection-card", html)
+        self.assertIn("inspector-entity-form", html)
+        self.assertIn("inspector-attr-form", html)
+        self.assertIn("inspector-rel-form", html)
+        self.assertIn("btn-builder-delete-selected", html)
+
+        # 2. Compact Visual Editor Toolbar
+        self.assertIn("btn-tool-select", html)
+        self.assertIn("btn-tool-undo", html)
+        self.assertIn("btn-tool-redo", html)
+        self.assertIn("btn-tool-zoom-in", html)
+        self.assertIn("btn-tool-zoom-reset", html)
+        self.assertIn("btn-tool-zoom-out", html)
+        self.assertIn("btn-tool-fit-view", html)
+        self.assertIn("btn-tool-auto-arrange", html)
+        self.assertIn("btn-tool-delete", html)
+
+        # 3. Canvas Container & SVG
+        self.assertIn("er-canvas-container", html)
+        self.assertIn("er-builder-svg", html)
+        self.assertIn("er-viewport", html)
+        self.assertIn("er-canvas-grid-pattern", html)
+
+        # 4. Action Buttons & Export / Import
+        self.assertIn("btn-builder-load-sample", html)
+        self.assertIn("btn-builder-save-local", html)
+        self.assertIn("btn-builder-load-local", html)
+        self.assertIn("btn-builder-export-json", html)
+        self.assertIn("builder-import-json-file", html)
+        self.assertIn("btn-builder-export-svg", html)
+
+        # 5. Schema Generator Controls
+        self.assertIn("btn-copy-generated-sql", html)
+        self.assertIn("btn-download-generated-sql", html)
+        self.assertIn("builder-schema-warnings", html)
+        self.assertIn("builder-schema-output", html)
+
     def test_er_model_alias_route(self):
         """Verify /er-model route acts as an alias to /phase-6."""
         response = self.client.get("/er-model")

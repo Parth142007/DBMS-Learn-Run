@@ -757,6 +757,12 @@ document.addEventListener("DOMContentLoaded", function () {
         panY: 0
     };
 
+    // Full Page Studio State
+    let isFullPageMode = false;
+    let canvasResizeObserver = null;
+    let lastCanvasWidth = 0;
+    let lastCanvasHeight = 0;
+
     // Undo / Redo History
     let historyStack = [];
     let historyIndex = -1;
@@ -847,6 +853,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Bind Schema & File Export Buttons
             bindExportAndPersistence();
+
+            // Initialize Canvas Resize Observer & Fullscreen Synchronization
+            initCanvasResizeObserver();
 
             console.log("Interactive ER Diagram Builder initialized successfully.");
         } catch (err) {
@@ -1367,6 +1376,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Auto Arrange
         document.getElementById("btn-tool-auto-arrange")?.addEventListener("click", autoArrangeLayout);
+
+        // Full Page Studio Mode
+        document.getElementById("btn-tool-fullpage")?.addEventListener("click", toggleFullPageMode);
+        document.getElementById("btn-header-exit-fullpage")?.addEventListener("click", exitFullPageMode);
     }
 
     function autoArrangeLayout() {
@@ -1405,7 +1418,14 @@ document.addEventListener("DOMContentLoaded", function () {
             const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : "";
             if (tag === "input" || tag === "textarea" || tag === "select") return;
 
-            // Only trigger if topic10 (ER builder section) is active
+            // Escape -> Exit Full Page mode immediately (if active)
+            if (isFullPageMode && e.key === "Escape") {
+                e.preventDefault();
+                exitFullPageMode();
+                return;
+            }
+
+            // Only trigger ER diagram builder shortcuts if topic10 is active
             if (currentTopic !== "topic10") return;
 
             // Ctrl+Z or Cmd+Z -> Undo
@@ -1669,6 +1689,226 @@ document.addEventListener("DOMContentLoaded", function () {
         viewport.panX = Math.round(cw / 2 - midX * fitScale);
         viewport.panY = Math.round(ch / 2 - midY * fitScale);
         updateViewportTransform();
+    }
+
+    // ====================================================================
+    // FULL-PAGE MODE & CANVAS RESIZING ENGINE
+    // ====================================================================
+    function toggleFullPageMode() {
+        if (isFullPageMode) {
+            exitFullPageMode();
+        } else {
+            enterFullPageMode();
+        }
+    }
+
+    function enterFullPageMode() {
+        const section = document.getElementById("interactive-er-builder-section");
+        if (!section) return;
+
+        const container = document.getElementById("er-canvas-container");
+        if (container) {
+            lastCanvasWidth = container.clientWidth;
+            lastCanvasHeight = container.clientHeight;
+        }
+
+        const reqFs = section.requestFullscreen ||
+                      section.webkitRequestFullscreen ||
+                      section.mozRequestFullScreen ||
+                      section.msRequestFullscreen;
+
+        if (reqFs && document.fullscreenEnabled !== false) {
+            try {
+                const promise = reqFs.call(section);
+                if (promise && typeof promise.then === "function") {
+                    promise.then(() => {
+                        applyFullPageStyles(true);
+                    }).catch(err => {
+                        console.warn("Fullscreen request rejected; activating CSS fallback:", err);
+                        applyFullPageStyles(true);
+                    });
+                } else {
+                    applyFullPageStyles(true);
+                }
+            } catch (err) {
+                console.warn("Fullscreen API exception; activating CSS fallback:", err);
+                applyFullPageStyles(true);
+            }
+        } else {
+            applyFullPageStyles(true);
+        }
+    }
+
+    function exitFullPageMode() {
+        const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+        if (isFs) {
+            const exitFs = document.exitFullscreen ||
+                           document.webkitExitFullscreen ||
+                           document.mozCancelFullScreen ||
+                           document.msExitFullscreen;
+            if (exitFs) {
+                try {
+                    const promise = exitFs.call(document);
+                    if (promise && typeof promise.then === "function") {
+                        promise.then(() => {
+                            applyFullPageStyles(false);
+                        }).catch(() => {
+                            applyFullPageStyles(false);
+                        });
+                        return;
+                    }
+                } catch (e) {}
+            }
+        }
+        applyFullPageStyles(false);
+    }
+
+    function applyFullPageStyles(active) {
+        const section = document.getElementById("interactive-er-builder-section");
+        const btnTool = document.getElementById("btn-tool-fullpage");
+        const iconTool = document.getElementById("icon-tool-fullpage");
+        const textTool = document.getElementById("text-tool-fullpage");
+        const headerExitBtn = document.getElementById("btn-header-exit-fullpage");
+        const headerBadge = document.getElementById("builder-header-badge");
+
+        if (!section) return;
+
+        isFullPageMode = active;
+
+        if (active) {
+            section.classList.add("er-fullpage-mode");
+            document.body.classList.add("er-fullpage-active");
+
+            if (btnTool) {
+                btnTool.setAttribute("title", "Exit Full Page");
+                btnTool.setAttribute("aria-label", "Exit Full Page");
+                btnTool.setAttribute("aria-pressed", "true");
+                btnTool.classList.add("active", "text-danger");
+                btnTool.classList.remove("text-primary");
+            }
+            if (iconTool) {
+                iconTool.className = "bi bi-fullscreen-exit";
+            }
+            if (textTool) {
+                textTool.textContent = "Exit Full Page";
+            }
+            if (headerExitBtn) {
+                headerExitBtn.classList.remove("d-none");
+            }
+            if (headerBadge) {
+                headerBadge.textContent = "Full-Page Studio";
+                headerBadge.className = "badge bg-success";
+            }
+        } else {
+            section.classList.remove("er-fullpage-mode");
+            document.body.classList.remove("er-fullpage-active");
+
+            if (btnTool) {
+                btnTool.setAttribute("title", "Full Page");
+                btnTool.setAttribute("aria-label", "Full Page");
+                btnTool.setAttribute("aria-pressed", "false");
+                btnTool.classList.remove("active", "text-danger");
+                btnTool.classList.add("text-primary");
+            }
+            if (iconTool) {
+                iconTool.className = "bi bi-fullscreen";
+            }
+            if (textTool) {
+                textTool.textContent = "Full Page";
+            }
+            if (headerExitBtn) {
+                headerExitBtn.classList.add("d-none");
+            }
+            if (headerBadge) {
+                headerBadge.textContent = "Interactive Design Tool";
+                headerBadge.className = "badge bg-primary";
+            }
+        }
+
+        setTimeout(() => {
+            handleCanvasResize();
+            showToast(active ? "Full Page Mode activated. Press Esc to exit." : "Exited Full Page Mode.");
+        }, 60);
+    }
+
+    function handleCanvasResize() {
+        const container = document.getElementById("er-canvas-container");
+        if (!container) return;
+
+        const newW = container.clientWidth;
+        const newH = container.clientHeight;
+
+        if (lastCanvasWidth > 0 && lastCanvasHeight > 0 &&
+            (Math.abs(newW - lastCanvasWidth) > 4 || Math.abs(newH - lastCanvasHeight) > 4)) {
+            const deltaW = newW - lastCanvasWidth;
+            const deltaH = newH - lastCanvasHeight;
+            viewport.panX += Math.round(deltaW / 2);
+            viewport.panY += Math.round(deltaH / 2);
+        }
+
+        lastCanvasWidth = newW;
+        lastCanvasHeight = newH;
+        updateViewportTransform();
+    }
+
+    function initCanvasResizeObserver() {
+        const container = document.getElementById("er-canvas-container");
+        if (!container) return;
+
+        lastCanvasWidth = container.clientWidth;
+        lastCanvasHeight = container.clientHeight;
+
+        if (window.ResizeObserver) {
+            canvasResizeObserver = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    const cr = entry.contentRect;
+                    if (cr.width > 0 && cr.height > 0) {
+                        if (lastCanvasWidth > 0 && lastCanvasHeight > 0 &&
+                            (Math.abs(cr.width - lastCanvasWidth) > 5 || Math.abs(cr.height - lastCanvasHeight) > 5)) {
+                            const deltaW = cr.width - lastCanvasWidth;
+                            const deltaH = cr.height - lastCanvasHeight;
+                            viewport.panX += Math.round(deltaW / 2);
+                            viewport.panY += Math.round(deltaH / 2);
+                            updateViewportTransform();
+                        }
+                        lastCanvasWidth = cr.width;
+                        lastCanvasHeight = cr.height;
+                    }
+                }
+            });
+            canvasResizeObserver.observe(container);
+        } else {
+            window.addEventListener("resize", () => {
+                handleCanvasResize();
+            });
+        }
+
+        // Fullscreen API event synchronization
+        const fsChangeHandler = () => {
+            const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+            if (isFs !== isFullPageMode) {
+                applyFullPageStyles(isFs);
+            }
+        };
+
+        document.addEventListener("fullscreenchange", fsChangeHandler);
+        document.addEventListener("webkitfullscreenchange", fsChangeHandler);
+        document.addEventListener("mozfullscreenchange", fsChangeHandler);
+        document.addEventListener("MSFullscreenChange", fsChangeHandler);
+    }
+
+    function toggleSchemaCollapse() {
+        const card = document.getElementById("builder-generated-schema-card");
+        const icon = document.getElementById("icon-schema-collapse");
+        if (!card) return;
+
+        const isCollapsed = card.classList.toggle("schema-collapsed");
+        if (icon) {
+            icon.className = isCollapsed ? "bi bi-chevron-up" : "bi bi-chevron-down";
+        }
+        setTimeout(() => {
+            handleCanvasResize();
+        }, 50);
     }
 
     // ====================================================================
@@ -2383,6 +2623,11 @@ document.addEventListener("DOMContentLoaded", function () {
             if (card) {
                 card.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
+        });
+
+        // Toggle Schema Panel Collapse
+        document.getElementById("btn-toggle-schema-collapse")?.addEventListener("click", function () {
+            toggleSchemaCollapse();
         });
 
         // Copy SQL

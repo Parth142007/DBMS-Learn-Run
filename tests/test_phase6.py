@@ -57,6 +57,9 @@ class TestPhase6ErAndRelationalModel(unittest.TestCase):
         self.assertIn("btn-tool-fit-view", html)
         self.assertIn("btn-tool-auto-arrange", html)
         self.assertIn("btn-tool-delete", html)
+        self.assertIn("btn-tool-fullpage", html)
+        self.assertIn("btn-header-exit-fullpage", html)
+        self.assertIn("btn-toggle-schema-collapse", html)
 
         # 3. Canvas Container & SVG
         self.assertIn("er-canvas-container", html)

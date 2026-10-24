@@ -213,19 +213,24 @@
 
         <!-- Section 3: Interactive ER Diagram Builder -->
         <section class="mb-5" id="interactive-er-builder-section">
-            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 flex-wrap gap-2" id="builder-section-header">
                 <div>
-                    <h5 class="fw-bold text-success mb-0">
+                    <h5 class="fw-bold text-success mb-0" id="builder-header-title">
                         <i class="bi bi-bounding-box-circles me-2"></i>3. Interactive ER Diagram Builder &amp; Schema Generator
                     </h5>
-                    <p class="small text-muted mb-0">Design entities, attributes, keys, and relationships, view live Chen diagrams, and automatically generate relational SQL schemas!</p>
+                    <p class="small text-muted mb-0" id="builder-header-subtitle">Design entities, attributes, keys, and relationships, view live Chen diagrams, and automatically generate relational SQL schemas!</p>
                 </div>
-                <span class="badge bg-primary">Interactive Design Tool</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary" id="builder-header-badge">Interactive Design Tool</span>
+                    <button type="button" class="btn btn-outline-danger btn-sm d-none" id="btn-header-exit-fullpage" title="Exit Full Page Mode (Esc)" aria-label="Exit Full Page Mode">
+                        <i class="bi bi-fullscreen-exit me-1"></i> Exit Full Page
+                    </button>
+                </div>
             </div>
 
-            <div class="row g-4">
+            <div class="row g-4" id="er-builder-main-row">
                 <!-- Controls Column: Selection Inspector, Add Entity, Add Attribute, Add Relationship, Actions -->
-                <div class="col-lg-4">
+                <div class="col-lg-4" id="builder-controls-column">
                     <!-- Dynamic Selection Inspector Card -->
                     <div class="card border mb-3 shadow-none border-primary-subtle" id="builder-selection-card">
                         <div class="card-header bg-primary-subtle py-2 d-flex justify-content-between align-items-center">
@@ -464,9 +469,9 @@
                 </div>
 
                 <!-- Canvas & Output Column -->
-                <div class="col-lg-8">
+                <div class="col-lg-8" id="builder-canvas-column">
                     <!-- Live SVG Diagram Viewer with Interactive Visual Toolbar -->
-                    <div class="card border mb-3 shadow-none">
+                    <div class="card border mb-3 shadow-none" id="builder-visualizer-card">
                         <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2">
                                 <span class="fw-semibold small text-dark"><i class="bi bi-eye text-success me-1"></i> Live Chen ER Diagram Visualizer</span>
@@ -500,6 +505,10 @@
                                 </button>
                                 <button type="button" class="btn btn-light btn-sm er-toolbar-btn text-danger" id="btn-tool-delete" title="Delete Selected Element (Del)">
                                     <i class="bi bi-trash"></i>
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm er-toolbar-btn text-primary fw-semibold" id="btn-tool-fullpage" title="Full Page" aria-label="Full Page" aria-pressed="false">
+                                    <i class="bi bi-fullscreen" id="icon-tool-fullpage"></i>
+                                    <span class="d-none d-md-inline ms-1 small" id="text-tool-fullpage">Full Page</span>
                                 </button>
                             </div>
                         </div>
@@ -542,12 +551,15 @@
                                 <span class="small fw-semibold"><i class="bi bi-terminal me-1"></i> Generated Relational Schema &amp; MySQL 8 DDL</span>
                                 <span class="badge bg-success" id="builder-validation-badge">Model Validated</span>
                             </div>
-                            <div class="d-flex gap-1">
+                            <div class="d-flex gap-1 align-items-center">
                                 <button type="button" class="btn btn-outline-light btn-sm py-0 px-2 font-monospace" id="btn-copy-generated-sql" title="Copy SQL to clipboard">
                                     <i class="bi bi-clipboard me-1"></i> Copy SQL
                                 </button>
                                 <button type="button" class="btn btn-outline-light btn-sm py-0 px-2 font-monospace" id="btn-download-generated-sql" title="Download .sql file">
                                     <i class="bi bi-download me-1"></i> Download .sql
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 font-monospace text-light" id="btn-toggle-schema-collapse" title="Collapse / Expand Schema Panel" aria-label="Collapse or Expand Schema Panel">
+                                    <i class="bi bi-chevron-down" id="icon-schema-collapse"></i>
                                 </button>
                             </div>
                         </div>

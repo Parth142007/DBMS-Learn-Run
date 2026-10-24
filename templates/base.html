@@ -40,7 +40,12 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if active_page == 'phase2' %}active fw-semibold text-success{% endif %}" href="/phase-2">
-                            <i class="bi bi-journal-richtext me-1"></i> Phase 2: Intro to DBMS
+                            <i class="bi bi-journal-richtext me-1"></i> Phase 2: Intro
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'phase3' %}active fw-semibold text-success{% endif %}" href="/phase-3">
+                            <i class="bi bi-terminal-split me-1"></i> Phase 3: SQL Lab
                         </a>
                     </li>
                     <li class="nav-item">
@@ -78,7 +83,7 @@
                 <i class="bi bi-table"></i> Database Schema (8 Tables)
             </a>
 
-            <div class="sidebar-header">Module 1: Foundations</div>
+            <div class="sidebar-header">Module 1: Foundations (Phase 2)</div>
             <a href="/phase-2?topic=architecture" class="sidebar-nav-link {% if active_page == 'phase2' and current_topic == 'architecture' %}active{% endif %}">
                 <i class="bi bi-hdd-network"></i> 1. Database Architecture
             </a>
@@ -103,21 +108,39 @@
                 <i class="bi bi-calculator"></i> Relational Algebra Lab
             </a>
 
-            <div class="sidebar-header">Module 3: SQL Mastery</div>
-            <a href="#quick-sql-lab" class="sidebar-nav-link">
+            <div class="sidebar-header">Module 3: SQL Mastery (Phase 3)</div>
+            <a href="/phase-3" class="sidebar-nav-link {% if active_page == 'phase3' and not current_topic %}active{% endif %}">
                 <i class="bi bi-terminal"></i> Interactive SQL Runner
             </a>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 2">
-                <i class="bi bi-plus-square"></i> DDL & DML Commands
+            <a href="/phase-3?topic=ddl" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'ddl' %}active{% endif %}">
+                <i class="bi bi-plus-square"></i> 1. DDL: Create, Alter, Drop
             </a>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 3">
-                <i class="bi bi-intersect"></i> SQL JOINs Laboratory
+            <a href="/phase-3?topic=dml" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'dml' %}active{% endif %}">
+                <i class="bi bi-pencil-square"></i> 2. DML: Insert, Update, Delete
             </a>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4">
-                <i class="bi bi-funnel"></i> Aggregate & GROUP BY
+            <a href="/phase-3?topic=dql" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'dql' %}active{% endif %}">
+                <i class="bi bi-search"></i> 3. DQL: SELECT & Filtering
             </a>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4">
-                <i class="bi bi-box-arrow-in-down-right"></i> Nested & Subqueries
+            <a href="/phase-3?topic=inner-join" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'inner-join' %}active{% endif %}">
+                <i class="bi bi-intersect"></i> 4. INNER JOIN
+            </a>
+            <a href="/phase-3?topic=left-join" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'left-join' %}active{% endif %}">
+                <i class="bi bi-arrow-left-square"></i> 5. LEFT JOIN
+            </a>
+            <a href="/phase-3?topic=right-join" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'right-join' %}active{% endif %}">
+                <i class="bi bi-arrow-right-square"></i> 6. RIGHT JOIN
+            </a>
+            <a href="/phase-3?topic=self-join" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'self-join' %}active{% endif %}">
+                <i class="bi bi-arrow-repeat"></i> 7. SELF JOIN
+            </a>
+            <a href="/phase-3?topic=cross-join" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'cross-join' %}active{% endif %}">
+                <i class="bi bi-grid-3x3"></i> 8. CROSS JOIN
+            </a>
+            <a href="/phase-3?topic=aggregates" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'aggregates' %}active{% endif %}">
+                <i class="bi bi-funnel"></i> 9. Aggregates & GROUP BY
+            </a>
+            <a href="/phase-3?topic=subqueries" class="sidebar-nav-link {% if active_page == 'phase3' and current_topic == 'subqueries' %}active{% endif %}">
+                <i class="bi bi-box-arrow-in-down-right"></i> 10. Nested Subqueries
             </a>
 
             <div class="sidebar-header">Module 4: Advanced SQL</div>

@@ -1,0 +1,266 @@
+<!-- ====================================================================
+     Topic 8: CROSS JOIN & Comprehensive Join Comparison
+     NEPC42 Syllabus — Module 3: SQL & Relational Queries
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-cross-join">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 8 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 20 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">8. CROSS JOIN &amp; Comprehensive Join Comparison</h2>
+            <p class="text-secondary mb-0">
+                Understand the Cartesian product &mdash; how every row in Table A pairs with every row in Table B &mdash; the catastrophic performance risks of accidental cross joins, and a complete multi-dimensional comparison of all 5 relational joins.
+            </p>
+        </div>
+    </div>
+
+    <!-- 8.1 What is a Cartesian Product? -->
+    <section class="mb-5" id="cj-concept">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">8.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is a CROSS JOIN (Cartesian Product)?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A <strong>CROSS JOIN</strong> returns the <strong>Cartesian product</strong> of the two joined tables. That is, it combines <strong>every single row of Table A with every single row of Table B</strong>, without evaluating any join condition (no <code>ON</code> clause).
+                </p>
+
+                <!-- Formula Card -->
+                <div class="p-3 bg-light rounded border text-center my-3">
+                    <span class="text-muted small fw-bold text-uppercase d-block mb-1">Result Set Cardinality Formula:</span>
+                    <span class="h4 fw-bold text-primary font-monospace">Total Rows = |Table A| &times; |Table B|</span>
+                    <p class="small text-secondary mt-2 mb-0">
+                        In our database, <code>departments</code> has 5 rows and <code>events</code> has 6 rows. Their CROSS JOIN produces exactly <strong>5 &times; 6 = 30 rows</strong>.
+                    </p>
+                </div>
+
+                <!-- Catastrophic Risk Callout -->
+                <div class="p-3 bg-danger-subtle border border-danger-subtle rounded text-dark small my-3">
+                    <strong class="d-block mb-1 text-danger-emphasis"><i class="bi bi-exclamation-triangle-fill me-1"></i> THE DANGER OF UNINTENDED CROSS JOINS!</strong>
+                    If you write <code>SELECT * FROM table1, table2</code> and forget the join condition in the <code>WHERE</code> clause, SQL defaults to a Cartesian product!
+                    If <code>table1</code> has 10,000 rows and <code>table2</code> has 10,000 rows, the query attempts to generate <strong>100,000,000 rows</strong>, which can exhaust RAM and crash your database server!
+                    Always use explicit modern JOIN syntax with an <code>ON</code> clause to prevent accidental Cartesian explosions.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8.2 Executable CROSS JOIN Example -->
+    <section class="mb-5" id="cj-example">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">8.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Live Safe CROSS JOIN Example</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="small text-secondary mb-3">
+                    Legitimate use cases for CROSS JOIN include generating permutations, scheduling matrices, or pairing all academic departments with campus event venues:
+                </p>
+
+                <div class="card border bg-light mb-3">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small text-dark"><i class="bi bi-terminal me-1"></i> Bounded CROSS JOIN Query:</span>
+                            <button class="btn btn-sm btn-gfg btn-load-sql" data-sql="SELECT d.dept_code, d.dept_name, e.event_title, e.location FROM departments d CROSS JOIN events e ORDER BY d.dept_code ASC LIMIT 15;">
+                                <i class="bi bi-play-fill me-1"></i> Run in SQL Editor
+                            </button>
+                        </div>
+                        <pre class="bg-dark text-white p-2 rounded small font-monospace mb-0">SELECT d.dept_code, 
+       d.dept_name, 
+       e.event_title, 
+       e.location 
+FROM departments d 
+CROSS JOIN events e 
+ORDER BY d.dept_code ASC 
+LIMIT 15; -- Capped for display safety</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8.3 Comprehensive 5-Join Comparison Matrix -->
+    <section class="mb-5" id="cj-matrix">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">8.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Comprehensive Comparison of All 5 SQL Joins</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white overflow-hidden">
+            <div class="card-header bg-light py-3">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-table text-success me-2"></i>Multi-Dimensional Relational Join Comparison Matrix</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 15%;">Join Type</th>
+                            <th style="width: 25%;">Preserved Rows</th>
+                            <th style="width: 20%;">Unmatched Handling</th>
+                            <th style="width: 20%;">Generates NULLs?</th>
+                            <th style="width: 20%;">Ideal Real-World Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-success">INNER JOIN</td>
+                            <td>Only matching rows in BOTH tables.</td>
+                            <td>Discarded completely.</td>
+                            <td>No (unless actual column stores NULL).</td>
+                            <td>Finding confirmed registrations, student departments.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">LEFT JOIN</td>
+                            <td>ALL rows from Left table + matches from Right table.</td>
+                            <td>Right columns padded with NULL.</td>
+                            <td>Yes (for unmatched right rows).</td>
+                            <td>Finding inactive students, items with zero sales.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-warning-emphasis">RIGHT JOIN</td>
+                            <td>ALL rows from Right table + matches from Left table.</td>
+                            <td>Left columns padded with NULL.</td>
+                            <td>Yes (for unmatched left rows).</td>
+                            <td>Finding events with zero signups (or reverse order in LEFT JOIN).</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">SELF JOIN</td>
+                            <td>Depends on INNER or LEFT join condition on the same table.</td>
+                            <td>Filtered by join condition on self aliases.</td>
+                            <td>Yes (if using LEFT SELF JOIN).</td>
+                            <td>Mentors &amp; students, employees &amp; managers, category trees.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-danger">CROSS JOIN</td>
+                            <td>Every row in Table A &times; Every row in Table B.</td>
+                            <td>No join condition evaluated.</td>
+                            <td>No (unless raw data contains NULL).</td>
+                            <td>Generating schedule combinations, product size &times; color grids.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 8 Exercises -->
+    <section class="mb-5" id="cj-exercises">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-success-subtle py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-success-emphasis mb-0">
+                    <i class="bi bi-mortarboard me-2"></i>Join Selection Exercises
+                </h5>
+                <span class="badge bg-success text-white">Interactive Practice</span>
+            </div>
+            <div class="card-body p-4">
+                
+                <div class="border rounded p-3 mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 8.1: Select the Correct Join for a Report</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Concept</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        You need a report listing <strong>all courses offered by the university</strong>, along with the department name. If a new course has no department assigned, the course must still appear on the report. Which join must you use?
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-cj-1">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="SELECT c.course_code, c.course_name, d.dept_name FROM courses c LEFT JOIN departments d ON c.dept_id = d.dept_id;">
+                            <i class="bi bi-terminal me-1"></i> Load Solution &amp; Run
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-cj-1">
+                        <strong>Hint:</strong> Since <code>courses</code> is on the left and ALL courses must be preserved, use <code>courses c LEFT JOIN departments d</code>.
+                    </div>
+                </div>
+
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 8.2: Calculate Cartesian Output Size</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Calculation</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        If <code>students</code> has 10 rows and <code>courses</code> has 6 rows, what is the exact row count of <code>SELECT * FROM students CROSS JOIN courses;</code>?
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-cj-2">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="SELECT COUNT(*) AS cartesian_row_count FROM students CROSS JOIN courses;">
+                            <i class="bi bi-terminal me-1"></i> Verify via SQL Execution
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-cj-2">
+                        <strong>Hint:</strong> 10 &times; 6 = <strong>60 rows</strong>! Click "Verify via SQL Execution" to check against the real database.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 8 Quiz -->
+    <section class="mb-4" id="cj-quiz">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary me-2">Knowledge Check</span>
+                    <h5 class="fw-bold d-inline mb-0">Topic 8 Quiz: CROSS JOIN</h5>
+                </div>
+                <div id="quiz-cj-badge" class="badge bg-light text-dark border">Not Attempted</div>
+            </div>
+            <div class="card-body p-4" id="quiz-container-cj">
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="cj-q1">
+                    <p class="fw-semibold text-dark mb-2">1. If Table A has 500 rows and Table B has 2,000 rows, how many rows will be returned by a CROSS JOIN without a WHERE clause?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> 2,500 rows
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> 1,000,000 rows (Cartesian product: 500 &times; 2,000)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> 2,000 rows
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> 0 rows
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-secondary btn-reset-quiz" data-quiz="cj">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Topic 8 Quiz
+                    </button>
+                    <div class="small fw-semibold text-muted" id="quiz-cj-summary">Complete the questions to record your score.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Footer -->
+    <div class="d-flex justify-content-between align-items-center my-4 p-3 bg-white rounded border shadow-sm">
+        <button class="btn btn-outline-secondary btn-sm btn-nav-topic" data-target="self-join">
+            <i class="bi bi-arrow-left me-1"></i> Previous: Topic 7 &mdash; SELF JOIN
+        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm btn-mark-completed" data-topic="cross-join">
+                <i class="bi bi-check-circle me-1"></i> Mark Topic 8 Completed
+            </button>
+            <button class="btn btn-gfg btn-sm btn-nav-topic" data-target="aggregates">
+                Next: Topic 9 &mdash; Aggregates <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+</div>

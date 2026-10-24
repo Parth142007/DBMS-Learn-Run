@@ -55,6 +55,23 @@ def phase_2():
         topic = "architecture"
     return render_template("phase2.html", active_page="phase2", current_topic=topic)
 
+@app.route("/phase-3")
+@app.route("/sql-lab")
+def phase_3():
+    """
+    Phase 3: SQL & Relational Queries
+    Comprehensive interactive module covering DDL, DML, DQL,
+    INNER/LEFT/RIGHT/SELF/CROSS JOINs, Aggregate functions, and Nested Subqueries.
+    """
+    topic = request.args.get("topic", "ddl")
+    valid_topics = [
+        "ddl", "dml", "dql", "inner-join", "left-join",
+        "right-join", "self-join", "cross-join", "aggregates", "subqueries"
+    ]
+    if topic not in valid_topics:
+        topic = "ddl"
+    return render_template("phase3.html", active_page="phase3", current_topic=topic)
+
 # ====================================================================
 # REST API ENDPOINTS
 # ====================================================================
@@ -81,6 +98,12 @@ def api_tables():
         "error": status["error"]
     })
 
+@app.route("/api/reset-practice-table", methods=["POST"])
+def api_reset_practice_table():
+    """Reset the dedicated practice_students table with clean sample rows."""
+    res = db.reset_practice_table()
+    return jsonify(res)
+
 @app.route("/api/query", methods=["POST"])
 def api_query():
     """
@@ -89,6 +112,7 @@ def api_query():
     """
     data = request.get_json() or {}
     sql_text = data.get("query", "").strip()
+    confirm_unfiltered = data.get("confirm_unfiltered", False)
 
     if not sql_text:
         return jsonify({
@@ -99,7 +123,7 @@ def api_query():
             "execution_time_ms": 0
         }), 400
 
-    result = db.execute_query(sql_text)
+    result = db.execute_query(sql_text, confirm_unfiltered=confirm_unfiltered)
     return jsonify(result)
 
 @app.route("/api/test-connection", methods=["POST"])

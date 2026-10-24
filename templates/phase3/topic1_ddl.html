@@ -1,0 +1,408 @@
+<!-- ====================================================================
+     Topic 1: DDL — Data Definition Language
+     NEPC42 Syllabus — Module 3: SQL & Relational Queries
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-ddl">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 1 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 20 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">1. DDL &mdash; Data Definition Language</h2>
+            <p class="text-secondary mb-0">
+                Master the structural commands that build, alter, and destroy database schemas: <code>CREATE</code>, <code>ALTER</code>, <code>DROP</code>, and <code>TRUNCATE</code>, along with table constraints and implicit commit mechanics.
+            </p>
+        </div>
+    </div>
+
+    <!-- 1.1 Introduction to DDL -->
+    <section class="mb-5" id="ddl-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is DDL and Why is it Essential?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    <strong>Data Definition Language (DDL)</strong> consists of the subset of SQL commands responsible for defining, altering, and managing the <strong>structure</strong> of database objects &mdash; such as databases, tables, columns, indexes, and constraints.
+                </p>
+                <div class="p-3 bg-light rounded border-start border-4 border-primary my-3">
+                    <strong class="text-primary d-block mb-1">Key Principle:</strong>
+                    <span class="text-secondary small">
+                        DDL operations modify the <strong>database schema and metadata</strong> stored in the Data Dictionary (System Catalog). Unlike DML (which alters the rows *inside* a table), DDL alters the *container* itself.
+                    </span>
+                </div>
+
+                <div class="alert alert-warning border-warning-subtle py-2 px-3 small my-3">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+                    <strong>Crucial MySQL Technical Behavior &mdash; Implicit Commits:</strong>
+                    In MySQL, all DDL statements (such as <code>CREATE TABLE</code>, <code>ALTER TABLE</code>, <code>DROP TABLE</code>, and <code>TRUNCATE TABLE</code>) cause an <strong>implicit transaction commit</strong>. You <em>cannot</em> issue a <code>ROLLBACK</code> statement to undo a DDL command! Once executed, schema changes are permanently written to disk.
+                </div>
+
+                <!-- Safe Practice Table Callout -->
+                <div class="p-3 bg-success-subtle border border-success-subtle rounded mt-3">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div>
+                            <strong class="text-success-emphasis d-block small mb-1"><i class="bi bi-shield-check me-1"></i> Dedicated Safe Sandbox: <code>practice_students</code></strong>
+                            <span class="text-dark small">
+                                To protect core curriculum tables (<code>departments</code>, <code>students</code>, <code>events</code>, etc.) for JOIN and query lessons, all DDL drop/alter experiments are safely performed on the <code>practice_students</code> table.
+                            </span>
+                        </div>
+                        <button class="btn btn-sm btn-outline-success btn-reset-practice-table">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Practice Table
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.2 DDL Commands In-Depth -->
+    <section class="mb-5" id="ddl-commands">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Core DDL Commands &amp; Syntax</h3>
+        </div>
+
+        <!-- 1.2.1 CREATE TABLE -->
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-dark small"><i class="bi bi-plus-square text-success me-1"></i> 1. CREATE TABLE &amp; Constraints</span>
+                <span class="badge bg-success-subtle text-success border">Structure Creator</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-secondary mb-3">
+                    <code>CREATE TABLE</code> specifies the table name, column definitions (name and data type), and integrity constraints.
+                </p>
+
+                <div class="bg-light p-3 rounded border font-monospace small mb-3">
+                    <span class="text-primary fw-bold">CREATE TABLE</span> table_name (<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;column1 datatype [<span class="text-success">CONSTRAINTS</span>],<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;column2 datatype [<span class="text-success">CONSTRAINTS</span>],<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;...<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;[<span class="text-primary fw-bold">CONSTRAINT</span> constraint_name <span class="text-success">CONSTRAINT_DEFINITION</span>]<br>
+                    ) ENGINE=InnoDB;
+                </div>
+
+                <!-- Constraints Summary Table -->
+                <div class="table-responsive my-3">
+                    <table class="table table-sm table-bordered mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Constraint</th>
+                                <th>Meaning &amp; Enforcement</th>
+                                <th>Example Usage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold text-primary">PRIMARY KEY</td>
+                                <td>Uniquely identifies each row; strictly forbids duplicate values and NULLs.</td>
+                                <td><code>student_id INT AUTO_INCREMENT PRIMARY KEY</code></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-success">FOREIGN KEY</td>
+                                <td>Enforces referential integrity pointing to a primary key in another table.</td>
+                                <td><code>FOREIGN KEY (dept_id) REFERENCES departments(dept_id)</code></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-warning-emphasis">UNIQUE</td>
+                                <td>Ensures all values in a column are distinct across the table.</td>
+                                <td><code>roll_no VARCHAR(20) NOT NULL UNIQUE</code></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-danger">NOT NULL</td>
+                                <td>Guarantees that a column cannot store NULL (missing) values.</td>
+                                <td><code>first_name VARCHAR(50) NOT NULL</code></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-info">DEFAULT</td>
+                                <td>Supplies a default value when no value is provided on INSERT.</td>
+                                <td><code>gpa DECIMAL(3,2) DEFAULT 7.50</code></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-dark">CHECK</td>
+                                <td>Validates that inserted/updated values satisfy a boolean expression.</td>
+                                <td><code>CHECK (gpa >= 0.00 AND gpa <= 10.00)</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card border bg-light my-3">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small text-dark"><i class="bi bi-code-slash me-1"></i> Live Executable Example:</span>
+                            <button class="btn btn-sm btn-gfg btn-load-sql" data-sql="DESCRIBE practice_students;">
+                                <i class="bi bi-play-fill me-1"></i> Inspect Structure in Editor
+                            </button>
+                        </div>
+                        <pre class="bg-dark text-white p-2 rounded small mb-0 font-monospace">DESCRIBE practice_students;</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1.2.2 ALTER TABLE -->
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-dark small"><i class="bi bi-pencil-square text-primary me-1"></i> 2. ALTER TABLE</span>
+                <span class="badge bg-primary-subtle text-primary border">Structure Mutator</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-secondary mb-2">
+                    <code>ALTER TABLE</code> modifies the schema of an existing table without dropping it. Common actions include:
+                </p>
+                <ul class="small text-secondary ps-3 mb-3">
+                    <li><strong>ADD COLUMN:</strong> Adds a new field to the table.</li>
+                    <li><strong>MODIFY COLUMN:</strong> Changes a column's data type or nullability constraint.</li>
+                    <li><strong>DROP COLUMN:</strong> Permanently removes a column from the table.</li>
+                    <li><strong>ADD CONSTRAINT:</strong> Adds a new check or unique constraint.</li>
+                </ul>
+
+                <!-- Executable ALTER examples -->
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <strong class="small text-dark d-block mb-1">Example A: Add a new column</strong>
+                            <pre class="bg-dark text-white p-2 rounded small font-monospace mb-2">ALTER TABLE practice_students 
+ADD email VARCHAR(100) DEFAULT 'pending@college.edu';</pre>
+                            <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="ALTER TABLE practice_students ADD email VARCHAR(100) DEFAULT 'pending@college.edu';">
+                                <i class="bi bi-terminal me-1"></i> Load &amp; Run ADD COLUMN
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <strong class="small text-dark d-block mb-1">Example B: Modify column data type</strong>
+                            <pre class="bg-dark text-white p-2 rounded small font-monospace mb-2">ALTER TABLE practice_students 
+MODIFY city VARCHAR(80) NOT NULL;</pre>
+                            <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="ALTER TABLE practice_students MODIFY city VARCHAR(80) NOT NULL;">
+                                <i class="bi bi-terminal me-1"></i> Load &amp; Run MODIFY COLUMN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1.2.3 DROP TABLE vs TRUNCATE TABLE -->
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-dark small"><i class="bi bi-trash3 text-danger me-1"></i> 3. DROP TABLE vs. TRUNCATE TABLE</span>
+                <span class="badge bg-danger-subtle text-danger border">Destructive Commands</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-secondary mb-3">
+                    Students frequently confuse <code>DROP</code>, <code>TRUNCATE</code>, and <code>DELETE</code>. Here is their structural contrast:
+                </p>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-3 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Feature / Command</th>
+                                <th>DROP TABLE</th>
+                                <th>TRUNCATE TABLE</th>
+                                <th>DELETE FROM table</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold text-dark">SQL Category</td>
+                                <td><span class="badge bg-danger-subtle text-danger">DDL</span></td>
+                                <td><span class="badge bg-danger-subtle text-danger">DDL</span></td>
+                                <td><span class="badge bg-primary-subtle text-primary">DML</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-dark">Effect on Table Structure</td>
+                                <td>Completely deletes the table definition and all data from database.</td>
+                                <td>Preserves the table structure and columns, but wipes all rows.</td>
+                                <td>Preserves the table structure; deletes selected rows.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-dark">WHERE Clause Support</td>
+                                <td>No (Drops entire object)</td>
+                                <td>No (Wipes entire table at storage engine level)</td>
+                                <td>Yes (Can delete specific rows via <code>WHERE</code>)</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-dark">Auto-Increment Reset</td>
+                                <td>N/A (Table is destroyed)</td>
+                                <td>Resets AUTO_INCREMENT counter back to 1.</td>
+                                <td>Does NOT reset the AUTO_INCREMENT counter.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-dark">Performance</td>
+                                <td>Instant (Deletes metadata &amp; storage file)</td>
+                                <td>Blazing Fast (Drops and recreates storage pages)</td>
+                                <td>Slower (Logs row-by-row deletions for rollback)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="p-2 border rounded bg-light">
+                            <span class="fw-semibold small text-danger d-block mb-1">Test TRUNCATE on Practice Table:</span>
+                            <button class="btn btn-sm btn-outline-danger btn-load-sql" data-sql="TRUNCATE TABLE practice_students;">
+                                <i class="bi bi-eraser me-1"></i> Run TRUNCATE TABLE practice_students;
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-2 border rounded bg-light">
+                            <span class="fw-semibold small text-success d-block mb-1">Verify or Re-seed Table:</span>
+                            <button class="btn btn-sm btn-outline-success btn-reset-practice-table">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Restore practice_students
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 1 Practice Exercises -->
+    <section class="mb-5" id="ddl-exercises">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-success-subtle py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-success-emphasis mb-0">
+                    <i class="bi bi-mortarboard me-2"></i>DDL Hands-on Exercises
+                </h5>
+                <span class="badge bg-success text-white">Interactive Practice</span>
+            </div>
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="border rounded p-3 mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 1.1: Add a Contact Number Column</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Beginner</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Write an <code>ALTER TABLE</code> statement to add a new column named <code>phone_no</code> of type <code>VARCHAR(15)</code> to <code>practice_students</code>.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-ddl-1">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="ALTER TABLE practice_students ADD phone_no VARCHAR(15);">
+                            <i class="bi bi-terminal me-1"></i> Load Solution &amp; Run
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-ddl-1">
+                        <strong>Hint:</strong> Use the syntax <code>ALTER TABLE table_name ADD column_name datatype;</code>.
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 1.2: Add a CHECK Constraint</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Intermediate</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Write an <code>ALTER TABLE</code> statement to add a CHECK constraint on <code>practice_students</code> ensuring that <code>dept_code</code> is not empty.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-ddl-2">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="ALTER TABLE practice_students ADD CONSTRAINT chk_dept_not_empty CHECK (LENGTH(dept_code) > 0);">
+                            <i class="bi bi-terminal me-1"></i> Load Solution &amp; Run
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-ddl-2">
+                        <strong>Hint:</strong> Use <code>ALTER TABLE table_name ADD CONSTRAINT constraint_name CHECK (condition);</code>.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 1 Knowledge Check Quiz -->
+    <section class="mb-4" id="ddl-quiz">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary me-2">Knowledge Check</span>
+                    <h5 class="fw-bold d-inline mb-0">Topic 1 Quiz: Data Definition Language</h5>
+                </div>
+                <div id="quiz-ddl-badge" class="badge bg-light text-dark border">Not Attempted</div>
+            </div>
+            <div class="card-body p-4" id="quiz-container-ddl">
+                
+                <!-- Q1 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="ddl-q1">
+                    <p class="fw-semibold text-dark mb-2">1. What happens when you execute a DDL command like <code>ALTER TABLE</code> or <code>TRUNCATE TABLE</code> inside an open MySQL transaction?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> The statement is queued and only commits when you explicitly issue COMMIT.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> MySQL triggers an implicit COMMIT, immediately and permanently committing the transaction.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> MySQL raises an error and halts execution.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> The table structure changes, but all rows are permanently locked.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="ddl-q2">
+                    <p class="fw-semibold text-dark mb-2">2. What is the fundamental difference between <code>TRUNCATE TABLE</code> and <code>DROP TABLE</code>?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> TRUNCATE deletes the table completely from the database, while DROP deletes only the rows.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> TRUNCATE removes all rows while preserving the table schema and columns; DROP destroys both the rows and the schema.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> TRUNCATE supports a WHERE clause, while DROP does not.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> TRUNCATE is DML, while DROP is DQL.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-secondary btn-reset-quiz" data-quiz="ddl">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Topic 1 Quiz
+                    </button>
+                    <div class="small fw-semibold text-muted" id="quiz-ddl-summary">Complete the questions to record your score.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Footer -->
+    <div class="d-flex justify-content-between align-items-center my-4 p-3 bg-white rounded border shadow-sm">
+        <a href="/" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-house-door me-1"></i> Dashboard
+        </a>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm btn-mark-completed" data-topic="ddl">
+                <i class="bi bi-check-circle me-1"></i> Mark Topic 1 Completed
+            </button>
+            <button class="btn btn-gfg btn-sm btn-nav-topic" data-target="dml">
+                Next: Topic 2 &mdash; DML <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+</div>

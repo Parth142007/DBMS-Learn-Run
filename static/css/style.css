@@ -317,15 +317,21 @@ body {
     transition: all 0.2s ease;
 }
 
-#phase2-topic-tabs .nav-link:hover {
+#phase2-topic-tabs .nav-link:hover,
+#phase3-topic-tabs .nav-link:hover {
     color: var(--gfg-green);
     background-color: #f0fdf4;
 }
 
-#phase2-topic-tabs .nav-link.active {
+#phase2-topic-tabs .nav-link.active,
+#phase3-topic-tabs .nav-link.active {
     background-color: var(--gfg-green) !important;
     color: #ffffff !important;
     box-shadow: 0 2px 4px rgba(47, 141, 70, 0.25);
+}
+
+.min-vh-20 {
+    min-height: 120px;
 }
 
 .topic-section-panel {

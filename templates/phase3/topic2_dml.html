@@ -1,0 +1,318 @@
+<!-- ====================================================================
+     Topic 2: DML — Data Manipulation Language
+     NEPC42 Syllabus — Module 3: SQL & Relational Queries
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-dml">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 2 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 20 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">2. DML &mdash; Data Manipulation Language</h2>
+            <p class="text-secondary mb-0">
+                Learn how to populate, modify, and delete tuples inside existing relational tables using <code>INSERT</code>, <code>UPDATE</code>, and <code>DELETE</code>, alongside transactional safety and unfiltered-change warnings.
+            </p>
+        </div>
+    </div>
+
+    <!-- 2.1 Introduction to DML -->
+    <section class="mb-5" id="dml-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is DML and How Does it Operate?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    <strong>Data Manipulation Language (DML)</strong> consists of SQL statements that manipulate the <strong>data values (records or tuples)</strong> stored inside existing tables.
+                </p>
+
+                <!-- DDL vs DML Contrast Box -->
+                <div class="row g-3 my-2">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100 border-start border-4 border-secondary">
+                            <span class="badge bg-secondary mb-2">DDL (Topic 1)</span>
+                            <h6 class="fw-bold text-dark mb-1">Structure / Container</h6>
+                            <p class="small text-muted mb-0">Creates, alters, or drops table columns, keys, and definitions. Triggers implicit commits.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100 border-start border-4 border-success">
+                            <span class="badge bg-success mb-2">DML (Topic 2)</span>
+                            <h6 class="fw-bold text-dark mb-1">Data / Contents</h6>
+                            <p class="small text-muted mb-0">Inserts, updates, or deletes rows within the existing columns. Governed by storage engine transaction rules.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-info-subtle py-2 px-3 small my-3">
+                    <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                    <strong>Transaction Behavior &amp; Autocommit:</strong> In MySQL, by default <code>autocommit = 1</code>, which means every standalone DML command is committed immediately upon execution. When running inside an explicit transaction block (<code>START TRANSACTION; ... COMMIT;</code>), InnoDB allows DML operations to be rolled back with <code>ROLLBACK;</code> if an error occurs.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.2 INSERT Statement -->
+    <section class="mb-5" id="dml-insert">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The INSERT Statement</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="small text-secondary mb-3">
+                    The <code>INSERT INTO</code> statement adds new tuples to a table. You can insert a single record or multiple records in a single statement.
+                </p>
+
+                <div class="row g-3">
+                    <!-- Single Row Insert -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <strong class="small text-dark d-block mb-1">1. Single-Row Insert (with column list)</strong>
+                            <p class="small text-muted mb-2">Best practice: Explicitly naming columns protects code if table schema changes later.</p>
+                            <pre class="bg-dark text-white p-2 rounded small font-monospace mb-2">INSERT INTO practice_students 
+(roll_no, first_name, last_name, dept_code, gpa, city)
+VALUES 
+('P106', 'Sonia', 'Nair', 'CIVIL', 8.20, 'Kochi');</pre>
+                            <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="INSERT INTO practice_students (roll_no, first_name, last_name, dept_code, gpa, city) VALUES ('P106', 'Sonia', 'Nair', 'CIVIL', 8.20, 'Kochi');">
+                                <i class="bi bi-play-fill me-1"></i> Load &amp; Run Single Insert
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Row Bulk Insert -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <strong class="small text-dark d-block mb-1">2. Multi-Row Bulk Insert</strong>
+                            <p class="small text-muted mb-2">Significantly faster than separate inserts because it commits in a single network round-trip.</p>
+                            <pre class="bg-dark text-white p-2 rounded small font-monospace mb-2">INSERT INTO practice_students 
+(roll_no, first_name, last_name, dept_code, gpa)
+VALUES 
+('P107', 'Aditya', 'Joshi', 'CSE', 7.85),
+('P108', 'Kavya', 'Menon', 'ECE', 9.30);</pre>
+                            <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="INSERT INTO practice_students (roll_no, first_name, last_name, dept_code, gpa) VALUES ('P107', 'Aditya', 'Joshi', 'CSE', 7.85), ('P108', 'Kavya', 'Menon', 'ECE', 9.30);">
+                                <i class="bi bi-play-fill me-1"></i> Load &amp; Run Multi Insert
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.3 UPDATE Statement & The WHERE Clause Hazard -->
+    <section class="mb-5" id="dml-update">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The UPDATE Statement &amp; The WHERE Clause Hazard</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="small text-secondary mb-3">
+                    The <code>UPDATE</code> statement modifies values in one or more existing rows.
+                </p>
+
+                <!-- Critical Warning Callout -->
+                <div class="p-3 bg-danger-subtle border border-danger-subtle rounded text-dark small mb-3">
+                    <strong class="d-block mb-1 text-danger-emphasis"><i class="bi bi-shield-slash-fill me-1"></i> THE NUMBER ONE DML DISASTER: OMITTING THE WHERE CLAUSE!</strong>
+                    If you write <code>UPDATE practice_students SET gpa = 10.00;</code> without a <code>WHERE</code> condition, <strong>every single student in the entire table will have their GPA set to 10.00!</strong>
+                    Always specify a filter (e.g. <code>WHERE roll_no = 'P101'</code>) unless you explicitly intend to modify the entire dataset.
+                </div>
+
+                <div class="card border bg-light my-3">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small text-dark"><i class="bi bi-code-slash me-1"></i> Safe Filtered Update Example:</span>
+                            <button class="btn btn-sm btn-gfg btn-load-sql" data-sql="UPDATE practice_students SET gpa = 8.95, city = 'Mysuru' WHERE roll_no = 'P101';">
+                                <i class="bi bi-play-fill me-1"></i> Load &amp; Run Filtered UPDATE
+                            </button>
+                        </div>
+                        <pre class="bg-dark text-white p-2 rounded small mb-0 font-monospace">UPDATE practice_students 
+SET gpa = 8.95, city = 'Mysuru' 
+WHERE roll_no = 'P101';</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.4 DELETE Statement -->
+    <section class="mb-5" id="dml-delete">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The DELETE Statement</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="small text-secondary mb-3">
+                    The <code>DELETE FROM</code> statement removes specified rows from a table. Just like <code>UPDATE</code>, omitting the <code>WHERE</code> clause will permanently delete all records!
+                </p>
+
+                <div class="card border bg-light my-3">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small text-dark"><i class="bi bi-code-slash me-1"></i> Safe Filtered Delete Example:</span>
+                            <button class="btn btn-sm btn-gfg btn-load-sql" data-sql="DELETE FROM practice_students WHERE roll_no = 'P105';">
+                                <i class="bi bi-play-fill me-1"></i> Load &amp; Run Filtered DELETE
+                            </button>
+                        </div>
+                        <pre class="bg-dark text-white p-2 rounded small mb-0 font-monospace">DELETE FROM practice_students 
+WHERE roll_no = 'P105';</pre>
+                    </div>
+                </div>
+
+                <!-- Verify rows after delete -->
+                <div class="d-flex justify-content-between align-items-center p-2 border rounded bg-white mt-3">
+                    <span class="small text-muted">Verify current rows in practice_students:</span>
+                    <button class="btn btn-sm btn-outline-primary btn-load-sql" data-sql="SELECT * FROM practice_students;">
+                        <i class="bi bi-table me-1"></i> SELECT * FROM practice_students;
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 2 Exercises -->
+    <section class="mb-5" id="dml-exercises">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-success-subtle py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-success-emphasis mb-0">
+                    <i class="bi bi-mortarboard me-2"></i>DML Hands-on Exercises
+                </h5>
+                <span class="badge bg-success text-white">Interactive Practice</span>
+            </div>
+            <div class="card-body p-4">
+                
+                <!-- Exercise 2.1 -->
+                <div class="border rounded p-3 mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 2.1: Award GPA Bonus</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Beginner</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Write an <code>UPDATE</code> statement to increase the GPA by <code>0.20</code> for all students in the <code>'CSE'</code> department.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-dml-1">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="UPDATE practice_students SET gpa = gpa + 0.20 WHERE dept_code = 'CSE';">
+                            <i class="bi bi-terminal me-1"></i> Load Solution &amp; Run
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-dml-1">
+                        <strong>Hint:</strong> Use <code>SET gpa = gpa + 0.20 WHERE dept_code = 'CSE';</code>.
+                    </div>
+                </div>
+
+                <!-- Exercise 2.2 -->
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 2.2: Delete Students by City</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Beginner</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Write a <code>DELETE</code> statement to remove any student whose city is <code>'Hubballi'</code>.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-dml-2">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="DELETE FROM practice_students WHERE city = 'Hubballi';">
+                            <i class="bi bi-terminal me-1"></i> Load Solution &amp; Run
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-dml-2">
+                        <strong>Hint:</strong> Use <code>DELETE FROM practice_students WHERE city = 'Hubballi';</code>.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 2 Quiz -->
+    <section class="mb-4" id="dml-quiz">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary me-2">Knowledge Check</span>
+                    <h5 class="fw-bold d-inline mb-0">Topic 2 Quiz: Data Manipulation Language</h5>
+                </div>
+                <div id="quiz-dml-badge" class="badge bg-light text-dark border">Not Attempted</div>
+            </div>
+            <div class="card-body p-4" id="quiz-container-dml">
+                
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="dml-q1">
+                    <p class="fw-semibold text-dark mb-2">1. What is the disastrous consequence of issuing an <code>UPDATE</code> or <code>DELETE</code> statement without specifying a <code>WHERE</code> clause?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> The database throws a syntax error and refuses to execute.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> Every single row in the entire table is updated or deleted!
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Only the first row of the table is modified.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> The table structure is dropped from the database.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="dml-q2">
+                    <p class="fw-semibold text-dark mb-2">2. Which SQL category does <code>INSERT INTO</code> belong to?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="A">
+                            <strong>A.</strong> DML (Data Manipulation Language)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> DDL (Data Definition Language)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> DCL (Data Control Language)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> TCL (Transaction Control Language)
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-secondary btn-reset-quiz" data-quiz="dml">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Topic 2 Quiz
+                    </button>
+                    <div class="small fw-semibold text-muted" id="quiz-dml-summary">Complete the questions to record your score.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Footer -->
+    <div class="d-flex justify-content-between align-items-center my-4 p-3 bg-white rounded border shadow-sm">
+        <button class="btn btn-outline-secondary btn-sm btn-nav-topic" data-target="ddl">
+            <i class="bi bi-arrow-left me-1"></i> Previous: Topic 1 &mdash; DDL
+        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm btn-mark-completed" data-topic="dml">
+                <i class="bi bi-check-circle me-1"></i> Mark Topic 2 Completed
+            </button>
+            <button class="btn btn-gfg btn-sm btn-nav-topic" data-target="dql">
+                Next: Topic 3 &mdash; DQL <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}Phase 3 — SQL & Relational Queries | DBMS Learn & Run{% endblock %}
+
+{% block content %}
+<!-- Phase 3 Module Header -->
+<div class="topic-header mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold">
+                    <i class="bi bi-mortarboard-fill me-1"></i> NEPC42 Syllabus &bull; Module 3
+                </span>
+                <span class="badge bg-light text-secondary border">Core SQL Laboratory</span>
+            </div>
+            <h1 class="topic-title">Phase 3 &mdash; SQL &amp; Relational Queries</h1>
+            <p class="topic-subtitle">
+                Interactive mastery of DDL, DML, DQL, the 5 Relational JOINs (Inner, Left, Right, Self, Cross), Aggregate Functions, and Nested Subqueries.
+            </p>
+        </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <a href="/" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Main Dashboard
+            </a>
+            <a href="/phase-2" class="btn btn-outline-info btn-sm">
+                <i class="bi bi-book me-1"></i> Phase 2: Intro to DBMS
+            </a>
+            <a href="/schema" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-diagram-3 me-1"></i> Schema Inspector
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Learning Objectives & Module Overview Banner -->
+<div class="card shadow-sm border mb-4 bg-white">
+    <div class="card-body p-4">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-8">
+                <h5 class="fw-bold text-dark mb-2">
+                    <i class="bi bi-journal-check text-success me-2"></i>Phase 3 Learning Objectives
+                </h5>
+                <p class="small text-secondary mb-3">
+                    By completing this interactive laboratory, students will practice and master:
+                </p>
+                <div class="row g-2 small text-secondary">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span><strong>DDL Structures:</strong> Create, alter, drop, and truncate tables with integrity constraints.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span><strong>DML Operations:</strong> Single &amp; multi-row inserts, selective updates, safe deletes, and transaction behavior.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span><strong>DQL Retrieval:</strong> Projections, aliases, 3-valued boolean logic, ORDER BY, and LIMIT.</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span><strong>5 Relational JOINs:</strong> INNER, LEFT, RIGHT, SELF, and CROSS joins with Cartesian risk analysis.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span><strong>Aggregation &amp; GROUP BY:</strong> COUNT, SUM, AVG, MIN, MAX, and HAVING vs WHERE execution order.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span><strong>Nested Subqueries:</strong> Scalar, multi-row (IN/ANY/ALL), derived tables, and correlated EXISTS/NOT EXISTS.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 border-start-lg ps-lg-4">
+                <div class="p-3 bg-light rounded border text-center">
+                    <span class="text-uppercase small fw-bold text-muted d-block mb-1">Estimated Total Study Time</span>
+                    <span class="h3 fw-bold text-dark d-block mb-1">
+                        <i class="bi bi-clock-history text-primary me-1"></i> ~150 mins
+                    </span>
+                    <span class="small text-muted d-block mb-3">10 Topics &bull; 30 Quiz Questions &bull; Real MySQL Execution</span>
+                    <a href="#sql-lab-panel" class="btn btn-gfg btn-sm w-100">
+                        <i class="bi bi-terminal me-1"></i> Jump to SQL Laboratory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Learning Progress Tracker Card -->
+<div class="card shadow-sm border mb-4 bg-white" id="progress-card">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-trophy-fill text-warning fs-5"></i>
+                <span class="fw-bold text-dark">Phase 3 Learning Progress:</span>
+                <span class="badge bg-success" id="progress-percentage-badge">0% Complete</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 small text-muted">
+                <span class="badge bg-light text-secondary border">
+                    <i class="bi bi-hdd-network me-1"></i> Saved locally in browser
+                </span>
+                <button class="btn btn-link btn-sm text-danger p-0 text-decoration-none" id="btn-reset-all-progress" title="Reset all Phase 3 progress">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset Progress
+                </button>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="progress mb-3" style="height: 10px;">
+            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+                 id="phase3-progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <!-- 10 Topic Status Indicators -->
+        <div class="row g-2 text-center small">
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-ddl">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">1. DDL</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-ddl">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-dml">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">2. DML</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-dml">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-dql">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">3. DQL</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-dql">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-inner-join">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">4. Inner Join</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-inner-join">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-left-join">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">5. Left Join</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-left-join">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-right-join">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">6. Right Join</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-right-join">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-self-join">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">7. Self Join</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-self-join">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-cross-join">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">8. Cross Join</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-cross-join">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-aggregates">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">9. Aggregates</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-aggregates">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-subqueries">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">10. Subqueries</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-subqueries">Quiz: 0/3</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================================
+     INTERACTIVE SQL LABORATORY (Shared Across All 10 Topics)
+     ==================================================================== -->
+<div class="card shadow-sm border mb-4 bg-white" id="sql-lab-panel">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-terminal-fill text-success fs-5"></i>
+            <span class="fw-bold">Phase 3 Interactive SQL Laboratory</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle small">Connected to MySQL 8</span>
+        </div>
+        <div class="small text-light" id="lab-execution-stats">
+            Ready to execute queries
+        </div>
+    </div>
+
+    <div class="card-body p-3">
+        <!-- Status Alert Area -->
+        <div id="lab-status-alert" class="alert alert-info py-2 px-3 mb-3 d-none">
+            <span><i class="bi bi-info-circle me-2"></i>Status message</span>
+        </div>
+
+        <!-- SQL Editor Input -->
+        <div class="mb-3 position-relative">
+            <textarea id="lab-sql-input" class="form-control font-monospace text-dark bg-light p-3" 
+                      rows="5" spellcheck="false" 
+                      style="font-size: 0.95rem; line-height: 1.5; border: 1px solid #ced4da; border-radius: 6px;"
+                      data-default-query="SELECT s.student_id, s.first_name, s.last_name, d.dept_name, s.gpa FROM students s INNER JOIN departments d ON s.dept_id = d.dept_id ORDER BY s.gpa DESC;">SELECT s.student_id, s.first_name, s.last_name, d.dept_name, s.gpa 
+FROM students s 
+INNER JOIN departments d ON s.dept_id = d.dept_id 
+ORDER BY s.gpa DESC;</textarea>
+        </div>
+
+        <!-- Controls Toolbar -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <button id="btn-lab-run" class="btn btn-success btn-sm px-3 fw-bold">
+                    <i class="bi bi-play-fill me-1"></i> Run Query
+                </button>
+                <button id="btn-lab-clear" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-trash3 me-1"></i> Clear
+                </button>
+                <button id="btn-lab-reset" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Query
+                </button>
+                <button id="btn-reset-practice-tbl" class="btn btn-outline-warning btn-sm text-dark" title="Restores practice_students table if dropped or altered">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Reset Practice Table
+                </button>
+            </div>
+
+            <!-- Example Presets Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-light border btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-collection me-1"></i> Quick Presets
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm small">
+                    <li><h6 class="dropdown-header">Basic Queries</h6></li>
+                    <li><button class="dropdown-item btn-preset" data-query="SELECT * FROM students ORDER BY gpa DESC;">SELECT all students</button></li>
+                    <li><button class="dropdown-item btn-preset" data-query="SELECT * FROM departments;">SELECT all departments</button></li>
+                    <li><button class="dropdown-item btn-preset" data-query="SELECT * FROM practice_students;">SELECT practice_students</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">Relational JOINs</h6></li>
+                    <li><button class="dropdown-item btn-preset" data-query="SELECT s.first_name, s.last_name, d.dept_name FROM students s INNER JOIN departments d ON s.dept_id = d.dept_id;">INNER JOIN Students &amp; Depts</button></li>
+                    <li><button class="dropdown-item btn-preset" data-query="SELECT d.dept_name, s.first_name, s.last_name FROM departments d LEFT JOIN students s ON d.dept_id = s.dept_id;">LEFT JOIN (Includes Civil Dept)</button></li>
+                    <li><button class="dropdown-item btn-preset" data-query="SELECT e.event_title, r.registration_id, s.first_name FROM events e LEFT JOIN registrations r ON e.event_id = r.event_id LEFT JOIN students s ON r.student_id = s.student_id;">LEFT JOIN Events with Registrations</button></li>
+                    <li><button class="dropdown-item btn-preset" data-query="SELECT s.first_name AS mentee, m.first_name AS mentor FROM students s INNER JOIN students m ON s.mentor_id = m.student_id;">SELF JOIN Student Mentorship</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">Aggregates &amp; Subqueries</h6></li>
+                    <li><button class="dropdown-item btn-preset" data-query="SELECT d.dept_name, COUNT(s.student_id) AS total_students, ROUND(AVG(s.gpa), 2) AS avg_gpa FROM departments d LEFT JOIN students s ON d.dept_id = s.dept_id GROUP BY d.dept_id, d.dept_name;">GROUP BY Department Summary</button></li>
+                    <li><button class="dropdown-item btn-preset" data-query="SELECT first_name, last_name, gpa FROM students WHERE gpa > (SELECT AVG(gpa) FROM students) ORDER BY gpa DESC;">Scalar Subquery: Above Average</button></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Query Results Container -->
+        <div id="lab-results-container" class="border rounded bg-light p-3 min-vh-20">
+            <div class="text-center text-muted p-4">
+                <i class="bi bi-table fs-2 d-block mb-2 text-secondary"></i>
+                <p class="mb-1 fw-semibold">No query executed yet.</p>
+                <small class="text-secondary">Click "Run Query" above or use any "Load into SQL Editor &amp; Run" button in the syllabus topics below.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================================
+     TOPIC NAVIGATION TABS (Sticky Toolbar)
+     ==================================================================== -->
+<div class="topic-nav-sticky mb-4" id="topics-navigation">
+    <div class="nav nav-pills nav-fill p-1 bg-white border rounded shadow-sm gap-1 flex-wrap" id="phase3-topic-tabs" role="tablist">
+        <button class="nav-link py-2 px-2 active fw-semibold small" id="tab-btn-ddl" data-target="ddl">
+            1. DDL
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary small" id="tab-btn-dml" data-target="dml">
+            2. DML
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary small" id="tab-btn-dql" data-target="dql">
+            3. DQL
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary small" id="tab-btn-inner-join" data-target="inner-join">
+            4. Inner Join
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary small" id="tab-btn-left-join" data-target="left-join">
+            5. Left Join
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary small" id="tab-btn-right-join" data-target="right-join">
+            6. Right Join
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary small" id="tab-btn-self-join" data-target="self-join">
+            7. Self Join
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary small" id="tab-btn-cross-join" data-target="cross-join">
+            8. Cross Join
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary small" id="tab-btn-aggregates" data-target="aggregates">
+            9. Aggregates
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary small" id="tab-btn-subqueries" data-target="subqueries">
+            10. Subqueries
+        </button>
+    </div>
+</div>
+
+<!-- ====================================================================
+     TOPIC CONTENT CONTAINERS (10 TOPICS)
+     ==================================================================== -->
+<div id="topic-container-ddl" class="topic-section-panel">
+    {% include 'phase3/topic1_ddl.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm" disabled><i class="bi bi-arrow-left me-1"></i> Start of Module</button>
+        <button class="btn btn-success btn-sm btn-mark-complete" data-topic="ddl">
+            <i class="bi bi-check-lg me-1"></i> Mark Complete &amp; Continue to DML &rarr;
+        </button>
+    </div>
+</div>
+
+<div id="topic-container-dml" class="topic-section-panel d-none">
+    {% include 'phase3/topic2_dml.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm btn-prev-topic" data-target="ddl"><i class="bi bi-arrow-left me-1"></i> Prev: 1. DDL</button>
+        <button class="btn btn-success btn-sm btn-mark-complete" data-topic="dml">
+            <i class="bi bi-check-lg me-1"></i> Mark Complete &amp; Continue to DQL &rarr;
+        </button>
+    </div>
+</div>
+
+<div id="topic-container-dql" class="topic-section-panel d-none">
+    {% include 'phase3/topic3_dql.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm btn-prev-topic" data-target="dml"><i class="bi bi-arrow-left me-1"></i> Prev: 2. DML</button>
+        <button class="btn btn-success btn-sm btn-mark-complete" data-topic="dql">
+            <i class="bi bi-check-lg me-1"></i> Mark Complete &amp; Continue to Inner Join &rarr;
+        </button>
+    </div>
+</div>
+
+<div id="topic-container-inner-join" class="topic-section-panel d-none">
+    {% include 'phase3/topic4_inner_join.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm btn-prev-topic" data-target="dql"><i class="bi bi-arrow-left me-1"></i> Prev: 3. DQL</button>
+        <button class="btn btn-success btn-sm btn-mark-complete" data-topic="inner-join">
+            <i class="bi bi-check-lg me-1"></i> Mark Complete &amp; Continue to Left Join &rarr;
+        </button>
+    </div>
+</div>
+
+<div id="topic-container-left-join" class="topic-section-panel d-none">
+    {% include 'phase3/topic5_left_join.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm btn-prev-topic" data-target="inner-join"><i class="bi bi-arrow-left me-1"></i> Prev: 4. Inner Join</button>
+        <button class="btn btn-success btn-sm btn-mark-complete" data-topic="left-join">
+            <i class="bi bi-check-lg me-1"></i> Mark Complete &amp; Continue to Right Join &rarr;
+        </button>
+    </div>
+</div>
+
+<div id="topic-container-right-join" class="topic-section-panel d-none">
+    {% include 'phase3/topic6_right_join.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm btn-prev-topic" data-target="left-join"><i class="bi bi-arrow-left me-1"></i> Prev: 5. Left Join</button>
+        <button class="btn btn-success btn-sm btn-mark-complete" data-topic="right-join">
+            <i class="bi bi-check-lg me-1"></i> Mark Complete &amp; Continue to Self Join &rarr;
+        </button>
+    </div>
+</div>
+
+<div id="topic-container-self-join" class="topic-section-panel d-none">
+    {% include 'phase3/topic7_self_join.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm btn-prev-topic" data-target="right-join"><i class="bi bi-arrow-left me-1"></i> Prev: 6. Right Join</button>
+        <button class="btn btn-success btn-sm btn-mark-complete" data-topic="self-join">
+            <i class="bi bi-check-lg me-1"></i> Mark Complete &amp; Continue to Cross Join &rarr;
+        </button>
+    </div>
+</div>
+
+<div id="topic-container-cross-join" class="topic-section-panel d-none">
+    {% include 'phase3/topic8_cross_join.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm btn-prev-topic" data-target="self-join"><i class="bi bi-arrow-left me-1"></i> Prev: 7. Self Join</button>
+        <button class="btn btn-success btn-sm btn-mark-complete" data-topic="cross-join">
+            <i class="bi bi-check-lg me-1"></i> Mark Complete &amp; Continue to Aggregates &rarr;
+        </button>
+    </div>
+</div>
+
+<div id="topic-container-aggregates" class="topic-section-panel d-none">
+    {% include 'phase3/topic9_aggregates.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm btn-prev-topic" data-target="cross-join"><i class="bi bi-arrow-left me-1"></i> Prev: 8. Cross Join</button>
+        <button class="btn btn-success btn-sm btn-mark-complete" data-topic="aggregates">
+            <i class="bi bi-check-lg me-1"></i> Mark Complete &amp; Continue to Subqueries &rarr;
+        </button>
+    </div>
+</div>
+
+<div id="topic-container-subqueries" class="topic-section-panel d-none">
+    {% include 'phase3/topic10_subqueries.html' %}
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <button class="btn btn-outline-secondary btn-sm btn-prev-topic" data-target="aggregates"><i class="bi bi-arrow-left me-1"></i> Prev: 9. Aggregates</button>
+        <button class="btn btn-primary btn-sm btn-mark-complete" data-topic="subqueries">
+            <i class="bi bi-award me-1"></i> Complete Phase 3 Module!
+        </button>
+    </div>
+</div>
+
+<!-- Toast for Copy & Feedback -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1090">
+    <div id="phase3-toast" class="toast align-items-center text-bg-success border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body small" id="phase3-toast-msg">
+                Action completed successfully!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/phase3.js') }}"></script>
+{% endblock %}

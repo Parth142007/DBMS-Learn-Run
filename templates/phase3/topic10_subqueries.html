@@ -1,0 +1,508 @@
+<!-- ====================================================================
+     Topic 10: Nested Subqueries
+     NEPC42 Syllabus — Module 3: SQL & Relational Queries
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-subqueries">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 10 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">10. Nested Subqueries</h2>
+            <p class="text-secondary mb-0">
+                Master the technique of nesting queries inside queries: scalar subqueries, multi-row lookups with <code>IN</code>, <code>ANY</code>, and <code>ALL</code>, derived tables in the <code>FROM</code> clause, and powerful correlated subqueries using <code>EXISTS</code> and <code>NOT EXISTS</code>.
+            </p>
+        </div>
+    </div>
+
+    <!-- 10.1 Concept & Classification -->
+    <section class="mb-5" id="subq-concept">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">10.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is a Subquery?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A <strong>subquery</strong> (also called an <em>inner query</em> or <em>nested query</em>) is a <code>SELECT</code> statement embedded inside another SQL statement (the <em>outer query</em>). Subqueries are enclosed within parentheses <code>(...)</code> and can be placed in the <code>WHERE</code>, <code>FROM</code>, <code>HAVING</code>, or <code>SELECT</code> clauses.
+                </p>
+
+                <!-- Visual Subquery Breakdown -->
+                <div class="my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-layers me-1 text-primary"></i> Anatomy of a Nested Subquery:</h6>
+                    <div class="font-monospace p-3 bg-dark text-light rounded small">
+<span class="text-secondary">-- Outer Query (main query that formats and returns the final result)</span>
+<span class="text-info">SELECT</span> name, gpa
+<span class="text-info">FROM</span> students
+<span class="text-info">WHERE</span> gpa &gt; <span class="text-warning">(</span>
+    <span class="text-secondary">-- Inner Query (subquery executed to compute a dynamic benchmark)</span>
+    <span class="text-info">SELECT</span> <span class="text-warning">AVG</span>(gpa) 
+    <span class="text-info">FROM</span> students
+<span class="text-warning">)</span>;
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mt-2 text-muted small">
+                        <i class="bi bi-arrow-return-right text-success"></i>
+                        <span>Execution order: <strong>Inner Query evaluates first</strong> &rarr; calculates average (e.g. 3.65) &rarr; <strong>Outer Query evaluates second</strong> using <code>WHERE gpa > 3.65</code>.</span>
+                    </div>
+                </div>
+
+                <!-- Subquery Classifications -->
+                <h6 class="fw-bold text-dark mb-3">Subquery Types by Cardinality (Shape of Result):</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-primary mb-2">Scalar Subquery</span>
+                            <h6 class="fw-bold mb-1">1 Row &times; 1 Column</h6>
+                            <p class="small text-muted mb-0">Returns a single value (e.g., <code>AVG(gpa)</code>). Used with comparison operators like <code>=</code>, <code>&gt;</code>, <code>&lt;</code>, <code>!=</code>.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-info text-dark mb-2">Multi-Row Subquery</span>
+                            <h6 class="fw-bold mb-1">N Rows &times; 1 Column</h6>
+                            <p class="small text-muted mb-0">Returns a list of values. Used with set operators like <code>IN</code>, <code>NOT IN</code>, <code>ANY</code>, <code>ALL</code>.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-secondary mb-2">Derived Table</span>
+                            <h6 class="fw-bold mb-1">N Rows &times; M Columns</h6>
+                            <p class="small text-muted mb-0">Placed in the <code>FROM</code> clause. Acts as a virtual in-memory table and <strong>must have an alias</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10.2 Scalar Subquery Example -->
+    <section class="mb-5" id="subq-scalar">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">10.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Scalar Subqueries in WHERE</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A <strong>scalar subquery</strong> returns exactly one value. This allows you to write dynamic filters without hardcoding values.
+                </p>
+
+                <div class="card border shadow-sm mb-3 bg-light">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-bold text-dark"><i class="bi bi-play-circle me-1 text-success"></i> Live Query: Students with Above-Average GPA</span>
+                        <span class="badge bg-primary-subtle text-primary">Scalar Comparison</span>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <p class="small text-secondary mb-2">
+                            The inner query computes the campus-wide average GPA. The outer query displays all students whose GPA strictly exceeds this dynamic average:
+                        </p>
+                        <div class="bg-dark text-light p-3 rounded font-monospace small mb-3">
+<span class="text-info">SELECT</span> 
+    student_id,
+    first_name,
+    semester,
+    gpa
+<span class="text-info">FROM</span> students
+<span class="text-info">WHERE</span> gpa &gt; (
+    <span class="text-info">SELECT</span> <span class="text-warning">AVG</span>(gpa) 
+    <span class="text-info">FROM</span> students
+)
+<span class="text-info">ORDER BY</span> gpa <span class="text-info">DESC</span>;
+                        </div>
+
+                        <button class="btn btn-sm btn-success run-code-btn" data-sql="SELECT student_id, first_name, semester, gpa FROM students WHERE gpa > (SELECT AVG(gpa) FROM students) ORDER BY gpa DESC;">
+                            <i class="bi bi-terminal me-1"></i> Load into SQL Editor &amp; Run
+                        </button>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger small mb-0">
+                    <strong class="d-block mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Common Error: Subquery returns more than 1 row (Error 1242):</strong>
+                    If you use a scalar operator like <code>WHERE gpa = (SELECT gpa FROM students)</code>, MySQL throws: <code>ERROR 1242: Subquery returns more than 1 row</code>. Because <code>=</code> expects a single scalar value, you cannot supply a multi-row list!
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10.3 Multi-Row Subqueries: IN, ANY, ALL -->
+    <section class="mb-5" id="subq-multirow">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">10.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Multi-Row Subqueries: IN, ANY, ALL</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    When a subquery returns a column containing multiple rows, you must use set-comparison operators:
+                </p>
+
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 15%;">Operator</th>
+                                <th style="width: 45%;">Meaning</th>
+                                <th style="width: 40%;">Example Condition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code class="fw-bold text-primary">IN</code></td>
+                                <td>True if the value matches ANY element in the subquery's result set.</td>
+                                <td><code>WHERE dept_id IN (SELECT dept_id FROM ...)</code></td>
+                            </tr>
+                            <tr>
+                                <td><code class="fw-bold text-danger">NOT IN</code></td>
+                                <td>True if the value matches NO element in the subquery's result set.</td>
+                                <td><code>WHERE student_id NOT IN (SELECT student_id ...)</code></td>
+                            </tr>
+                            <tr>
+                                <td><code class="fw-bold text-success">&gt; ALL</code></td>
+                                <td>True if the value is strictly greater than EVERY value returned by the subquery.</td>
+                                <td><code>WHERE gpa &gt; ALL (SELECT gpa FROM ...)</code></td>
+                            </tr>
+                            <tr>
+                                <td><code class="fw-bold text-warning text-dark">&gt; ANY</code></td>
+                                <td>True if the value is strictly greater than AT LEAST ONE value in the subquery.</td>
+                                <td><code>WHERE gpa &gt; ANY (SELECT gpa FROM ...)</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Executable IN subquery -->
+                <div class="card border shadow-sm mb-3 bg-light">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-bold text-dark"><i class="bi bi-play-circle me-1 text-success"></i> Live Query: Students in Specific Departments via <code>IN</code></span>
+                        <span class="badge bg-info-subtle text-info-emphasis">Multi-Row IN</span>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <p class="small text-secondary mb-2">
+                            Select all students belonging to departments whose department code begins with 'C' (Computer Science &amp; Civil Engineering):
+                        </p>
+                        <div class="bg-dark text-light p-3 rounded font-monospace small mb-3">
+<span class="text-info">SELECT</span> 
+    student_id,
+    name,
+    dept_id,
+    gpa
+<span class="text-info">FROM</span> students
+<span class="text-info">WHERE</span> dept_id <span class="text-info">IN</span> (
+    <span class="text-info">SELECT</span> dept_id 
+    <span class="text-info">FROM</span> departments 
+    <span class="text-info">WHERE</span> dept_code <span class="text-info">LIKE</span> <span class="text-success">'C%'</span>
+)
+<span class="text-info">ORDER BY</span> student_id <span class="text-info">ASC</span>;
+                        </div>
+
+                        <button class="btn btn-sm btn-success run-code-btn" data-sql="SELECT student_id, first_name, dept_id, gpa FROM students WHERE dept_id IN (SELECT dept_id FROM departments WHERE dept_code LIKE 'C%') ORDER BY student_id ASC;">
+                            <i class="bi bi-terminal me-1"></i> Load into SQL Editor &amp; Run
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10.4 Correlated Subqueries & EXISTS -->
+    <section class="mb-5" id="subq-correlated">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">10.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Correlated Subqueries &amp; EXISTS</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    In a <strong>non-correlated subquery</strong>, the inner query runs once independently of the outer query. In a <strong>correlated subquery</strong>, the inner query references a column from the outer query (e.g. <code>r.student_id = s.student_id</code>). As a result, the inner query <strong>re-evaluates for every single row examined by the outer query</strong>!
+                </p>
+
+                <!-- EXISTS vs IN callout -->
+                <div class="p-3 bg-light border rounded my-3">
+                    <h6 class="fw-bold text-dark mb-1"><i class="bi bi-check2-circle text-success me-1"></i> The <code>EXISTS</code> Operator:</h6>
+                    <p class="small text-muted mb-0">
+                        <code>EXISTS</code> returns <code>TRUE</code> as soon as the inner query produces at least one row, and <code>FALSE</code> if the inner query produces zero rows. Because it stops scanning immediately upon finding the first matching row (short-circuiting), it is often highly efficient.
+                    </p>
+                </div>
+
+                <!-- Executable Correlated Query (NOT EXISTS) -->
+                <div class="card border shadow-sm mb-3 bg-light">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-bold text-dark"><i class="bi bi-play-circle me-1 text-success"></i> Live Query: Unregistered Students via Correlated <code>NOT EXISTS</code></span>
+                        <span class="badge bg-danger-subtle text-danger">Correlated Subquery</span>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <p class="small text-secondary mb-2">
+                            Find all students who have <strong>zero event registrations</strong>. For each student <code>s</code> in the outer query, the inner query checks if any registration exists with matching <code>student_id</code>:
+                        </p>
+                        <div class="bg-dark text-light p-3 rounded font-monospace small mb-3">
+<span class="text-info">SELECT</span> 
+    s.student_id,
+    s.first_name,
+    s.last_name,
+    s.email,
+    s.dept_id
+<span class="text-info">FROM</span> students s
+<span class="text-info">WHERE</span> <span class="text-info">NOT EXISTS</span> (
+    <span class="text-info">SELECT</span> 1 
+    <span class="text-info">FROM</span> registrations r 
+    <span class="text-info">WHERE</span> r.student_id = s.student_id
+)
+<span class="text-info">ORDER BY</span> s.student_id <span class="text-info">ASC</span>;
+                        </div>
+
+                        <button class="btn btn-sm btn-success run-code-btn" data-sql="SELECT s.student_id, s.first_name, s.last_name, s.email, s.dept_id FROM students s WHERE NOT EXISTS (SELECT 1 FROM registrations r WHERE r.student_id = s.student_id) ORDER BY s.student_id ASC;">
+                            <i class="bi bi-terminal me-1"></i> Load into SQL Editor &amp; Run
+                        </button>
+                    </div>
+                </div>
+
+                <!-- NOT IN vs NOT EXISTS Null Trap -->
+                <div class="alert alert-warning small mb-0">
+                    <strong class="d-block mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> The Famous NOT IN NULL Trap!</strong>
+                    If the subquery returns even a single row with a <code>NULL</code> value (for example, <code>[1, 2, NULL]</code>), the expression <code>val NOT IN (1, 2, NULL)</code> evaluates to <strong>UNKNOWN (NULL)</strong> for every value due to 3-valued logic. As a consequence, the outer query returns 0 rows! <code>NOT EXISTS</code> never suffers from this trap because it only checks for the existence of rows.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10.5 Subqueries in FROM (Derived Tables) -->
+    <section class="mb-5" id="subq-from">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">10.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Subqueries in the FROM Clause (Derived Tables)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A subquery in the <code>FROM</code> clause creates a temporary, unnamed result set known as a <strong>derived table</strong>. In MySQL, <strong>every derived table MUST be assigned a table alias</strong>, or MySQL will reject it with: <code>ERROR 1248: Every derived table must have its own alias</code>.
+                </p>
+
+                <!-- Executable Derived Table Query -->
+                <div class="card border shadow-sm mb-3 bg-light">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-bold text-dark"><i class="bi bi-play-circle me-1 text-success"></i> Live Query: Department Statistics Derived Table</span>
+                        <span class="badge bg-secondary-subtle text-dark">FROM Clause Subquery</span>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <p class="small text-secondary mb-2">
+                            This query aggregates department headcount inside a derived table aliased as <code>dept_stats</code>, and then queries that summary table:
+                        </p>
+                        <div class="bg-dark text-light p-3 rounded font-monospace small mb-3">
+<span class="text-info">SELECT</span> 
+    dept_stats.dept_id,
+    dept_stats.student_count,
+    dept_stats.avg_gpa
+<span class="text-info">FROM</span> (
+    <span class="text-secondary">-- Derived table subquery</span>
+    <span class="text-info">SELECT</span> 
+        dept_id,
+        <span class="text-warning">COUNT</span>(*) <span class="text-info">AS</span> student_count,
+        <span class="text-warning">ROUND</span>(<span class="text-warning">AVG</span>(gpa), 2) <span class="text-info">AS</span> avg_gpa
+    <span class="text-info">FROM</span> students
+    <span class="text-info">GROUP BY</span> dept_id
+) <span class="text-info">AS</span> dept_stats
+<span class="text-info">WHERE</span> dept_stats.student_count &gt;= 2
+<span class="text-info">ORDER BY</span> dept_stats.avg_gpa <span class="text-info">DESC</span>;
+                        </div>
+
+                        <button class="btn btn-sm btn-success run-code-btn" data-sql="SELECT dept_stats.dept_id, dept_stats.student_count, dept_stats.avg_gpa FROM (SELECT dept_id, COUNT(*) AS student_count, ROUND(AVG(gpa), 2) AS avg_gpa FROM students GROUP BY dept_id) AS dept_stats WHERE dept_stats.student_count >= 2 ORDER BY dept_stats.avg_gpa DESC;">
+                            <i class="bi bi-terminal me-1"></i> Load into SQL Editor &amp; Run
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10.6 Subqueries vs Joins -->
+    <section class="mb-5" id="subq-vs-joins">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">10.6</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Subqueries vs JOINs: Architectural Tradeoffs</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Students often wonder: <em>"Should I write a JOIN or a Subquery?"</em> In modern relational database engines like MySQL 8, the query optimizer often transforms subqueries into joins internally. However, each construct has distinct strengths:
+                </p>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 25%;">Criteria</th>
+                                <th style="width: 37.5%;" class="text-primary">JOINs</th>
+                                <th style="width: 37.5%;" class="text-success">Subqueries</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Returning Columns</td>
+                                <td>Can retrieve columns from <strong>both tables</strong> in the final <code>SELECT</code>.</td>
+                                <td>Outer query can only output columns from the outer table (unless subquery is in FROM).</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Readability</td>
+                                <td>Best when combining related entities (e.g. <code>students</code> &amp; <code>departments</code>).</td>
+                                <td>Best for isolated scalar calculations (e.g. <code>gpa > AVG(gpa)</code>) or existence tests.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Correlated Overhead</td>
+                                <td>Usually set-based and heavily optimized with index scans.</td>
+                                <td>Correlated subqueries can execute $O(N)$ times if not unnested by the optimizer.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10.7 Practice Exercises -->
+    <section class="mb-5" id="subq-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">10.7</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 1 (Moderate)</span>
+                        <span class="text-muted small">Nested Scalar Subquery</span>
+                    </div>
+                    <p class="fw-bold mb-1">Students Above Minimum IT GPA:</p>
+                    <p class="small text-secondary mb-2">
+                        Write a query to find all students in any department whose GPA is strictly higher than the <strong>highest GPA in Department 4 (IT)</strong>. Display their <code>student_id</code>, <code>name</code>, <code>dept_id</code>, and <code>gpa</code>.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#hint-subq-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="collapse mb-2" id="hint-subq-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> Use a scalar subquery: <code>WHERE gpa > (SELECT MAX(gpa) FROM students WHERE dept_id = 4)</code>.
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-success run-code-btn" data-sql="SELECT student_id, first_name, dept_id, gpa FROM students WHERE gpa > (SELECT MAX(gpa) FROM students WHERE dept_id = 4) ORDER BY gpa DESC;">
+                            <i class="bi bi-box-arrow-in-down me-1"></i> Load Solution into SQL Editor
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 2 (Advanced)</span>
+                        <span class="text-muted small">Correlated Subquery</span>
+                    </div>
+                    <p class="fw-bold mb-1">Students Above Their Own Department's Average:</p>
+                    <p class="small text-secondary mb-2">
+                        Write a correlated subquery that displays students whose GPA is higher than the average GPA of <strong>their specific department</strong>.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#hint-subq-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="collapse mb-2" id="hint-subq-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> Correlate the subquery on <code>dept_id</code>: <code>WHERE s.gpa > (SELECT AVG(sub.gpa) FROM students sub WHERE sub.dept_id = s.dept_id)</code>.
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-success run-code-btn" data-sql="SELECT s.student_id, s.first_name, s.dept_id, s.gpa FROM students s WHERE s.gpa > (SELECT AVG(sub.gpa) FROM students sub WHERE sub.dept_id = s.dept_id) ORDER BY s.dept_id ASC, s.gpa DESC;">
+                            <i class="bi bi-box-arrow-in-down me-1"></i> Load Solution into SQL Editor
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 10.8 Knowledge Check Quiz -->
+    <section class="mb-5" id="subq-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">10.8</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Topic 10 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase3-subqueries">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. What error occurs if you write <code>WHERE gpa = (SELECT gpa FROM students)</code> when <code>students</code> has 10 rows?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_subq_0" id="q_subq_0_a" value="a">
+                            <label class="form-check-label" for="q_subq_0_a">A) Syntax error near WHERE</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_subq_0" id="q_subq_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_subq_0_b">B) ERROR 1242: Subquery returns more than 1 row (scalar operator '=' cannot accept multiple rows)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_subq_0" id="q_subq_0_c" value="c">
+                            <label class="form-check-label" for="q_subq_0_c">C) Table lock timeout</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. What distinguishes a correlated subquery from a standard subquery?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_subq_1" id="q_subq_1_a" value="a">
+                            <label class="form-check-label" for="q_subq_1_a">A) It uses a JOIN instead of WHERE</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_subq_1" id="q_subq_1_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_subq_1_b">B) It references a column from the outer query and re-evaluates for each outer row</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_subq_1" id="q_subq_1_c" value="c">
+                            <label class="form-check-label" for="q_subq_1_c">C) It always returns a table with 0 rows</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. In MySQL, what is mandatory when placing a subquery in the <code>FROM</code> clause (a derived table)?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_subq_2" id="q_subq_2_a" value="a">
+                            <label class="form-check-label" for="q_subq_2_a">A) It must use an ORDER BY clause</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_subq_2" id="q_subq_2_b" value="b">
+                            <label class="form-check-label" for="q_subq_2_b">B) It must contain at least 10 rows</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_subq_2" id="q_subq_2_c" value="c" data-correct="true">
+                            <label class="form-check-label" for="q_subq_2_c">C) It MUST have a table alias (e.g. <code>AS my_derived_table</code>)</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase3-subqueries">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

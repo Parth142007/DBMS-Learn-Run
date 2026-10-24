@@ -116,10 +116,16 @@ def test_connection(password=None, user=None, host=None, port=None):
 
     return result
 
-def execute_query(sql_statement, params=None, max_rows=None):
+CORE_TABLES = [
+    "departments", "students", "courses", "events",
+    "organizers", "registrations", "attendance", "feedback"
+]
+
+def execute_query(sql_statement, params=None, max_rows=None, confirm_unfiltered=False):
     """
     Safely execute an arbitrary SQL statement against the practice database.
-    Returns dictionary with columns, rows, affected_rows, execution time, and status.
+    Applies security policies, blocks deletion of core tables, and returns
+    structured JSON with execution statistics.
     """
     if max_rows is None:
         max_rows = Config.MAX_ROWS_RETURNED
@@ -127,7 +133,7 @@ def execute_query(sql_statement, params=None, max_rows=None):
     trimmed_sql = sql_statement.strip()
     upper_sql = trimmed_sql.upper()
 
-    # Safety check: block restricted admin commands
+    # Safety check 1: block restricted admin/server commands
     for restricted in Config.RESTRICTED_KEYWORDS:
         if restricted in upper_sql:
             return {
@@ -138,6 +144,40 @@ def execute_query(sql_statement, params=None, max_rows=None):
                 "execution_time_ms": 0,
                 "affected_rows": 0
             }
+
+    # Safety check 2: protect core curriculum tables from accidental DROP or TRUNCATE
+    if upper_sql.startswith("DROP") or upper_sql.startswith("TRUNCATE"):
+        for tbl in CORE_TABLES:
+            patterns = [
+                f"DROP TABLE {tbl.upper()}", f"DROP TABLE `{tbl.upper()}`",
+                f"DROP TABLE IF EXISTS {tbl.upper()}", f"DROP TABLE IF EXISTS `{tbl.upper()}`",
+                f"TRUNCATE TABLE {tbl.upper()}", f"TRUNCATE TABLE `{tbl.upper()}`",
+                f"TRUNCATE {tbl.upper()}", f"TRUNCATE `{tbl.upper()}`"
+            ]
+            if any(p in upper_sql for p in patterns):
+                return {
+                    "success": False,
+                    "error": f"Protection Notice: The core curriculum table '{tbl}' is protected to preserve relational joins and schema inspection for all students. Please practice CREATE, ALTER, DROP, and TRUNCATE experiments on the dedicated 'practice_students' table.",
+                    "rows": [],
+                    "columns": [],
+                    "execution_time_ms": 0,
+                    "affected_rows": 0
+                }
+
+    # Safety check 3: Warn on broad UPDATE/DELETE without WHERE on core tables
+    if (upper_sql.startswith("UPDATE") or upper_sql.startswith("DELETE")) and "WHERE" not in upper_sql:
+        for tbl in CORE_TABLES:
+            if tbl in trimmed_sql.lower() and not confirm_unfiltered:
+                cmd = upper_sql.split()[0]
+                return {
+                    "success": False,
+                    "error": f"Safety Notice: Unfiltered {cmd} without a WHERE clause detected on core table '{tbl}'. This would modify or delete all records in the table! If you intend to execute this, check the 'Confirm broad change' box, or experiment on 'practice_students'.",
+                    "rows": [],
+                    "columns": [],
+                    "execution_time_ms": 0,
+                    "affected_rows": 0,
+                    "requires_confirmation": True
+                }
 
     start_time = time.perf_counter()
     try:
@@ -225,3 +265,35 @@ def get_table_schema(table_name):
             "success": False,
             "error": str(e)
         }
+
+def reset_practice_table():
+    """Drops and recreates the practice_students table with 5 clean sample rows."""
+    setup_statements = [
+        "DROP TABLE IF EXISTS practice_students;",
+        """CREATE TABLE practice_students (
+            student_id INT AUTO_INCREMENT PRIMARY KEY,
+            roll_no VARCHAR(20) NOT NULL UNIQUE,
+            first_name VARCHAR(50) NOT NULL,
+            last_name VARCHAR(50) NOT NULL,
+            dept_code VARCHAR(10) NOT NULL,
+            gpa DECIMAL(3, 2) NOT NULL DEFAULT 7.50,
+            city VARCHAR(50) DEFAULT 'Bengaluru',
+            enrollment_date DATE DEFAULT '2026-08-01',
+            CONSTRAINT chk_practice_gpa CHECK (gpa >= 0.00 AND gpa <= 10.00)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;""",
+        """INSERT INTO practice_students (roll_no, first_name, last_name, dept_code, gpa, city, enrollment_date) VALUES
+        ('P101', 'Rahul', 'Sharma', 'CSE', 8.45, 'Bengaluru', '2026-08-01'),
+        ('P102', 'Ananya', 'Iyer', 'ISE', 9.10, 'Mysuru', '2026-08-01'),
+        ('P103', 'Karan', 'Patel', 'ECE', 7.20, 'Bengaluru', '2026-08-02'),
+        ('P104', 'Meera', 'Rao', 'CSE', 8.90, 'Mangaluru', '2026-08-02'),
+        ('P105', 'Varun', 'Deshmukh', 'MECH', 6.80, 'Hubballi', '2026-08-03');"""
+    ]
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            for stmt in setup_statements:
+                cursor.execute(stmt)
+        conn.close()
+        return {"success": True, "message": "Practice table 'practice_students' successfully reset with 5 rows."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}

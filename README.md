@@ -34,29 +34,40 @@ Project/
 │   ├── 03_insert_sample_data.sql # Deliberate matching & non-matching records
 │   ├── 04_views.sql            # Educational views (self-join, multi-join)
 │   ├── 05_triggers.sql         # Audit log & capacity validation triggers
-│   └── 06_practice_queries.sql # Ready-to-run queries mapped to syllabus
+│   ├── 06_practice_queries.sql # Ready-to-run queries mapped to syllabus
+│   └── 07_practice_table.sql   # Isolated practice_students sandbox table
 │
 ├── templates/                  # Jinja2 Templates
-│   ├── base.html               # Main layout with 16-topic syllabus sidebar
+│   ├── base.html               # Main layout with 16-topic syllabus sidebar & Phase 3 links
 │   ├── index.html              # Live dashboard & interactive SQL runner
 │   ├── schema.html             # Relational schema inspector (8 tables)
 │   ├── phase2.html             # Phase 2 Learning Module container
-│   └── phase2/                 # Modular syllabus topic partials
-│       ├── topic1_architecture.html     # Topic 1: Database System Architecture
-│       ├── topic2_data_models.html      # Topic 2: Data Models (Hierarchical, Relational, etc.)
-│       ├── topic3_three_schema.html     # Topic 3: Three-Schema Architecture (ANSI/SPARC)
-│       └── topic4_data_independence.html # Topic 4: Physical & Logical Data Independence
+│   ├── phase2/                 # Modular Phase 2 topic partials (Topics 1-4)
+│   ├── phase3.html             # Phase 3 Learning Dashboard & SQL Lab container
+│   └── phase3/                 # Modular Phase 3 topic partials (Topics 1-10)
+│       ├── topic1_ddl.html         # Topic 1: DDL (CREATE, ALTER, DROP, TRUNCATE, constraints)
+│       ├── topic2_dml.html         # Topic 2: DML (INSERT, UPDATE, DELETE, autocommit)
+│       ├── topic3_dql.html         # Topic 3: DQL (SELECT, filtering, execution pipeline)
+│       ├── topic4_inner_join.html  # Topic 4: INNER JOIN (Intersection & matching rows)
+│       ├── topic5_left_join.html   # Topic 5: LEFT JOIN (Left preservation & anti-joins)
+│       ├── topic6_right_join.html  # Topic 6: RIGHT JOIN (Right preservation)
+│       ├── topic7_self_join.html   # Topic 7: SELF JOIN (Student mentorship hierarchy)
+│       ├── topic8_cross_join.html  # Topic 8: CROSS JOIN (Cartesian & 5-join matrix)
+│       ├── topic9_aggregates.html  # Topic 9: Aggregates, GROUP BY & HAVING
+│       └── topic10_subqueries.html # Topic 10: Nested Subqueries (Scalar, Multi-row, Correlated)
 │
 ├── static/                     # Static assets
-│   ├── css/style.css           # GeeksforGeeks-inspired styling + Phase 2 styles
+│   ├── css/style.css           # Styling for tabs, diagrams, and code snippets
 │   └── js/
 │       ├── app.js              # Dynamic query execution & output rendering
-│       └── phase2.js           # Progress tracking, quizzes & data independence simulator
+│       ├── phase2.js           # Phase 2 progress, quizzes & simulator
+│       └── phase3.js           # Phase 3 SQL Lab, tab routing, quizzes & table reset
 │
-└── tests/                      # Automated test suite
+└── tests/                      # Automated test suite (31 tests passing)
     ├── test_database.py        # Database helper & serialization tests
     ├── test_sql_lab.py         # SQL parsing & safety tests
-    └── test_phase2.py          # Phase 2 routes, topics, quizzes, and regression tests
+    ├── test_phase2.py          # Phase 2 routes, topics, quizzes, and regression tests
+    └── test_phase3.py          # Phase 3 routes, 10 topics, joins, aggregates, subqueries, safeguards
 ```
 
 ---
@@ -177,3 +188,69 @@ Access the live module at: **`http://localhost:5000/phase-2`** (or alias **`/mod
   - Preserves Phase 3 SQL Laboratory, Schema Inspector, and all REST API endpoints.
   - Functions completely offline even if MySQL Server is temporarily unauthenticated or down.
   - 100% automated test coverage in `tests/test_phase2.py` (17 tests total passing).
+
+---
+
+## Phase 3 Deliverables Summary &mdash; SQL & Relational Queries (NEPC42)
+
+Access the live module at: **`http://localhost:5000/phase-3`** (or alias **`/sql-lab`**)
+
+- [x] **Dedicated Phase 3 Learning Dashboard:**
+  - Modern, responsive GeeksforGeeks-inspired interface with sticky topic navigation pills across all 10 topics.
+  - Interactive learning objectives, estimated study time (~150 mins), and dynamic completion badges.
+  - Browser `localStorage` progress tracking with visual progress bar (0%–100%) and reset option.
+  - Embedded **Interactive SQL Laboratory** connected live to MySQL 8 with query runner, execution timer, row counter, presets dropdown, and safe error renderer.
+- [x] **Topic 1 &mdash; Data Definition Language (DDL):**
+  - Database, table, and column structural definitions.
+  - Syntax, examples, and behavior for `CREATE DATABASE`, `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE`, and `TRUNCATE TABLE`.
+  - Comprehensive integrity constraints guide (`PRIMARY KEY`, `FOREIGN KEY`, `UNIQUE`, `NOT NULL`, `DEFAULT`, `CHECK`).
+  - Critical warning on MySQL implicit commits for DDL statements.
+  - Isolated testing on the dedicated `practice_students` table.
+- [x] **Topic 2 &mdash; Data Manipulation Language (DML):**
+  - Data modifications with `INSERT` (single-row and multi-row), `UPDATE`, and `DELETE`.
+  - The dangers of omitting a `WHERE` clause and server-side safeguards against accidental mass modifications.
+  - Transaction autocommit behavior across InnoDB storage engine tables.
+- [x] **Topic 3 &mdash; Data Query Language (DQL):**
+  - Deep-dive into `SELECT`, column projections, and aliases with `AS`.
+  - Logical Query Processing Order pipeline: `FROM` &rarr; `JOIN` &rarr; `WHERE` &rarr; `GROUP BY` &rarr; `HAVING` &rarr; `SELECT` &rarr; `DISTINCT` &rarr; `ORDER BY` &rarr; `LIMIT`.
+  - Comparison operators, boolean logic (`AND`, `OR`, `NOT`), `BETWEEN`, `IN`, `LIKE` wildcards (`%`, `_`), and three-valued logic for `NULL`.
+- [x] **Topic 4 &mdash; INNER JOIN:**
+  - Concept of relational matching and intersection with custom SVG Venn diagram.
+  - Dissecting `ON` (table linking predicate) vs. `WHERE` (row filter).
+  - Executable query linking `students` and `departments` demonstrating exclusion of unmatched Civil Engineering.
+- [x] **Topic 5 &mdash; LEFT JOIN:**
+  - Preservation of all records from the left table and populating missing right-side values with `NULL`.
+  - Clean SVG Venn diagram showing left circle inclusion.
+  - Executable query identifying departments with zero enrolled students.
+  - Anti-join pattern using `WHERE right_table.id IS NULL`.
+- [x] **Topic 6 &mdash; RIGHT JOIN:**
+  - Preservation of all records from the right table and comparison with reversing table order in a `LEFT JOIN`.
+  - SVG Venn diagram showing right circle inclusion.
+  - Executable query identifying `Event 6` (Cybersecurity Summit) which has zero student registrations.
+- [x] **Topic 7 &mdash; SELF JOIN:**
+  - Joining a table to itself using mandatory table aliases.
+  - SVG hierarchical tree diagram modeling student-mentor relationships.
+  - Executable query pairing senior student mentors with junior student mentees via `mentor_id`.
+- [x] **Topic 8 &mdash; CROSS JOIN & 5-Join Matrix:**
+  - Cartesian product definition and cardinality formula: $|A| \times |B|$.
+  - Catastrophic performance warning on accidental cross joins (e.g. 10k &times; 10k = 100M rows).
+  - Multi-dimensional 5-join matrix comparing syntax, preserved rows, NULL behavior, and practical use cases.
+- [x] **Topic 9 &mdash; Aggregate Functions, GROUP BY & HAVING:**
+  - Multi-row calculations using `COUNT(*)`, `COUNT(col)`, `COUNT(DISTINCT)`, `SUM()`, `AVG()`, `MIN()`, and `MAX()`.
+  - Automatic exclusion of `NULL` values in aggregation.
+  - Visual row-clustering diagram showing how raw rows partition into grouped buckets.
+  - Clear architectural breakdown: `WHERE` (filters rows before grouping) vs `HAVING` (filters groups after aggregation).
+  - MySQL 8 `ONLY_FULL_GROUP_BY` SQL mode compliance.
+- [x] **Topic 10 &mdash; Nested Subqueries:**
+  - Classification by cardinality: scalar subqueries (1x1), multi-row subqueries (`IN`, `ANY`, `ALL`), and derived tables in `FROM` (mandatory aliases).
+  - Non-correlated subqueries (evaluate once) vs correlated subqueries (re-evaluate per outer row).
+  - Correlated subqueries with `EXISTS` and `NOT EXISTS` and immunity from the famous `NOT IN (NULL)` trap.
+  - Architectural tradeoffs: Subqueries vs JOINs.
+- [x] **Interactive Assessments & Safeguards:**
+  - 10 interactive topic quizzes (30 multiple-choice questions total) with instant validation and technical explanations.
+  - Collapsible practice exercises with progressive hints and one-click solution loading into the SQL Laboratory.
+  - Server-side DDL protection blocking `DROP`/`TRUNCATE` on core curriculum tables.
+  - One-click `Reset Practice Table` endpoint (`/api/reset-practice-table`) to restore `practice_students` to 5 seed records.
+- [x] **Testing & Verification:**
+  - Comprehensive test suite in `tests/test_phase3.py` (14 new automated tests).
+  - 100% test pass rate across all 31 unit tests (`python -m unittest discover tests`).

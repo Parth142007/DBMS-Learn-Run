@@ -1,0 +1,525 @@
+<!-- ====================================================================
+     Topic 9: Aggregate Functions, GROUP BY, and HAVING
+     NEPC42 Syllabus — Module 3: SQL & Relational Queries
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-aggregates">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 9 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">9. Aggregate Functions, GROUP BY &amp; HAVING</h2>
+            <p class="text-secondary mb-0">
+                Learn how relational database engines perform multi-row calculations: summarizing populations with <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, and <code>MAX</code>, partitioning datasets with <code>GROUP BY</code>, and filtering aggregated groups with <code>HAVING</code>.
+            </p>
+        </div>
+    </div>
+
+    <!-- 9.1 Concept of Aggregate Functions -->
+    <section class="mb-5" id="agg-concept">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">9.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What are Aggregate Functions?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    An <strong>aggregate function</strong> takes a set of values from multiple rows in a column and compresses them into a <strong>single scalar summary value</strong>. Unlike scalar functions (such as <code>UPPER()</code> or <code>ROUND()</code>) that operate row-by-row, aggregate functions operate across an entire set of rows.
+                </p>
+
+                <div class="row g-3 my-2">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light text-center h-100">
+                            <i class="bi bi-calculator text-primary fs-3 d-block mb-2"></i>
+                            <h6 class="fw-bold mb-1">Row Reduction</h6>
+                            <p class="small text-muted mb-0">Collapses 1,000 student records into a single average GPA or total head count.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light text-center h-100">
+                            <i class="bi bi-slash-circle text-warning fs-3 d-block mb-2"></i>
+                            <h6 class="fw-bold mb-1">NULL Value Ignorance</h6>
+                            <p class="small text-muted mb-0">Aggregate functions (except <code>COUNT(*)</code>) automatically <strong>ignore NULL values</strong> during calculation.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light text-center h-100">
+                            <i class="bi bi-funnel text-success fs-3 d-block mb-2"></i>
+                            <h6 class="fw-bold mb-1">Partitioned Summary</h6>
+                            <p class="small text-muted mb-0">When combined with <code>GROUP BY</code>, calculates separate summaries for each subset/category.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visual: Aggregation Bucket Diagram -->
+                <div class="my-4 p-3 bg-light rounded border text-center">
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-3 me-1"></i> Visualizing Aggregation &amp; Grouping</h6>
+                    <svg viewBox="0 0 760 220" class="img-fluid" style="max-height: 220px;" aria-label="Aggregation Flow Diagram">
+                        <!-- Raw Rows -->
+                        <g transform="translate(10, 20)">
+                            <rect x="0" y="0" width="180" height="180" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3"/>
+                            <text x="90" y="24" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">Input Rows (students)</text>
+                            <rect x="15" y="38" width="150" height="22" rx="4" fill="#e2e8f0"/>
+                            <text x="25" y="53" font-size="10" font-family="monospace" fill="#0f172a">Dept 1 (CSE) | GPA 3.85</text>
+                            <rect x="15" y="65" width="150" height="22" rx="4" fill="#e2e8f0"/>
+                            <text x="25" y="80" font-size="10" font-family="monospace" fill="#0f172a">Dept 1 (CSE) | GPA 3.60</text>
+                            <rect x="15" y="92" width="150" height="22" rx="4" fill="#e2e8f0"/>
+                            <text x="25" y="107" font-size="10" font-family="monospace" fill="#0f172a">Dept 2 (ECE) | GPA 3.75</text>
+                            <rect x="15" y="119" width="150" height="22" rx="4" fill="#e2e8f0"/>
+                            <text x="25" y="134" font-size="10" font-family="monospace" fill="#0f172a">Dept 2 (ECE) | GPA 3.20</text>
+                            <rect x="15" y="146" width="150" height="22" rx="4" fill="#e2e8f0"/>
+                            <text x="25" y="161" font-size="10" font-family="monospace" fill="#0f172a">Dept 3 (MECH)| GPA 3.40</text>
+                        </g>
+
+                        <!-- Arrow 1: GROUP BY -->
+                        <g transform="translate(200, 95)">
+                            <path d="M 0 15 L 55 15" stroke="#2563eb" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+                            <text x="28" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#2563eb">GROUP BY</text>
+                            <text x="28" y="32" text-anchor="middle" font-size="9" fill="#64748b">dept_id</text>
+                        </g>
+
+                        <!-- Partition Buckets -->
+                        <g transform="translate(270, 20)">
+                            <rect x="0" y="0" width="190" height="180" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+                            <text x="95" y="24" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8">Grouped Buckets</text>
+                            
+                            <rect x="15" y="38" width="160" height="38" rx="4" fill="#dbeafe" stroke="#bfdbfe"/>
+                            <text x="22" y="54" font-size="10" font-weight="bold" fill="#1e40af">Bucket: CSE (2 rows)</text>
+                            <text x="22" y="68" font-size="9" font-family="monospace" fill="#3b82f6">[3.85, 3.60]</text>
+
+                            <rect x="15" y="85" width="160" height="38" rx="4" fill="#dbeafe" stroke="#bfdbfe"/>
+                            <text x="22" y="101" font-size="10" font-weight="bold" fill="#1e40af">Bucket: ECE (2 rows)</text>
+                            <text x="22" y="115" font-size="9" font-family="monospace" fill="#3b82f6">[3.75, 3.20]</text>
+
+                            <rect x="15" y="132" width="160" height="38" rx="4" fill="#dbeafe" stroke="#bfdbfe"/>
+                            <text x="22" y="148" font-size="10" font-weight="bold" fill="#1e40af">Bucket: MECH (1 row)</text>
+                            <text x="22" y="162" font-size="9" font-family="monospace" fill="#3b82f6">[3.40]</text>
+                        </g>
+
+                        <!-- Arrow 2: Aggregation -->
+                        <g transform="translate(470, 95)">
+                            <path d="M 0 15 L 55 15" stroke="#16a34a" stroke-width="3" fill="none"/>
+                            <text x="28" y="0" text-anchor="middle" font-size="11" font-weight="bold" fill="#16a34a">AVG(gpa)</text>
+                            <text x="28" y="32" text-anchor="middle" font-size="9" fill="#64748b">COUNT(*)</text>
+                        </g>
+
+                        <!-- Aggregated Result -->
+                        <g transform="translate(540, 20)">
+                            <rect x="0" y="0" width="200" height="180" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5"/>
+                            <text x="100" y="24" text-anchor="middle" font-size="12" font-weight="bold" fill="#15803d">1 Summary Row per Group</text>
+                            
+                            <rect x="15" y="38" width="170" height="38" rx="4" fill="#dcfce7" stroke="#bbf7d0"/>
+                            <text x="22" y="54" font-size="10" font-weight="bold" fill="#166534">Dept 1 (CSE)</text>
+                            <text x="22" y="68" font-size="10" font-family="monospace" fill="#15803d">COUNT=2 | AVG=3.73</text>
+
+                            <rect x="15" y="85" width="170" height="38" rx="4" fill="#dcfce7" stroke="#bbf7d0"/>
+                            <text x="22" y="101" font-size="10" font-weight="bold" fill="#166534">Dept 2 (ECE)</text>
+                            <text x="22" y="115" font-size="10" font-family="monospace" fill="#15803d">COUNT=2 | AVG=3.48</text>
+
+                            <rect x="15" y="132" width="170" height="38" rx="4" fill="#dcfce7" stroke="#bbf7d0"/>
+                            <text x="22" y="148" font-size="10" font-weight="bold" fill="#166534">Dept 3 (MECH)</text>
+                            <text x="22" y="162" font-size="10" font-family="monospace" fill="#15803d">COUNT=1 | AVG=3.40</text>
+                        </g>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">Every group bucket collapses into exactly one output row containing aggregate calculations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9.2 The Core 5 Aggregate Functions -->
+    <section class="mb-5" id="agg-functions">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">9.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The Core 5 Aggregate Functions</h3>
+        </div>
+
+        <div class="table-responsive mb-4 shadow-sm rounded border">
+            <table class="table table-bordered table-hover mb-0 align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 15%;">Function</th>
+                        <th style="width: 35%;">Purpose &amp; Syntax</th>
+                        <th style="width: 25%;">Handling of NULLs</th>
+                        <th style="width: 25%;">Example Expression</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="fw-bold text-primary">COUNT(*)</code></td>
+                        <td>Counts total rows in the table or group, regardless of nulls or duplicates.</td>
+                        <td><span class="badge bg-success">Includes NULL rows</span></td>
+                        <td><code>COUNT(*)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="fw-bold text-primary">COUNT(col)</code></td>
+                        <td>Counts non-NULL values present in the specified column.</td>
+                        <td><span class="badge bg-warning text-dark">Ignores NULLs</span></td>
+                        <td><code>COUNT(mentor_id)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="fw-bold text-primary">COUNT(DISTINCT col)</code></td>
+                        <td>Counts unique, non-NULL values present in the column.</td>
+                        <td><span class="badge bg-warning text-dark">Ignores NULLs</span></td>
+                        <td><code>COUNT(DISTINCT dept_id)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="fw-bold text-success">SUM(col)</code></td>
+                        <td>Calculates the arithmetic total of all non-NULL numeric values.</td>
+                        <td><span class="badge bg-warning text-dark">Ignores NULLs</span></td>
+                        <td><code>SUM(capacity)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="fw-bold text-info">AVG(col)</code></td>
+                        <td>Calculates arithmetic mean: <code>SUM(col) / COUNT(col)</code>.</td>
+                        <td><span class="badge bg-warning text-dark">Ignores NULLs</span> (divisor is non-NULL count!)</td>
+                        <td><code>ROUND(AVG(gpa), 2)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="fw-bold text-danger">MIN(col)</code></td>
+                        <td>Finds smallest non-NULL value (works on numbers, dates, strings).</td>
+                        <td><span class="badge bg-warning text-dark">Ignores NULLs</span></td>
+                        <td><code>MIN(gpa)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code class="fw-bold text-danger">MAX(col)</code></td>
+                        <td>Finds largest non-NULL value (works on numbers, dates, strings).</td>
+                        <td><span class="badge bg-warning text-dark">Ignores NULLs</span></td>
+                        <td><code>MAX(gpa)</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Live Aggregate Demonstration Query -->
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                <span class="fw-bold text-dark"><i class="bi bi-play-circle me-1 text-success"></i> Global Aggregation on <code>students</code></span>
+                <span class="badge bg-secondary-subtle text-secondary font-monospace">Demonstrating COUNT vs COUNT(col)</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-secondary mb-3">
+                    In our university database, exactly 10 students exist. However, students 1 and 4 do not have an assigned mentor (<code>mentor_id IS NULL</code>). Notice the difference between <code>COUNT(*)</code> and <code>COUNT(mentor_id)</code>:
+                </p>
+
+                <div class="bg-dark text-light p-3 rounded font-monospace small mb-3">
+<span class="text-secondary">-- Global aggregate metrics across all students in the database</span>
+<span class="text-info">SELECT</span> 
+    <span class="text-warning">COUNT</span>(*) <span class="text-info">AS</span> total_students,
+    <span class="text-warning">COUNT</span>(mentor_id) <span class="text-info">AS</span> students_with_mentor,
+    <span class="text-warning">ROUND</span>(<span class="text-warning">AVG</span>(gpa), 2) <span class="text-info">AS</span> campus_avg_gpa,
+    <span class="text-warning">MIN</span>(gpa) <span class="text-info">AS</span> lowest_gpa,
+    <span class="text-warning">MAX</span>(gpa) <span class="text-info">AS</span> highest_gpa
+<span class="text-info">FROM</span> students;
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-success run-code-btn" data-sql="SELECT COUNT(*) AS total_students, COUNT(mentor_id) AS students_with_mentor, ROUND(AVG(gpa), 2) AS campus_avg_gpa, MIN(gpa) AS lowest_gpa, MAX(gpa) AS highest_gpa FROM students;">
+                        <i class="bi bi-terminal me-1"></i> Load into SQL Editor &amp; Run
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9.3 GROUP BY Clause -->
+    <section class="mb-5" id="agg-groupby">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">9.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The GROUP BY Clause</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Without <code>GROUP BY</code>, aggregate functions collapse the entire table into a single row. The <code>GROUP BY</code> clause partitions rows having matching values in designated columns into groups, then calculates the aggregate function <strong>independently for each group</strong>.
+                </p>
+
+                <h6 class="fw-bold text-dark mt-4 mb-2"><i class="bi bi-card-checklist me-1 text-primary"></i> Syntax &amp; Golden Rules of GROUP BY:</h6>
+                <div class="bg-light border rounded p-3 font-monospace small mb-3">
+<span class="text-primary">SELECT</span> column1, column2, <span class="text-success">AGGREGATE_FUNCTION</span>(column3)
+<span class="text-primary">FROM</span> table_name
+<span class="text-primary">GROUP BY</span> column1, column2
+<span class="text-primary">ORDER BY</span> <span class="text-success">AGGREGATE_FUNCTION</span>(column3) <span class="text-primary">DESC</span>;
+                </div>
+
+                <div class="alert alert-warning small border-warning-subtle mb-4">
+                    <strong class="d-block mb-1"><i class="bi bi-shield-exclamation me-1"></i> The ONLY_FULL_GROUP_BY Rule:</strong>
+                    In standard SQL (and MySQL 8's default <code>ONLY_FULL_GROUP_BY</code> SQL mode), every column in your <code>SELECT</code> list must either be:
+                    <ol class="mb-0 mt-1 ps-3">
+                        <li>Explicitly named in the <code>GROUP BY</code> clause, OR</li>
+                        <li>Enclosed inside an aggregate function (such as <code>COUNT()</code>, <code>AVG()</code>, etc.).</li>
+                    </ol>
+                    Selecting a raw column like <code>name</code> without grouping by it produces: <code>ERROR 1055: Expression is not in GROUP BY clause and contains nonaggregated column</code>.
+                </div>
+
+                <!-- Executable Group By Query -->
+                <div class="card border shadow-sm mb-2 bg-light">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-bold text-dark"><i class="bi bi-play-circle me-1 text-success"></i> Live Query: Department Enrolment &amp; GPA Summary</span>
+                        <span class="badge bg-primary-subtle text-primary">JOIN + GROUP BY + ORDER BY</span>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <p class="small text-secondary mb-2">
+                            This query joins <code>departments</code> with <code>students</code>, groups by department, counts students, and sorts from highest to lowest enrollment:
+                        </p>
+                        <div class="bg-dark text-light p-3 rounded font-monospace small mb-3">
+<span class="text-info">SELECT</span> 
+    d.dept_code,
+    d.dept_name,
+    <span class="text-warning">COUNT</span>(s.student_id) <span class="text-info">AS</span> total_students,
+    <span class="text-warning">COALESCE</span>(<span class="text-warning">ROUND</span>(<span class="text-warning">AVG</span>(s.gpa), 2), 0.00) <span class="text-info">AS</span> avg_gpa
+<span class="text-info">FROM</span> departments d
+<span class="text-info">LEFT JOIN</span> students s <span class="text-info">ON</span> d.dept_id = s.dept_id
+<span class="text-info">GROUP BY</span> d.dept_id, d.dept_code, d.dept_name
+<span class="text-info">ORDER BY</span> total_students <span class="text-info">DESC</span>, d.dept_code <span class="text-info">ASC</span>;
+                        </div>
+
+                        <button class="btn btn-sm btn-success run-code-btn" data-sql="SELECT d.dept_code, d.dept_name, COUNT(s.student_id) AS total_students, COALESCE(ROUND(AVG(s.gpa), 2), 0.00) AS avg_gpa FROM departments d LEFT JOIN students s ON d.dept_id = s.dept_id GROUP BY d.dept_id, d.dept_code, d.dept_name ORDER BY total_students DESC, d.dept_code ASC;">
+                            <i class="bi bi-terminal me-1"></i> Load into SQL Editor &amp; Run
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9.4 HAVING vs WHERE Clause -->
+    <section class="mb-5" id="agg-having">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">9.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">HAVING vs WHERE: Filtering Aggregated Data</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    One of the most frequent mistakes students make is trying to filter groups with a <code>WHERE</code> clause (e.g., <code>WHERE COUNT(*) > 2</code>). This fails because <strong>WHERE filters rows before aggregation occurs</strong>. To filter aggregated buckets, you must use <strong>HAVING</strong>.
+                </p>
+
+                <!-- Comparison Table -->
+                <div class="table-responsive my-3">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 25%;">Feature</th>
+                                <th style="width: 37.5%;" class="text-primary">WHERE Clause</th>
+                                <th style="width: 37.5%;" class="text-success">HAVING Clause</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Execution Stage</td>
+                                <td>Evaluated <strong>BEFORE</strong> rows are grouped.</td>
+                                <td>Evaluated <strong>AFTER</strong> groups are created and aggregates computed.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Level of Filtering</td>
+                                <td>Filters individual candidate records/rows.</td>
+                                <td>Filters collapsed summary groups/buckets.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Can Use Aggregates?</td>
+                                <td class="text-danger fw-bold"><i class="bi bi-x-circle me-1"></i> NO (causes Error 1111)</td>
+                                <td class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i> YES (e.g. <code>HAVING COUNT(*) >= 2</code>)</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Best Used For</td>
+                                <td>Filtering raw data like <code>status = 'Confirmed'</code> or <code>semester = 3</code>.</td>
+                                <td>Filtering aggregated results like <code>COUNT(*) > 5</code> or <code>AVG(gpa) >= 3.5</code>.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Logical Query Execution Order -->
+                <div class="p-3 bg-light rounded border my-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-sort-numeric-down me-1 text-primary"></i> Logical Execution Order in SQL:</h6>
+                    <p class="small text-muted mb-2">Notice where WHERE and HAVING fit in the engine's logical evaluation pipeline:</p>
+                    <div class="d-flex flex-wrap gap-2 text-center small font-monospace">
+                        <span class="badge bg-secondary p-2">1. FROM / JOIN</span>
+                        <span class="badge bg-primary p-2">2. WHERE (Row Filter)</span>
+                        <span class="badge bg-info text-dark p-2">3. GROUP BY</span>
+                        <span class="badge bg-success p-2">4. HAVING (Group Filter)</span>
+                        <span class="badge bg-dark p-2">5. SELECT</span>
+                        <span class="badge bg-secondary p-2">6. DISTINCT</span>
+                        <span class="badge bg-secondary p-2">7. ORDER BY</span>
+                        <span class="badge bg-secondary p-2">8. LIMIT</span>
+                    </div>
+                </div>
+
+                <!-- Executable WHERE + HAVING Example -->
+                <div class="card border shadow-sm mb-2 bg-light">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-bold text-dark"><i class="bi bi-play-circle me-1 text-success"></i> Query using both WHERE and HAVING</span>
+                        <span class="badge bg-success-subtle text-success">Filter Rows THEN Filter Groups</span>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <p class="small text-secondary mb-2">
+                            Find events that have at least <strong>2 Confirmed registrations</strong> (uses <code>WHERE</code> to filter for 'Confirmed' status, then <code>HAVING</code> to filter for counts &ge; 2):
+                        </p>
+                        <div class="bg-dark text-light p-3 rounded font-monospace small mb-3">
+<span class="text-info">SELECT</span> 
+    e.event_id,
+    e.event_title <span class="text-info">AS</span> event_name,
+    <span class="text-warning">COUNT</span>(r.registration_id) <span class="text-info">AS</span> confirmed_registrations
+<span class="text-info">FROM</span> events e
+<span class="text-info">JOIN</span> registrations r <span class="text-info">ON</span> e.event_id = r.event_id
+<span class="text-info">WHERE</span> r.status = <span class="text-success">'Confirmed'</span>    <span class="text-secondary">-- Filters rows before grouping</span>
+<span class="text-info">GROUP BY</span> e.event_id, e.event_title
+<span class="text-info">HAVING</span> confirmed_registrations &gt;= 2          <span class="text-secondary">-- Filters groups after aggregation</span>
+<span class="text-info">ORDER BY</span> confirmed_registrations <span class="text-info">DESC</span>;
+                        </div>
+
+                        <button class="btn btn-sm btn-success run-code-btn" data-sql="SELECT e.event_id, e.event_title AS event_name, COUNT(r.registration_id) AS confirmed_registrations FROM events e JOIN registrations r ON e.event_id = r.event_id WHERE r.status = 'Confirmed' GROUP BY e.event_id, e.event_title HAVING confirmed_registrations >= 2 ORDER BY confirmed_registrations DESC;">
+                            <i class="bi bi-terminal me-1"></i> Load into SQL Editor &amp; Run
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9.5 Practice Exercises -->
+    <section class="mb-5" id="agg-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">9.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 1 (Moderate)</span>
+                        <span class="text-muted small">Multi-row Aggregation</span>
+                    </div>
+                    <p class="fw-bold mb-1">Semester Distribution:</p>
+                    <p class="small text-secondary mb-2">
+                        Write a query that groups students by <code>semester</code>. Display the semester, the number of students in that semester (named <code>student_count</code>), and the minimum and maximum GPA for that semester. Sort from lowest to highest semester.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#hint-agg-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="collapse mb-2" id="hint-agg-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> Group by <code>semester</code>, use <code>COUNT(*)</code>, <code>MIN(gpa)</code>, and <code>MAX(gpa)</code>, and finish with <code>ORDER BY semester ASC</code>.
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-success run-code-btn" data-sql="SELECT semester, COUNT(*) AS student_count, MIN(gpa) AS min_gpa, MAX(gpa) AS max_gpa FROM students GROUP BY semester ORDER BY semester ASC;">
+                            <i class="bi bi-box-arrow-in-down me-1"></i> Load Solution into SQL Editor
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 2 (Advanced)</span>
+                        <span class="text-muted small">Aggregates with HAVING &amp; JOINs</span>
+                    </div>
+                    <p class="fw-bold mb-1">High-Performing Departments:</p>
+                    <p class="small text-secondary mb-2">
+                        Write a query that joins <code>departments</code> and <code>students</code> to find departments where the average student GPA is at least 3.50. Display the <code>dept_name</code> and rounded average GPA (named <code>average_gpa</code>).
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#hint-agg-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="collapse mb-2" id="hint-agg-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> Join <code>departments</code> and <code>students</code> on <code>dept_id</code>. Group by <code>d.dept_id, d.dept_name</code>. Use <code>HAVING AVG(s.gpa) >= 3.50</code>. Do not place <code>AVG(s.gpa) >= 3.50</code> in <code>WHERE</code>!
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-success run-code-btn" data-sql="SELECT d.dept_name, ROUND(AVG(s.gpa), 2) AS average_gpa FROM departments d JOIN students s ON d.dept_id = s.dept_id GROUP BY d.dept_id, d.dept_name HAVING AVG(s.gpa) >= 3.50 ORDER BY average_gpa DESC;">
+                            <i class="bi bi-box-arrow-in-down me-1"></i> Load Solution into SQL Editor
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 9.6 Knowledge Check Quiz -->
+    <section class="mb-5" id="agg-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">9.6</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Topic 9 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase3-aggregates">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. If a column contains values [4.0, 3.0, NULL, 5.0], what does <code>AVG(column)</code> compute?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_agg_0" id="q_agg_0_a" value="a">
+                            <label class="form-check-label" for="q_agg_0_a">A) (4.0 + 3.0 + 0 + 5.0) / 4 = 3.00</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_agg_0" id="q_agg_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_agg_0_b">B) (4.0 + 3.0 + 5.0) / 3 = 4.00 (NULL is completely ignored in numerator and denominator)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_agg_0" id="q_agg_0_c" value="c">
+                            <label class="form-check-label" for="q_agg_0_c">C) NULL (any calculation with NULL returns NULL)</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. What error occurs if you write <code>SELECT dept_id FROM students WHERE COUNT(*) > 2;</code>?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_agg_1" id="q_agg_1_a" value="a">
+                            <label class="form-check-label" for="q_agg_1_a">A) Table does not exist</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_agg_1" id="q_agg_1_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_agg_1_b">B) Error 1111: Invalid use of group function (aggregates cannot be evaluated in WHERE)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_agg_1" id="q_agg_1_c" value="c">
+                            <label class="form-check-label" for="q_agg_1_c">C) Division by zero</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. In standard SQL with <code>ONLY_FULL_GROUP_BY</code> enabled, which query is valid?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_agg_2" id="q_agg_2_a" value="a">
+                            <label class="form-check-label" for="q_agg_2_a">A) <code>SELECT dept_id, name, AVG(gpa) FROM students GROUP BY dept_id;</code></label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_agg_2" id="q_agg_2_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_agg_2_b">B) <code>SELECT dept_id, COUNT(*) FROM students GROUP BY dept_id;</code></label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_agg_2" id="q_agg_2_c" value="c">
+                            <label class="form-check-label" for="q_agg_2_c">C) <code>SELECT name, MIN(gpa) FROM students;</code></label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase3-aggregates">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

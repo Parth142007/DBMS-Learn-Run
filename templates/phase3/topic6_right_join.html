@@ -1,0 +1,224 @@
+<!-- ====================================================================
+     Topic 6: RIGHT JOIN (Right Outer Join)
+     NEPC42 Syllabus — Module 3: SQL & Relational Queries
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-right-join">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 6 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 15 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">6. RIGHT JOIN &mdash; Preserving All Right-Side Records</h2>
+            <p class="text-secondary mb-0">
+                Understand how Right Outer Joins preserve every single record from the right-hand table, pairing unmatched left-side columns with <code>NULL</code>, and why every <code>RIGHT JOIN</code> can be rewritten as a <code>LEFT JOIN</code>.
+            </p>
+        </div>
+    </div>
+
+    <!-- 6.1 Concept & Working -->
+    <section class="mb-5" id="rj-concept">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">6.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">How Does a RIGHT JOIN Operate?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A <strong>RIGHT JOIN</strong> (or <strong>RIGHT OUTER JOIN</strong>) is the exact mirror image of a <code>LEFT JOIN</code>. It returns <strong>all records from the right table (Table B)</strong>, along with matched records from the left table (Table A).
+                </p>
+                <div class="p-3 bg-light rounded border-start border-4 border-primary my-3">
+                    <strong class="text-primary d-block mb-1">The Right Join Rule:</strong>
+                    <span class="text-secondary small">
+                        If a row in Table B finds no matching row in Table A, all columns from Table A are set to <strong>NULL</strong>.
+                    </span>
+                </div>
+
+                <!-- Venn Diagram for RIGHT JOIN -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 6.1: RIGHT OUTER JOIN Set Representation</h6>
+                    <svg viewBox="0 0 600 200" class="img-fluid" style="max-height: 200px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Left Circle: Table A (unfilled) -->
+                        <circle cx="240" cy="100" r="80" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+                        <text x="180" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#64748b">Table A: registrations</text>
+                        
+                        <!-- Right Circle: Table B (Entirely filled) -->
+                        <circle cx="360" cy="100" r="80" fill="#22c55e" fill-opacity="0.85" stroke="#16a34a" stroke-width="2"/>
+                        <text x="420" y="98" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#ffffff">Table B: events</text>
+                        <text x="420" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#ffffff">(100% PRESERVED)</text>
+
+                        <!-- Intersection Text -->
+                        <text x="300" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#ffffff">Matching Rows</text>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 6.1:</em> The entire right table (green) is preserved. Any row in Table B with zero matches in Table A displays NULL on the left side.
+                    </p>
+                </div>
+
+                <div class="alert alert-info border-info-subtle py-2 px-3 small">
+                    <i class="bi bi-arrow-repeat text-primary me-1"></i>
+                    <strong>Industry Best Practice &mdash; Why LEFT JOIN is Preferred:</strong>
+                    <code>SELECT * FROM A RIGHT JOIN B</code> is 100% semantically equivalent to <code>SELECT * FROM B LEFT JOIN A</code>! Most professional database developers standardize on <code>LEFT JOIN</code> because reading left-to-right matches natural Western reading direction.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6.2 Practical Executable Example -->
+    <section class="mb-5" id="rj-example">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">6.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Live Verified Example: Events Without Registrations</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="small text-secondary mb-3">
+                    In our university database, <strong>Event 6 (Cybersecurity &amp; Cloud Summit 2026)</strong> was intentionally seeded with <strong>0 registrations</strong>. If we right join <code>registrations</code> with <code>events</code>, Event 6 is preserved with <code>registration_id = NULL</code>:
+                </p>
+
+                <div class="card border bg-light mb-3">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small text-dark"><i class="bi bi-terminal me-1"></i> Executable RIGHT JOIN Query:</span>
+                            <button class="btn btn-sm btn-gfg btn-load-sql" data-sql="SELECT e.event_id, e.event_title, e.capacity, r.registration_id, r.status FROM registrations r RIGHT JOIN events e ON r.event_id = e.event_id ORDER BY e.event_id ASC;">
+                                <i class="bi bi-play-fill me-1"></i> Run in SQL Editor
+                            </button>
+                        </div>
+                        <pre class="bg-dark text-white p-2 rounded small font-monospace mb-0">SELECT e.event_id, 
+       e.event_title, 
+       e.capacity, 
+       r.registration_id, 
+       r.status 
+FROM registrations r 
+RIGHT JOIN events e 
+  ON r.event_id = e.event_id 
+ORDER BY e.event_id ASC;</pre>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-light rounded border small">
+                    <strong class="text-dark d-block mb-1"><i class="bi bi-check-circle text-success me-1"></i>Result Interpretation:</strong>
+                    Events 1 through 5 show their registration records. Event 6 (Cybersecurity Summit) appears on the final row with <code>registration_id = NULL</code> and <code>status = NULL</code>, proving that it has zero attendees registered!
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 6 Exercises -->
+    <section class="mb-5" id="rj-exercises">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-success-subtle py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-success-emphasis mb-0">
+                    <i class="bi bi-mortarboard me-2"></i>RIGHT JOIN Practice Exercises
+                </h5>
+                <span class="badge bg-success text-white">Interactive Practice</span>
+            </div>
+            <div class="card-body p-4">
+                
+                <div class="border rounded p-3 mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 6.1: Convert RIGHT JOIN to Equivalent LEFT JOIN</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Beginner</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Rewrite the query <code>SELECT * FROM registrations r RIGHT JOIN events e ON r.event_id = e.event_id;</code> as an identical <code>LEFT JOIN</code> query.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-rj-1">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="SELECT e.event_title, r.registration_id, r.status FROM events e LEFT JOIN registrations r ON e.event_id = r.event_id ORDER BY e.event_id ASC;">
+                            <i class="bi bi-terminal me-1"></i> Load Solution &amp; Run
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-rj-1">
+                        <strong>Hint:</strong> Swap the table order: Put <code>events e</code> first on the left, then <code>LEFT JOIN registrations r</code>.
+                    </div>
+                </div>
+
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 6.2: Find Events with ZERO Registrations</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Intermediate</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Using a <code>RIGHT JOIN</code>, return only the title and location of events that have 0 student registrations.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-rj-2">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="SELECT e.event_title, e.location FROM registrations r RIGHT JOIN events e ON r.event_id = e.event_id WHERE r.registration_id IS NULL;">
+                            <i class="bi bi-terminal me-1"></i> Load Solution &amp; Run
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-rj-2">
+                        <strong>Hint:</strong> Add <code>WHERE r.registration_id IS NULL</code> to filter out events with registrations.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 6 Quiz -->
+    <section class="mb-4" id="rj-quiz">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary me-2">Knowledge Check</span>
+                    <h5 class="fw-bold d-inline mb-0">Topic 6 Quiz: RIGHT JOIN</h5>
+                </div>
+                <div id="quiz-rj-badge" class="badge bg-light text-dark border">Not Attempted</div>
+            </div>
+            <div class="card-body p-4" id="quiz-container-rj">
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="rj-q1">
+                    <p class="fw-semibold text-dark mb-2">1. The query <code>SELECT * FROM table_a RIGHT JOIN table_b ON table_a.id = table_b.id;</code> produces the exact same result as:</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> <code>SELECT * FROM table_a INNER JOIN table_b ON table_a.id = table_b.id;</code>
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> <code>SELECT * FROM table_b LEFT JOIN table_a ON table_b.id = table_a.id;</code>
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> <code>SELECT * FROM table_a CROSS JOIN table_b;</code>
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> <code>SELECT * FROM table_a NATURAL JOIN table_b;</code>
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-secondary btn-reset-quiz" data-quiz="rj">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Topic 6 Quiz
+                    </button>
+                    <div class="small fw-semibold text-muted" id="quiz-rj-summary">Complete the questions to record your score.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Footer -->
+    <div class="d-flex justify-content-between align-items-center my-4 p-3 bg-white rounded border shadow-sm">
+        <button class="btn btn-outline-secondary btn-sm btn-nav-topic" data-target="left-join">
+            <i class="bi bi-arrow-left me-1"></i> Previous: Topic 5 &mdash; LEFT JOIN
+        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm btn-mark-completed" data-topic="right-join">
+                <i class="bi bi-check-circle me-1"></i> Mark Topic 6 Completed
+            </button>
+            <button class="btn btn-gfg btn-sm btn-nav-topic" data-target="self-join">
+                Next: Topic 7 &mdash; SELF JOIN <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+</div>

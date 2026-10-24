@@ -114,7 +114,8 @@ def main():
         "02_create_tables.sql",
         "03_insert_sample_data.sql",
         "04_views.sql",
-        "05_triggers.sql"
+        "05_triggers.sql",
+        "07_practice_table.sql"
     ]
 
     with conn.cursor() as cursor:

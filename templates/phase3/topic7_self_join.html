@@ -1,0 +1,245 @@
+<!-- ====================================================================
+     Topic 7: SELF JOIN
+     NEPC42 Syllabus — Module 3: SQL & Relational Queries
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-self-join">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 7 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 20 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">7. SELF JOIN &mdash; Joining a Table to Itself</h2>
+            <p class="text-secondary mb-0">
+                Learn how to model self-referencing hierarchies (such as student-to-mentor or employee-to-manager) by joining two distinct logical alias instances of the exact same physical table.
+            </p>
+        </div>
+    </div>
+
+    <!-- 7.1 Concept & Why Aliases are Required -->
+    <section class="mb-5" id="sj-concept">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">7.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Why and How Do You Join a Table to Itself?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A <strong>SELF JOIN</strong> is a regular join in which a table is joined with <strong>itself</strong>. It is commonly used when records within the same table have hierarchical or associative relationships with each other &mdash; such as an employee reporting to a manager, or a junior student being mentored by a senior student.
+                </p>
+
+                <!-- Crucial Rule Callout -->
+                <div class="p-3 bg-light rounded border-start border-4 border-primary my-3">
+                    <strong class="text-primary d-block mb-1 fs-6">The Golden Rule of Self Joins &mdash; Aliases are Mandatory!</strong>
+                    <span class="text-secondary small">
+                        Because both sides of the join refer to the exact same table, you <strong>MUST assign distinct table aliases</strong> (e.g. <code>students s</code> and <code>students m</code>) so the database engine can distinguish which instance represents the student (mentee) and which instance represents the mentor!
+                    </span>
+                </div>
+
+                <!-- Self Join Diagram -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 7.1: Self-Referencing Mentor Relationship in students Table</h6>
+                    <svg viewBox="0 0 680 200" class="img-fluid" style="max-height: 210px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Table Instance 1: Mentee -->
+                        <rect x="50" y="30" width="240" height="130" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+                        <text x="170" y="55" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1e40af">Alias 's': Junior Student</text>
+                        <rect x="70" y="70" width="200" height="35" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+                        <text x="170" y="92" text-anchor="middle" font-family="Courier New, monospace" font-size="11" fill="#1f2937">student_id = 2 ('Priya')</text>
+                        <rect x="70" y="115" width="200" height="35" rx="4" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+                        <text x="170" y="137" text-anchor="middle" font-family="Courier New, monospace" font-size="11" font-weight="bold" fill="#2563eb">mentor_id = 1 (FK)</text>
+
+                        <!-- Self-Join Pointer Arc -->
+                        <path d="M 270 132 C 340 132, 340 92, 400 92" stroke="#d97706" stroke-width="3" fill="none" marker-end="url(#selfArrow)"/>
+                        <text x="345" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#b45309">ON s.mentor_id = m.student_id</text>
+
+                        <!-- Table Instance 2: Mentor -->
+                        <rect x="410" y="30" width="240" height="130" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+                        <text x="530" y="55" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#15803d">Alias 'm': Senior Mentor</text>
+                        <rect x="430" y="70" width="200" height="35" rx="4" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+                        <text x="530" y="92" text-anchor="middle" font-family="Courier New, monospace" font-size="11" font-weight="bold" fill="#16a34a">student_id = 1 (PK)</text>
+                        <rect x="430" y="115" width="200" height="35" rx="4" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+                        <text x="530" y="137" text-anchor="middle" font-family="Courier New, monospace" font-size="11" fill="#1f2937">first_name = 'Aarav'</text>
+
+                        <defs>
+                            <marker id="selfArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
+                            </marker>
+                        </defs>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 7.1:</em> The <code>students</code> table links back to itself. Priya (student_id = 2) has <code>mentor_id = 1</code>, which matches Aarav (student_id = 1).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7.2 Practical Executable Examples -->
+    <section class="mb-5" id="sj-examples">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">7.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Live Executable Examples &amp; Mentor Output</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <!-- Example 1: Students with mentors (INNER SELF JOIN) -->
+                <div class="card border bg-light mb-4">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small text-dark"><i class="bi bi-people me-1"></i> 1. List Students and Their Assigned Peer Mentors (INNER JOIN):</span>
+                            <button class="btn btn-sm btn-gfg btn-load-sql" data-sql="SELECT s.roll_no AS mentee_roll, CONCAT(s.first_name, ' ', s.last_name) AS student_name, s.semester AS student_sem, CONCAT(m.first_name, ' ', m.last_name) AS mentor_name, m.semester AS mentor_sem FROM students s INNER JOIN students m ON s.mentor_id = m.student_id ORDER BY s.roll_no ASC;">
+                                <i class="bi bi-play-fill me-1"></i> Run in SQL Editor
+                            </button>
+                        </div>
+                        <pre class="bg-dark text-white p-2 rounded small font-monospace mb-0">SELECT s.roll_no AS mentee_roll, 
+       CONCAT(s.first_name, ' ', s.last_name) AS student_name, 
+       s.semester AS student_sem, 
+       CONCAT(m.first_name, ' ', m.last_name) AS mentor_name, 
+       m.semester AS mentor_sem 
+FROM students s 
+INNER JOIN students m 
+  ON s.mentor_id = m.student_id 
+ORDER BY s.roll_no ASC;</pre>
+                    </div>
+                </div>
+
+                <!-- Example 2: All students including senior mentors without mentors (LEFT SELF JOIN) -->
+                <div class="card border bg-light">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small text-dark"><i class="bi bi-person-badge me-1"></i> 2. Include Senior Students Who Have No Mentor (LEFT SELF JOIN):</span>
+                            <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="SELECT s.roll_no, CONCAT(s.first_name, ' ', s.last_name) AS student_name, IFNULL(CONCAT(m.first_name, ' ', m.last_name), 'Senior Peer Mentor (None)') AS mentor_name FROM students s LEFT JOIN students m ON s.mentor_id = m.student_id ORDER BY s.student_id ASC;">
+                                <i class="bi bi-play-fill me-1"></i> Run in SQL Editor
+                            </button>
+                        </div>
+                        <pre class="bg-dark text-white p-2 rounded small font-monospace mb-0">SELECT s.roll_no, 
+       CONCAT(s.first_name, ' ', s.last_name) AS student_name, 
+       IFNULL(CONCAT(m.first_name, ' ', m.last_name), 'Senior Peer Mentor (None)') AS mentor_name 
+FROM students s 
+LEFT JOIN students m 
+  ON s.mentor_id = m.student_id 
+ORDER BY s.student_id ASC;</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 7 Exercises -->
+    <section class="mb-5" id="sj-exercises">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-success-subtle py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-success-emphasis mb-0">
+                    <i class="bi bi-mortarboard me-2"></i>SELF JOIN Practice Exercises
+                </h5>
+                <span class="badge bg-success text-white">Interactive Practice</span>
+            </div>
+            <div class="card-body p-4">
+                
+                <div class="border rounded p-3 mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 7.1: Find Students Mentored by Aarav Sharma</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Beginner</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Write a SELF JOIN query to return the roll number, name, and semester of all students whose mentor's first name is <code>'Aarav'</code>.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-sj-1">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="SELECT s.roll_no, s.first_name, s.semester FROM students s INNER JOIN students m ON s.mentor_id = m.student_id WHERE m.first_name = 'Aarav';">
+                            <i class="bi bi-terminal me-1"></i> Load Solution &amp; Run
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-sj-1">
+                        <strong>Hint:</strong> Add filter <code>WHERE m.first_name = 'Aarav'</code>.
+                    </div>
+                </div>
+
+                <div class="border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <h6 class="fw-bold text-dark mb-0">Exercise 7.2: Find Pairs of Students in the Same Department</h6>
+                        <span class="badge bg-secondary-subtle text-secondary">Intermediate</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Find all distinct pairs of students who are enrolled in the same department. Avoid pairing a student with themselves and avoid duplicate mirror pairs (use <code>s1.student_id &lt; s2.student_id</code>).
+                    </p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary btn-toggle-hint" data-target="hint-sj-2">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-load-sql" data-sql="SELECT s1.first_name AS student_1, s2.first_name AS student_2, s1.dept_id FROM students s1 INNER JOIN students s2 ON s1.dept_id = s2.dept_id AND s1.student_id < s2.student_id ORDER BY s1.dept_id LIMIT 10;">
+                            <i class="bi bi-terminal me-1"></i> Load Solution &amp; Run
+                        </button>
+                    </div>
+                    <div class="d-none alert alert-info py-2 px-3 small mt-2 mb-0" id="hint-sj-2">
+                        <strong>Hint:</strong> Join on <code>s1.dept_id = s2.dept_id AND s1.student_id < s2.student_id</code>.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 7 Quiz -->
+    <section class="mb-4" id="sj-quiz">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary me-2">Knowledge Check</span>
+                    <h5 class="fw-bold d-inline mb-0">Topic 7 Quiz: SELF JOIN</h5>
+                </div>
+                <div id="quiz-sj-badge" class="badge bg-light text-dark border">Not Attempted</div>
+            </div>
+            <div class="card-body p-4" id="quiz-container-sj">
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="sj-q1">
+                    <p class="fw-semibold text-dark mb-2">1. Why are table aliases strictly mandatory when executing a SELF JOIN?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> Because MySQL forbids tables with more than 5 columns.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> Because both sides of the join reference the same table; aliases allow the SQL parser to distinguish between the two logical instances.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Because table aliases automatically speed up indexing.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Aliases are optional; self joins work identically without them.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-secondary btn-reset-quiz" data-quiz="sj">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Topic 7 Quiz
+                    </button>
+                    <div class="small fw-semibold text-muted" id="quiz-sj-summary">Complete the questions to record your score.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Footer -->
+    <div class="d-flex justify-content-between align-items-center my-4 p-3 bg-white rounded border shadow-sm">
+        <button class="btn btn-outline-secondary btn-sm btn-nav-topic" data-target="right-join">
+            <i class="bi bi-arrow-left me-1"></i> Previous: Topic 6 &mdash; RIGHT JOIN
+        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm btn-mark-completed" data-topic="self-join">
+                <i class="bi bi-check-circle me-1"></i> Mark Topic 7 Completed
+            </button>
+            <button class="btn btn-gfg btn-sm btn-nav-topic" data-target="cross-join">
+                Next: Topic 8 &mdash; CROSS JOIN <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+</div>

@@ -49,6 +49,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'phase4' %}active fw-semibold text-success{% endif %}" href="/phase-4">
+                            <i class="bi bi-shield-lock-fill me-1"></i> Phase 4: Views &amp; Security
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if active_page == 'schema' %}active fw-semibold text-success{% endif %}" href="/schema">
                             <i class="bi bi-diagram-3-fill me-1"></i> Schema Inspector
                         </a>
@@ -143,12 +148,24 @@
                 <i class="bi bi-box-arrow-in-down-right"></i> 10. Nested Subqueries
             </a>
 
-            <div class="sidebar-header">Module 4: Advanced SQL</div>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4">
-                <i class="bi bi-eye"></i> Views & Security
+            <div class="sidebar-header">Module 4: Views, Triggers &amp; Security (Phase 4)</div>
+            <a href="/phase-4" class="sidebar-nav-link {% if active_page == 'phase4' and not current_topic %}active{% endif %}">
+                <i class="bi bi-award"></i> Phase 4 Dashboard
             </a>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4">
-                <i class="bi bi-lightning-charge"></i> Triggers & Procedures
+            <a href="/phase-4?topic=views" class="sidebar-nav-link {% if active_page == 'phase4' and current_topic == 'views' %}active{% endif %}">
+                <i class="bi bi-eye"></i> 1. Views &amp; Updatable Views
+            </a>
+            <a href="/phase-4?topic=triggers" class="sidebar-nav-link {% if active_page == 'phase4' and current_topic == 'triggers' %}active{% endif %}">
+                <i class="bi bi-lightning-charge"></i> 2. BEFORE &amp; AFTER Triggers
+            </a>
+            <a href="/phase-4?topic=constraints" class="sidebar-nav-link {% if active_page == 'phase4' and current_topic == 'constraints' %}active{% endif %}">
+                <i class="bi bi-shield-check"></i> 3. Database Constraints
+            </a>
+            <a href="/phase-4?topic=procedures" class="sidebar-nav-link {% if active_page == 'phase4' and current_topic == 'procedures' %}active{% endif %}">
+                <i class="bi bi-cpu"></i> 4. Stored Procedures
+            </a>
+            <a href="/phase-4?topic=security" class="sidebar-nav-link {% if active_page == 'phase4' and current_topic == 'security' %}active{% endif %}">
+                <i class="bi bi-key"></i> 5. Authorization &amp; Security
             </a>
 
             <div class="sidebar-header">Module 5: Design & Theory</div>

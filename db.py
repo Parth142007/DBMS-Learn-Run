@@ -267,8 +267,10 @@ def get_table_schema(table_name):
         }
 
 def reset_practice_table():
-    """Drops and recreates the practice_students table with 5 clean sample rows."""
+    """Drops and recreates practice_students and associated practice views with 5 clean rows."""
     setup_statements = [
+        "DROP VIEW IF EXISTS vw_practice_honor_students;",
+        "DROP VIEW IF EXISTS vw_practice_students;",
         "DROP TABLE IF EXISTS practice_students;",
         """CREATE TABLE practice_students (
             student_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -286,7 +288,9 @@ def reset_practice_table():
         ('P102', 'Ananya', 'Iyer', 'ISE', 9.10, 'Mysuru', '2026-08-01'),
         ('P103', 'Karan', 'Patel', 'ECE', 7.20, 'Bengaluru', '2026-08-02'),
         ('P104', 'Meera', 'Rao', 'CSE', 8.90, 'Mangaluru', '2026-08-02'),
-        ('P105', 'Varun', 'Deshmukh', 'MECH', 6.80, 'Hubballi', '2026-08-03');"""
+        ('P105', 'Varun', 'Deshmukh', 'MECH', 6.80, 'Hubballi', '2026-08-03');""",
+        "CREATE OR REPLACE VIEW vw_practice_students AS SELECT student_id, roll_no, first_name, last_name, dept_code, gpa, city FROM practice_students;",
+        "CREATE OR REPLACE VIEW vw_practice_honor_students AS SELECT student_id, roll_no, first_name, last_name, dept_code, gpa, city FROM practice_students WHERE gpa >= 8.00 WITH CHECK OPTION;"
     ]
     try:
         conn = get_connection(use_database=True)
@@ -294,6 +298,482 @@ def reset_practice_table():
             for stmt in setup_statements:
                 cursor.execute(stmt)
         conn.close()
-        return {"success": True, "message": "Practice table 'practice_students' successfully reset with 5 rows."}
+        return {"success": True, "message": "Practice table 'practice_students' and views successfully reset with 5 rows."}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+# ====================================================================
+# Phase 4 Database Helper Functions: Procedures, Views, Constraints, Triggers
+# ====================================================================
+
+ALLOWED_PROCEDURES = {
+    "sp_get_students_by_department": {
+        "params": ["dept_code"],
+        "description": "Returns student roster for a department sorted by GPA",
+        "has_result_set": True,
+        "has_out_params": False
+    },
+    "sp_get_event_roster": {
+        "params": ["event_id"],
+        "description": "Returns all registered attendees for a specific event",
+        "has_result_set": True,
+        "has_out_params": False
+    },
+    "sp_calculate_dept_gpa": {
+        "params": ["dept_code"],
+        "description": "Computes department GPA and headcount via OUT parameters",
+        "has_result_set": False,
+        "has_out_params": True
+    },
+    "sp_register_student_safe": {
+        "params": ["student_id", "event_id"],
+        "description": "Transactional registration check with capacity validation and OUT status",
+        "has_result_set": False,
+        "has_out_params": True
+    }
+}
+
+def call_stored_procedure(procedure_name, params=None):
+    """
+    Safely executes a whitelisted stored procedure with parameterized inputs.
+    Handles result sets and OUT parameters accurately.
+    """
+    if procedure_name not in ALLOWED_PROCEDURES:
+        return {
+            "success": False,
+            "error": f"Invalid or unauthorized procedure '{procedure_name}'. Only approved educational procedures can be executed."
+        }
+
+    proc_info = ALLOWED_PROCEDURES[procedure_name]
+    params = params or {}
+    # Normalize list/tuple params into expected dict
+    if isinstance(params, (list, tuple)):
+        param_list = list(params)
+        if procedure_name in ("sp_get_students_by_department", "sp_calculate_dept_gpa"):
+            params = {"dept_code": param_list[0] if len(param_list) > 0 else "CSE"}
+        elif procedure_name == "sp_get_event_roster":
+            params = {"event_id": param_list[0] if len(param_list) > 0 else 1}
+        elif procedure_name == "sp_register_student_safe":
+            params = {
+                "student_id": param_list[0] if len(param_list) > 0 else 1,
+                "event_id": param_list[1] if len(param_list) > 1 else 6
+            }
+        else:
+            params = {}
+
+    start_time = time.perf_counter()
+
+    conn = None
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            if procedure_name == "sp_get_students_by_department":
+                dept = str(params.get("dept_code", "CSE")).strip().upper()
+                cursor.callproc("sp_get_students_by_department", [dept])
+                columns = [c[0] for c in cursor.description] if cursor.description else []
+                raw_rows = cursor.fetchall()
+                rows = [{col: serialize_value(r[col]) for col in columns} for r in raw_rows]
+                elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+                return {
+                    "success": True,
+                    "procedure": procedure_name,
+                    "input_params": {"dept_code": dept},
+                    "columns": columns,
+                    "rows": rows,
+                    "result_sets": [rows],
+                    "out_parameters": {},
+                    "row_count": len(rows),
+                    "execution_time_ms": elapsed_ms,
+                    "message": f"Procedure '{procedure_name}' executed. Fetched {len(rows)} student records for department '{dept}' in {elapsed_ms} ms."
+                }
+
+            elif procedure_name == "sp_get_event_roster":
+                event_id = int(params.get("event_id", 1))
+                cursor.callproc("sp_get_event_roster", [event_id])
+                columns = [c[0] for c in cursor.description] if cursor.description else []
+                raw_rows = cursor.fetchall()
+                rows = [{col: serialize_value(r[col]) for col in columns} for r in raw_rows]
+                elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+                return {
+                    "success": True,
+                    "procedure": procedure_name,
+                    "input_params": {"event_id": event_id},
+                    "columns": columns,
+                    "rows": rows,
+                    "result_sets": [rows],
+                    "out_parameters": {},
+                    "row_count": len(rows),
+                    "execution_time_ms": elapsed_ms,
+                    "message": f"Procedure '{procedure_name}' executed. Fetched {len(rows)} attendee records for Event ID {event_id} in {elapsed_ms} ms."
+                }
+
+            elif procedure_name == "sp_calculate_dept_gpa":
+                dept = str(params.get("dept_code", "CSE")).strip().upper()
+                cursor.execute("SET @out_avg_gpa = 0.00, @out_count = 0;")
+                cursor.execute("CALL sp_calculate_dept_gpa(%s, @out_avg_gpa, @out_count);", (dept,))
+                cursor.execute("SELECT @out_avg_gpa AS average_gpa, @out_count AS total_students;")
+                out_row = cursor.fetchone()
+                elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+                out_params = {
+                    "out_avg_gpa": float(out_row["average_gpa"]) if out_row["average_gpa"] is not None else 0.0,
+                    "out_student_count": int(out_row["total_students"]) if out_row["total_students"] is not None else 0,
+                    "average_gpa": float(out_row["average_gpa"]) if out_row["average_gpa"] is not None else 0.0,
+                    "total_students": int(out_row["total_students"]) if out_row["total_students"] is not None else 0
+                }
+                return {
+                    "success": True,
+                    "procedure": procedure_name,
+                    "input_params": {"dept_code": dept},
+                    "out_parameters": out_params,
+                    "columns": ["dept_code", "average_gpa", "total_students"],
+                    "rows": [{
+                        "dept_code": dept,
+                        "average_gpa": out_params["out_avg_gpa"],
+                        "total_students": out_params["out_student_count"]
+                    }],
+                    "result_sets": [[{
+                        "dept_code": dept,
+                        "average_gpa": out_params["out_avg_gpa"],
+                        "total_students": out_params["out_student_count"]
+                    }]],
+                    "row_count": 1,
+                    "execution_time_ms": elapsed_ms,
+                    "message": f"Procedure '{procedure_name}' executed. OUT parameters returned for '{dept}': Avg GPA = {out_row['average_gpa']}, Total = {out_row['total_students']}."
+                }
+
+            elif procedure_name == "sp_register_student_safe":
+                student_id = int(params.get("student_id", 1))
+                event_id = int(params.get("event_id", 6))
+                cursor.execute("SET @out_status = '', @out_msg = '';")
+                cursor.execute("CALL sp_register_student_safe(%s, %s, @out_status, @out_msg);", (student_id, event_id))
+                cursor.execute("SELECT @out_status AS status, @out_msg AS message;")
+                out_row = cursor.fetchone()
+                elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+                
+                # Cleanup test registration if inserted
+                if out_row["status"] == "SUCCESS":
+                    cursor.execute("DELETE FROM registrations WHERE student_id = %s AND event_id = %s;", (student_id, event_id))
+                    cursor.execute("DELETE FROM registration_audit WHERE student_id = %s AND event_id = %s;", (student_id, event_id))
+
+                out_params = {
+                    "out_status": out_row["status"],
+                    "out_message": out_row["message"],
+                    "status": out_row["status"],
+                    "message": out_row["message"]
+                }
+                return {
+                    "success": True,
+                    "procedure": procedure_name,
+                    "input_params": {"student_id": student_id, "event_id": event_id},
+                    "out_parameters": out_params,
+                    "columns": ["student_id", "event_id", "status", "message"],
+                    "rows": [{
+                        "student_id": student_id,
+                        "event_id": event_id,
+                        "status": out_row["status"],
+                        "message": out_row["message"]
+                    }],
+                    "result_sets": [[{
+                        "student_id": student_id,
+                        "event_id": event_id,
+                        "status": out_row["status"],
+                        "message": out_row["message"]
+                    }]],
+                    "row_count": 1,
+                    "execution_time_ms": elapsed_ms,
+                    "message": f"Procedure '{procedure_name}' executed: Status={out_row['status']}, Message={out_row['message']}"
+                }
+    except Exception as e:
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        return {
+            "success": False,
+            "error": str(e),
+            "execution_time_ms": elapsed_ms
+        }
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+def get_view_inspection(view_name):
+    """Inspects a database view: definition SQL, columns, preview rows, and updatability."""
+    allowed_views = {
+        "vw_student_mentorship": {
+            "updatable": False,
+            "reason": "Contains JOIN between multiple tables (students and departments) without a unique 1:1 key mapping across all fields.",
+            "base_tables": ["students", "departments"]
+        },
+        "vw_student_event_details": {
+            "updatable": False,
+            "reason": "Complex multi-table join across registrations, students, departments, events, attendance, and feedback.",
+            "base_tables": ["registrations", "students", "departments", "events", "attendance", "feedback"]
+        },
+        "vw_department_statistics": {
+            "updatable": False,
+            "reason": "Contains aggregate functions (COUNT, AVG) and a GROUP BY clause.",
+            "base_tables": ["departments", "students", "events"]
+        },
+        "vw_event_occupancy": {
+            "updatable": False,
+            "reason": "Contains aggregate function COUNT(r.registration_id) and calculated percentage expression.",
+            "base_tables": ["events", "registrations"]
+        },
+        "vw_practice_students": {
+            "updatable": True,
+            "reason": "Simple 1:1 projection over single base table 'practice_students' with no aggregates or joins.",
+            "base_tables": ["practice_students"]
+        },
+        "vw_practice_honor_students": {
+            "updatable": True,
+            "reason": "Updatable with WITH CHECK OPTION enforced. Only rows with GPA >= 8.00 are accepted for INSERT/UPDATE.",
+            "base_tables": ["practice_students"]
+        }
+    }
+
+    if view_name not in allowed_views:
+        return {"success": False, "error": f"View '{view_name}' is not recognized."}
+
+    meta = allowed_views[view_name]
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            cursor.execute(f"SHOW CREATE VIEW `{view_name}`;")
+            create_row = cursor.fetchone()
+            create_sql = create_row.get("Create View", "")
+
+            cursor.execute(f"SELECT * FROM `{view_name}` LIMIT 5;")
+            raw_rows = cursor.fetchall()
+            columns = [c[0] for c in cursor.description] if cursor.description else []
+            rows = [{col: serialize_value(r[col]) for col in columns} for r in raw_rows]
+
+        conn.close()
+        return {
+            "success": True,
+            "view_name": view_name,
+            "create_sql": create_sql,
+            "create_statement": create_sql,
+            "updatable": meta["updatable"],
+            "is_updatable": meta["updatable"],
+            "reason": meta["reason"],
+            "updatability_reason": meta["reason"],
+            "base_tables": meta["base_tables"],
+            "columns": columns,
+            "rows": rows,
+            "sample_data": rows,
+            "row_count": len(rows)
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def test_constraint_scenario(scenario_key):
+    """
+    Executes a specific constraint test scenario on practice_students or core tables,
+    demonstrating how MySQL enforces relational integrity rules.
+    """
+    alias_map = {
+        "duplicate_pk": "primary_key",
+        "duplicate_unique": "unique",
+        "not_null_violation": "not_null",
+        "check_violation": "check",
+        "fk_violation": "foreign_key",
+        "default_test": "default"
+    }
+    normalized_key = alias_map.get(scenario_key, scenario_key)
+
+    scenarios = {
+        "primary_key": {
+            "name": "PRIMARY KEY Violation",
+            "table": "practice_students",
+            "constraint": "PRIMARY KEY (student_id)",
+            "sql": "INSERT INTO practice_students (student_id, roll_no, first_name, last_name, dept_code) VALUES (1, 'P991', 'Duplicate', 'PK', 'CSE');",
+            "explanation": "Primary keys must be strictly unique. Record with student_id = 1 already exists."
+        },
+        "unique": {
+            "name": "UNIQUE Constraint Violation",
+            "table": "practice_students",
+            "constraint": "UNIQUE (roll_no)",
+            "sql": "INSERT INTO practice_students (roll_no, first_name, last_name, dept_code) VALUES ('P101', 'Duplicate', 'Roll', 'CSE');",
+            "explanation": "The 'roll_no' column has a UNIQUE constraint. 'P101' already belongs to student Rahul Sharma."
+        },
+        "not_null": {
+            "name": "NOT NULL Violation",
+            "table": "practice_students",
+            "constraint": "NOT NULL on 'first_name'",
+            "sql": "INSERT INTO practice_students (roll_no, first_name, last_name, dept_code) VALUES ('P992', NULL, 'NullFirst', 'CSE');",
+            "explanation": "The column 'first_name' is defined as NOT NULL. MySQL rejects inserting NULL."
+        },
+        "check": {
+            "name": "CHECK Constraint Violation",
+            "table": "practice_students",
+            "constraint": "CONSTRAINT chk_practice_gpa CHECK (gpa >= 0.00 AND gpa <= 10.00)",
+            "sql": "INSERT INTO practice_students (roll_no, first_name, last_name, dept_code, gpa) VALUES ('P993', 'Invalid', 'GPA', 'CSE', 12.50);",
+            "explanation": "MySQL 8 enforces CHECK constraints. The GPA value 12.50 violates the permissible range [0.00, 10.00]."
+        },
+        "foreign_key": {
+            "name": "FOREIGN KEY Violation",
+            "table": "registrations",
+            "constraint": "CONSTRAINT fk_registrations_student FOREIGN KEY (student_id) REFERENCES students(student_id)",
+            "sql": "INSERT INTO registrations (student_id, event_id, status) VALUES (9999, 1, 'Confirmed');",
+            "explanation": "Referential integrity requires that the foreign key student_id=9999 exists in parent table 'students'. It does not exist, so insertion is rejected."
+        },
+        "default": {
+            "name": "DEFAULT Constraint Demonstration",
+            "table": "practice_students",
+            "constraint": "DEFAULT 7.50 on gpa, DEFAULT 'Bengaluru' on city",
+            "sql": "INSERT INTO practice_students (roll_no, first_name, last_name, dept_code) VALUES ('P994', 'Test', 'Defaults', 'CSE');",
+            "explanation": "When optional columns 'gpa', 'city', and 'enrollment_date' are omitted, MySQL automatically assigns their predefined DEFAULT values."
+        }
+    }
+
+    if normalized_key not in scenarios:
+        return {"success": False, "error": f"Unknown constraint scenario '{scenario_key}'."}
+
+    info = scenarios[normalized_key]
+    sql_to_run = info["sql"]
+
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            cursor.execute(sql_to_run)
+            affected = cursor.rowcount
+            # If default test succeeded, clean it up immediately
+            if normalized_key == "default":
+                cursor.execute("DELETE FROM practice_students WHERE roll_no = 'P994';")
+        conn.close()
+        return {
+            "success": True,
+            "scenario": info["name"],
+            "scenario_title": info["name"],
+            "sql": sql_to_run,
+            "attempted_sql": sql_to_run,
+            "constraint_violated": False,
+            "outcome": "PASSED (Operation Succeeded)",
+            "status_type": "success",
+            "message": "Statement executed successfully by MySQL! Default values were applied automatically.",
+            "error_message": None,
+            "explanation": info["explanation"]
+        }
+    except Exception as e:
+        return {
+            "success": True,  # Test harness successfully captured expected violation
+            "scenario": info["name"],
+            "scenario_title": info["name"],
+            "sql": sql_to_run,
+            "attempted_sql": sql_to_run,
+            "constraint_violated": True,
+            "outcome": "REJECTED by MySQL Engine (Constraint Enforced)",
+            "status_type": "danger",
+            "error": str(e),
+            "error_message": str(e),
+            "explanation": info["explanation"]
+        }
+
+def test_trigger_scenario(action):
+    """
+    Demonstrates BEFORE and AFTER trigger execution on live MySQL tables:
+    1. 'capacity_check': Tests BEFORE INSERT capacity enforcement (trg_check_event_capacity).
+    2. 'audit_log': Tests AFTER INSERT automated audit row logging (trg_audit_new_registration).
+    """
+    if action == "capacity_check":
+        # Create a temporary event with capacity 1 and 1 existing registration
+        try:
+            conn = get_connection(use_database=True)
+            with conn.cursor() as cursor:
+                # 1. Insert temporary full event
+                cursor.execute("""
+                    INSERT INTO events (event_id, event_title, event_type, event_date, location, capacity, dept_id)
+                    VALUES (999, 'Overbooked Workshop (Trigger Test)', 'Workshop', '2026-11-01', 'Room 101', 1, 1)
+                    ON DUPLICATE KEY UPDATE capacity = 1;
+                """)
+                # 2. Insert 1 confirmed registration (fills capacity to 100%)
+                cursor.execute("""
+                    INSERT INTO registrations (registration_id, student_id, event_id, status)
+                    VALUES (9991, 1, 999, 'Confirmed')
+                    ON DUPLICATE KEY UPDATE status = 'Confirmed';
+                """)
+                # 3. Attempt to register a SECOND student (Student 2) into full event
+                attempt_sql = "INSERT INTO registrations (student_id, event_id, status) VALUES (2, 999, 'Confirmed');"
+                try:
+                    cursor.execute(attempt_sql)
+                    outcome = "UNEXPECTED SUCCESS"
+                    msg = "Registration succeeded without capacity check."
+                    err = None
+                    rejected = False
+                except Exception as trigger_err:
+                    outcome = "REJECTED by BEFORE INSERT Trigger 'trg_check_event_capacity'"
+                    msg = str(trigger_err)
+                    err = str(trigger_err)
+                    rejected = True
+
+                # Cleanup test event and test registrations
+                cursor.execute("DELETE FROM registrations WHERE event_id = 999;")
+                cursor.execute("DELETE FROM registration_audit WHERE event_id = 999;")
+                cursor.execute("DELETE FROM events WHERE event_id = 999;")
+
+            conn.close()
+            return {
+                "success": True,
+                "trigger_name": "trg_check_event_capacity",
+                "trigger_fired": rejected,
+                "timing": "BEFORE INSERT",
+                "table": "registrations",
+                "attempted_sql": attempt_sql,
+                "rejected": rejected,
+                "outcome": outcome,
+                "message": msg,
+                "error_message": err or msg,
+                "explanation": "The BEFORE INSERT trigger calculated that event 999 has capacity=1 and already has 1 registration. It invoked SIGNAL SQLSTATE '45000' and aborted the transaction before the row was stored!"
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    elif action == "audit_log":
+        # Test AFTER INSERT trigger writing to registration_audit
+        try:
+            conn = get_connection(use_database=True)
+            with conn.cursor() as cursor:
+                # Insert a test registration on Event 6
+                test_sql = "INSERT INTO registrations (registration_id, student_id, event_id, status) VALUES (8888, 1, 6, 'Confirmed');"
+                cursor.execute("DELETE FROM registrations WHERE registration_id = 8888;")
+                cursor.execute("DELETE FROM registration_audit WHERE registration_id = 8888;")
+                
+                cursor.execute(test_sql)
+                
+                # Fetch the audit record automatically created by the trigger
+                cursor.execute("SELECT * FROM registration_audit WHERE registration_id = 8888;")
+                audit_row = cursor.fetchone()
+
+                # Cleanup test registration and audit record
+                cursor.execute("DELETE FROM registrations WHERE registration_id = 8888;")
+                cursor.execute("DELETE FROM registration_audit WHERE registration_id = 8888;")
+
+            conn.close()
+            audit_records = [audit_row] if audit_row else []
+            return {
+                "success": True,
+                "trigger_name": "trg_audit_new_registration",
+                "trigger_fired": True,
+                "timing": "AFTER INSERT",
+                "table": "registrations",
+                "attempted_sql": test_sql,
+                "audit_recorded": audit_row is not None,
+                "inserted_registration_id": 8888,
+                "audit_records": audit_records,
+                "audit_data": {
+                    "audit_id": audit_row["audit_id"] if audit_row else None,
+                    "registration_id": audit_row["registration_id"] if audit_row else None,
+                    "student_id": audit_row["student_id"] if audit_row else None,
+                    "event_id": audit_row["event_id"] if audit_row else None,
+                    "action_type": audit_row["action_type"] if audit_row else None,
+                    "log_time": str(audit_row["log_time"]) if audit_row else None,
+                    "details": audit_row["details"] if audit_row else None
+                } if audit_row else None,
+                "explanation": "The AFTER INSERT trigger executed immediately after the registration record was committed, automatically writing an immutable audit log entry with action_type='INSERT' and timestamp!"
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    else:
+        return {"success": False, "error": f"Unknown trigger action '{action}'."}
+

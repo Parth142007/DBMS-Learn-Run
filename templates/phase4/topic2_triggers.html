@@ -1,0 +1,498 @@
+<!-- ====================================================================
+     Topic 2: BEFORE and AFTER Triggers
+     NEPC42 Syllabus — Module 4: Views, Triggers & Security
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-triggers">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 2 of 5</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 30 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">2. BEFORE &amp; AFTER Database Triggers</h2>
+            <p class="text-secondary mb-0">
+                Master event-driven database programming in MySQL 8 &mdash; how automated triggers enforce complex business constraints, generate immutable audit trails, leverage <code>NEW</code> and <code>OLD</code> pseudorecords, and handle runtime exceptions using <code>SIGNAL SQLSTATE</code>.
+            </p>
+        </div>
+    </div>
+
+    <!-- 2.1 Introduction to Triggers -->
+    <section class="mb-5" id="triggers-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is a Database Trigger?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A <strong>database trigger</strong> is a specialized stored program in MySQL that <strong>automatically fires (executes)</strong> in response to a specific Data Manipulation Language (DML) event on a particular base table. 
+                </p>
+                <p class="text-secondary">
+                    Unlike standard stored procedures, a trigger <strong>cannot be called manually</strong> (there is no <code>CALL my_trigger()</code>). Instead, it runs automatically whenever an <code>INSERT</code>, <code>UPDATE</code>, or <code>DELETE</code> statement affects rows in the bound table.
+                </p>
+
+                <!-- Core Trigger Concept Diagram / Flow -->
+                <div class="p-3 bg-light rounded border my-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Trigger Execution Lifecycle</h6>
+                    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-2 text-center small font-monospace">
+                        <div class="p-2 border rounded bg-white shadow-sm flex-fill">
+                            <span class="badge bg-secondary mb-1">Step 1</span>
+                            <div>DML Issued (<code>INSERT</code> / <code>UPDATE</code>)</div>
+                        </div>
+                        <i class="bi bi-arrow-right text-muted d-none d-md-block fs-5"></i>
+                        <i class="bi bi-arrow-down text-muted d-md-none fs-5"></i>
+                        <div class="p-2 border rounded bg-warning-subtle shadow-sm flex-fill">
+                            <span class="badge bg-warning text-dark mb-1">Step 2 (Optional)</span>
+                            <div class="fw-bold text-dark">BEFORE Trigger</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">Validate / Mutate NEW</div>
+                        </div>
+                        <i class="bi bi-arrow-right text-muted d-none d-md-block fs-5"></i>
+                        <i class="bi bi-arrow-down text-muted d-md-none fs-5"></i>
+                        <div class="p-2 border rounded bg-primary-subtle shadow-sm flex-fill">
+                            <span class="badge bg-primary mb-1">Step 3</span>
+                            <div class="fw-bold text-primary">Engine Row Write</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">Written to InnoDB Page</div>
+                        </div>
+                        <i class="bi bi-arrow-right text-muted d-none d-md-block fs-5"></i>
+                        <i class="bi bi-arrow-down text-muted d-md-none fs-5"></i>
+                        <div class="p-2 border rounded bg-success-subtle shadow-sm flex-fill">
+                            <span class="badge bg-success mb-1">Step 4 (Optional)</span>
+                            <div class="fw-bold text-success">AFTER Trigger</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">Audit / Secondary Log</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison: Triggers vs Application Validation -->
+                <div class="table-responsive my-3">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 25%;">Feature</th>
+                                <th style="width: 37.5%;" class="text-success">Database Trigger</th>
+                                <th style="width: 37.5%;" class="text-primary">Application Validation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Bypass Immunity</td>
+                                <td><span class="badge bg-success">100% Unbypassable</span> &mdash; runs even if a developer opens MySQL Workbench or writes raw CLI queries.</td>
+                                <td>Bypassed whenever direct database tools, migration scripts, or 3rd-party services query MySQL.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Execution Location</td>
+                                <td>Directly inside the MySQL database storage engine (zero network latency for row checks).</td>
+                                <td>Inside web server process (Python/Flask, Java, Node.js). Requires multiple network round-trips.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Best Use Case</td>
+                                <td>Strict business invariants, audit logging, multi-row stock/capacity limits, security checks.</td>
+                                <td>UI feedback, formatting email strings, password hashing, file upload handling.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.2 Trigger Types & NEW / OLD Pseudorecords -->
+    <section class="mb-5" id="triggers-types">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The 6 Trigger Types &amp; NEW / OLD Records</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    In MySQL, every trigger combines one of <strong>two timings</strong> (<code>BEFORE</code> or <code>AFTER</code>) with one of <strong>three DML events</strong> (<code>INSERT</code>, <code>UPDATE</code>, or <code>DELETE</code>), yielding exactly <strong>6 trigger permutations</strong>:
+                </p>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-warning text-dark mb-2">BEFORE INSERT</span>
+                            <p class="small text-muted mb-0">Fires before new tuple is saved. Best for validating constraints or transforming input data (e.g. setting <code>NEW.email = LOWER(NEW.email)</code>).</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-success mb-2">AFTER INSERT</span>
+                            <p class="small text-muted mb-0">Fires immediately after a tuple is saved. Ideal for audit logging, notifying related tables, or writing to history logs.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-warning text-dark mb-2">BEFORE UPDATE</span>
+                            <p class="small text-muted mb-0">Fires prior to changing columns. Allows comparing <code>OLD</code> vs <code>NEW</code> values (e.g., preventing a student's GPA from dropping below 0).</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-success mb-2">AFTER UPDATE</span>
+                            <p class="small text-muted mb-0">Fires after row modification. Ideal for recording what changed, who changed it, and tracking historic value differences.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-warning-subtle h-100">
+                            <span class="badge bg-danger mb-2">BEFORE DELETE</span>
+                            <p class="small text-muted mb-0">Fires prior to row deletion. Useful for verifying deletion prerequisites or blocking deletion of critical records.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-secondary mb-2">AFTER DELETE</span>
+                            <p class="small text-muted mb-0">Fires after row removal. Used to copy the removed record into an archive table or update summary statistics.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pseudorecords Matrix -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-table text-primary me-2"></i>Availability of NEW and OLD Pseudorecords</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-start">DML Event</th>
+                                <th><code>OLD.column</code></th>
+                                <th><code>NEW.column</code></th>
+                                <th class="text-start">Can Modify <code>NEW.col</code> in BEFORE?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-start fw-bold text-primary">INSERT</td>
+                                <td><span class="badge bg-light text-muted border">NULL / Unavailable</span></td>
+                                <td><span class="badge bg-success">Available</span> (incoming row values)</td>
+                                <td class="text-start text-success"><i class="bi bi-check-circle-fill me-1"></i> Yes (in BEFORE INSERT only)</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start fw-bold text-warning-emphasis">UPDATE</td>
+                                <td><span class="badge bg-warning text-dark">Available</span> (existing values before update)</td>
+                                <td><span class="badge bg-success">Available</span> (proposed new values)</td>
+                                <td class="text-start text-success"><i class="bi bi-check-circle-fill me-1"></i> Yes (in BEFORE UPDATE only)</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start fw-bold text-danger">DELETE</td>
+                                <td><span class="badge bg-danger">Available</span> (values of row being deleted)</td>
+                                <td><span class="badge bg-light text-muted border">NULL / Unavailable</span></td>
+                                <td class="text-start text-muted"><i class="bi bi-dash-circle me-1"></i> No (no incoming row exists)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.3 Syntax & Working College Examples -->
+    <section class="mb-5" id="triggers-syntax">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Syntax &amp; Live Project Examples</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Below are the actual triggers defined in our college database schema (<code>database/05_triggers.sql</code>):
+                </p>
+
+                <!-- Example 1: BEFORE INSERT Capacity Check -->
+                <div class="mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-shield-check text-warning me-1"></i> 1. BEFORE INSERT: Event Capacity Enforcement (<code>trg_check_event_capacity</code>)</h6>
+                        <span class="badge bg-warning text-dark">Validation &amp; Error Signal</span>
+                    </div>
+                    <div class="bg-dark text-light p-3 rounded font-monospace small">
+<span class="text-secondary">-- DELIMITER command tells MySQL CLI to not terminate the statement at internal semicolons</span>
+<span class="text-info">DELIMITER</span> $$
+
+<span class="text-info">CREATE TRIGGER</span> trg_check_event_capacity
+<span class="text-warning">BEFORE INSERT</span> <span class="text-info">ON</span> registrations
+<span class="text-info">FOR EACH ROW</span>
+<span class="text-info">BEGIN</span>
+    <span class="text-info">DECLARE</span> current_count <span class="text-info">INT</span>;
+    <span class="text-info">DECLARE</span> max_allowed <span class="text-info">INT</span>;
+
+    <span class="text-secondary">-- 1. Fetch current count of active registrations</span>
+    <span class="text-info">SELECT</span> <span class="text-warning">COUNT</span>(*) <span class="text-info">INTO</span> current_count
+    <span class="text-info">FROM</span> registrations
+    <span class="text-info">WHERE</span> event_id = <span class="text-success">NEW</span>.event_id;
+
+    <span class="text-secondary">-- 2. Fetch maximum capacity configured for this event</span>
+    <span class="text-info">SELECT</span> max_capacity <span class="text-info">INTO</span> max_allowed
+    <span class="text-info">FROM</span> events
+    <span class="text-info">WHERE</span> event_id = <span class="text-success">NEW</span>.event_id;
+
+    <span class="text-secondary">-- 3. If capacity reached, abort transaction with standard SQLSTATE 45000</span>
+    <span class="text-info">IF</span> current_count &gt;= max_allowed <span class="text-info">THEN</span>
+        <span class="text-danger">SIGNAL SQLSTATE '45000'</span>
+        <span class="text-info">SET</span> MESSAGE_TEXT = <span class="text-success">'Registration rejected: Event is already at full capacity!'</span>;
+    <span class="text-info">END IF</span>;
+<span class="text-info">END</span>$$
+
+<span class="text-info">DELIMITER</span> ;
+                    </div>
+                </div>
+
+                <!-- Example 2: AFTER INSERT Audit Trail -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="fw-bold text-dark mb-0"><i class="bi bi-journal-text text-success me-1"></i> 2. AFTER INSERT: Security Audit Logging (<code>trg_audit_new_registration</code>)</h6>
+                        <span class="badge bg-success">Audit Trail Logging</span>
+                    </div>
+                    <div class="bg-dark text-light p-3 rounded font-monospace small">
+<span class="text-info">DELIMITER</span> $$
+
+<span class="text-info">CREATE TRIGGER</span> trg_audit_new_registration
+<span class="text-success">AFTER INSERT</span> <span class="text-info">ON</span> registrations
+<span class="text-info">FOR EACH ROW</span>
+<span class="text-info">BEGIN</span>
+    <span class="text-secondary">-- Automatically insert audit metadata into the auxiliary security table</span>
+    <span class="text-info">INSERT INTO</span> registration_audit (
+        registration_id, 
+        student_id, 
+        event_id, 
+        action_type, 
+        performed_at, 
+        performed_by
+    )
+    <span class="text-info">VALUES</span> (
+        <span class="text-success">NEW</span>.registration_id,
+        <span class="text-success">NEW</span>.student_id,
+        <span class="text-success">NEW</span>.event_id,
+        <span class="text-success">'INSERT'</span>,
+        <span class="text-warning">NOW</span>(),
+        <span class="text-warning">USER</span>()
+    );
+<span class="text-info">END</span>$$
+
+<span class="text-info">DELIMITER</span> ;
+                    </div>
+                </div>
+
+                <div class="alert alert-warning small mb-0">
+                    <strong class="d-block mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Critical MySQL Trigger Limitation: Error 1442 (Mutating Table)</strong>
+                    In MySQL, a trigger <strong>cannot modify the same table that caused it to fire</strong>. For instance, an <code>AFTER INSERT ON registrations</code> cannot execute an <code>UPDATE registrations SET ...</code>. Attempting this throws <code>ERROR 1442: Can't update table 'registrations' in stored function/trigger because it is already used by statement which invoked it</code> to prevent infinite recursion.
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.4 Interactive Trigger Laboratory -->
+    <section class="mb-5" id="triggers-lab">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Live Interactive Trigger Laboratory</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Trigger Execution &amp; Audit Trail Sandbox</span>
+                <span class="badge bg-success-subtle text-success">Live MySQL Engine</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-muted mb-3">
+                    Test how our live MySQL database triggers respond to incoming DML actions. Trigger 1 enforces event room capacity, while Trigger 2 automatically populates the <code>registration_audit</code> log:
+                </p>
+
+                <div class="row g-3">
+                    
+                    <!-- Scenario 1: BEFORE INSERT Rejection -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-danger">BEFORE INSERT Test</span>
+                                <span class="small text-muted">trg_check_event_capacity</span>
+                            </div>
+                            <h6 class="fw-bold mb-1">Simulate Over-Capacity Registration</h6>
+                            <p class="small text-muted mb-2">
+                                Event 4 (<em>"Hackathon 2024"</em>) has a capacity of 4 seats and is already full. Attempting to insert a 5th registration will trigger <code>SIGNAL SQLSTATE '45000'</code>:
+                            </p>
+                            <div class="bg-dark text-light p-2 rounded small font-monospace mb-2">
+INSERT INTO registrations 
+  (student_id, event_id, registration_date, attendance_status) 
+VALUES (1, 4, '2024-03-01', 'Registered');
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger w-100 btn-run-trigger-test" data-action="capacity_check">
+                                <i class="bi bi-slash-circle me-1"></i> Test Capacity Trigger Rejection
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Scenario 2: AFTER INSERT Audit Log -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-success">AFTER INSERT Test</span>
+                                <span class="small text-muted">trg_audit_new_registration</span>
+                            </div>
+                            <h6 class="fw-bold mb-1">Inspect Audit Row Creation</h6>
+                            <p class="small text-muted mb-2">
+                                Insert a test registration on an open event and inspect the row automatically recorded in <code>registration_audit</code>:
+                            </p>
+                            <div class="bg-dark text-light p-2 rounded small font-monospace mb-2">
+-- Trigger automatically inserts:
+INSERT INTO registration_audit 
+  (registration_id, student_id, event_id, action_type, performed_by)
+VALUES (...);
+                            </div>
+                            <button class="btn btn-sm btn-outline-success w-100 btn-run-trigger-test" data-action="audit_log">
+                                <i class="bi bi-journal-arrow-down me-1"></i> Test Audit Log Trigger
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Live Results Area -->
+                <div id="trigger-test-results" class="mt-4 p-3 bg-light rounded border small font-monospace" style="min-height: 120px;">
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-cpu fs-3 d-block mb-1"></i>
+                        Click one of the trigger test buttons above to execute real DML against MySQL 8.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.5 Practice Exercises -->
+    <section class="mb-5" id="triggers-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 2.1 (Beginner)</span>
+                        <span class="text-muted small">BEFORE UPDATE</span>
+                    </div>
+                    <p class="fw-bold mb-1">Prevent GPA Decreasing Below Zero:</p>
+                    <p class="small text-secondary mb-2">
+                        Write a <code>BEFORE UPDATE</code> trigger named <code>trg_validate_gpa</code> on table <code>students</code> that checks if <code>NEW.gpa &lt; 0.00</code>. If so, raise an error with <code>SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'GPA cannot be negative';</code>.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-trg-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-trg-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong><br>
+                            <code>CREATE TRIGGER trg_validate_gpa BEFORE UPDATE ON students FOR EACH ROW BEGIN IF NEW.gpa &lt; 0.00 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'GPA cannot be negative'; END IF; END;</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 2.2 (Advanced)</span>
+                        <span class="text-muted small">AFTER DELETE</span>
+                    </div>
+                    <p class="fw-bold mb-1">Student Deletion Archive Trigger:</p>
+                    <p class="small text-secondary mb-2">
+                        Explain why an <code>AFTER DELETE</code> trigger cannot use <code>NEW.student_id</code>, and write the SQL statement to copy the deleted student's <code>OLD.student_id</code>, <code>OLD.roll_no</code>, and deletion timestamp into an archive table named <code>deleted_students</code>.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-trg-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-trg-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> When a row is deleted, there is no "new" incoming row &mdash; only the row that previously existed (<code>OLD</code>)!<br>
+                            <code>CREATE TRIGGER trg_archive_student AFTER DELETE ON students FOR EACH ROW BEGIN INSERT INTO deleted_students(student_id, roll_no, deleted_at) VALUES (OLD.student_id, OLD.roll_no, NOW()); END;</code>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.6 Topic 2 Knowledge Check Quiz -->
+    <section class="mb-5" id="triggers-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.6</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Topic 2 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase4-triggers">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. Which pseudorecord is available inside an <code>AFTER DELETE</code> trigger in MySQL?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_trg_0" id="q_trg_0_a" value="a">
+                            <label class="form-check-label" for="q_trg_0_a">A) Both <code>NEW</code> and <code>OLD</code></label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_trg_0" id="q_trg_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_trg_0_b">B) Only <code>OLD</code></label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_trg_0" id="q_trg_0_c" value="c">
+                            <label class="form-check-label" for="q_trg_0_c">C) Only <code>NEW</code></label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. What happens if a <code>BEFORE INSERT</code> trigger raises an unhandled error using <code>SIGNAL SQLSTATE '45000'</code>?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_trg_1" id="q_trg_1_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_trg_1_a">A) The entire DML statement is aborted and any transaction changes are rolled back</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_trg_1" id="q_trg_1_b" value="b">
+                            <label class="form-check-label" for="q_trg_1_b">B) The row is inserted anyway with a warning logged in MySQL error.log</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_trg_1" id="q_trg_1_c" value="c">
+                            <label class="form-check-label" for="q_trg_1_c">C) The trigger is automatically deleted from the schema</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. Why can't a trigger attached to table <code>students</code> execute an <code>UPDATE students SET ...</code> in MySQL?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_trg_2" id="q_trg_2_a" value="a">
+                            <label class="form-check-label" for="q_trg_2_a">A) Triggers can only execute SELECT queries</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_trg_2" id="q_trg_2_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_trg_2_b">B) MySQL prevents mutating the triggering table (Error 1442) to avoid infinite recursion loops</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_trg_2" id="q_trg_2_c" value="c">
+                            <label class="form-check-label" for="q_trg_2_c">C) Because UPDATE triggers can only run on Views</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase4-triggers">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

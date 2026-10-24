@@ -1,0 +1,485 @@
+<!-- ====================================================================
+     Topic 4: Stored Procedures
+     NEPC42 Syllabus — Module 4: Views, Triggers & Security
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-procedures">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 4 of 5</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 30 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">4. MySQL Stored Procedures</h2>
+            <p class="text-secondary mb-0">
+                Explore procedural database programming in MySQL 8 &mdash; discover precompiled routines, <code>IN</code>/<code>OUT</code>/<code>INOUT</code> parameters, local variable declarations, <code>IF/ELSE</code> control structures, and execute live stored procedures in an interactive laboratory.
+            </p>
+        </div>
+    </div>
+
+    <!-- 4.1 Introduction to Stored Procedures -->
+    <section class="mb-5" id="procedures-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is a Stored Procedure?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A <strong>stored procedure</strong> is a set of precompiled SQL statements and procedural control logic (such as variable declarations, conditionals, and loops) stored directly inside the MySQL database catalog and executed using the <code>CALL</code> statement.
+                </p>
+
+                <!-- Comparison: Procedure vs Function -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-code-slash text-primary me-2"></i>Stored Procedure vs User-Defined Function (UDF)</h6>
+                <div class="table-responsive my-3">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 25%;">Criterion</th>
+                                <th style="width: 37.5%;" class="text-success">Stored Procedure (<code>CALL</code>)</th>
+                                <th style="width: 37.5%;" class="text-primary">Stored Function (<code>RETURN</code>)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Invocation</td>
+                                <td>Invoked via <code>CALL proc_name(args);</code></td>
+                                <td>Called inline inside expressions: <code>SELECT func(col) FROM t;</code></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Return Value</td>
+                                <td>Can return <strong>0, 1, or multiple result sets</strong>, plus multiple <code>OUT</code> parameters.</td>
+                                <td>Must return <strong>exactly one scalar value</strong> via the <code>RETURN</code> keyword.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Usage in SQL Queries</td>
+                                <td>Cannot be used in <code>SELECT</code>, <code>WHERE</code>, or <code>HAVING</code> clauses.</td>
+                                <td>Can be embedded anywhere a column expression is permitted.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">DML Execution</td>
+                                <td>Fully permits <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, and DDL operations.</td>
+                                <td>Strict limitations on mutating table states in standard queries.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 3 Major Advantages -->
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-success mb-2">1. Reduced Network Traffic</span>
+                            <p class="small text-muted mb-0">Instead of sending 20 separate SQL queries over the network, the client sends a single <code>CALL sp(...)</code> string. Processing occurs locally inside the database server.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-primary mb-2">2. Security Encapsulation</span>
+                            <p class="small text-muted mb-0">Users can be granted <code>EXECUTE</code> permissions on a procedure without granting direct <code>SELECT</code> or <code>UPDATE</code> access to underlying sensitive tables.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-warning text-dark mb-2">3. Precompiled Execution Plan</span>
+                            <p class="small text-muted mb-0">MySQL parses and optimizes the procedure once, caching execution structures in memory for faster repeated invocations.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.2 Parameter Modes & Syntax -->
+    <section class="mb-5" id="procedures-syntax">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Procedure Syntax &amp; Parameter Modes</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Parameter Modes -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-box-arrow-in-right text-success me-2"></i>Parameter Modes: IN, OUT, and INOUT</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-info text-dark mb-2">IN (Default)</span>
+                            <h6 class="fw-bold mb-1">Input Only</h6>
+                            <p class="small text-muted mb-0">Passes a value from caller into the procedure. The procedure can inspect the value but changes inside do not affect the caller's variable.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-success mb-2">OUT</span>
+                            <h6 class="fw-bold mb-1">Output Only</h6>
+                            <p class="small text-muted mb-0">Initial value is NULL upon entering. The procedure writes results into it, which are returned back to caller's session variable.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-warning text-dark mb-2">INOUT</span>
+                            <h6 class="fw-bold mb-1">Bidirectional</h6>
+                            <p class="small text-muted mb-0">Passes an initial value into the procedure, allows the procedure to modify it, and returns the modified result back to caller.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Syntax Breakdown -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-terminal text-primary me-2"></i>Anatomy of CREATE PROCEDURE</h6>
+                <div class="bg-dark text-light p-3 rounded font-monospace small mb-3">
+<span class="text-info">DELIMITER</span> //
+
+<span class="text-info">CREATE PROCEDURE</span> sp_calculate_dept_gpa (
+    <span class="text-warning">IN</span> in_dept_code <span class="text-info">VARCHAR</span>(10),
+    <span class="text-warning">OUT</span> out_avg_gpa <span class="text-info">DECIMAL</span>(3,2),
+    <span class="text-warning">OUT</span> out_student_count <span class="text-info">INT</span>
+)
+<span class="text-info">BEGIN</span>
+    <span class="text-secondary">-- 1. Declare local variables (must be declared at top of BEGIN block)</span>
+    <span class="text-info">DECLARE</span> v_dept_id <span class="text-info">INT</span>;
+
+    <span class="text-secondary">-- 2. Fetch department primary key</span>
+    <span class="text-info">SELECT</span> dept_id <span class="text-info">INTO</span> v_dept_id
+    <span class="text-info">FROM</span> departments
+    <span class="text-info">WHERE</span> dept_code = in_dept_code;
+
+    <span class="text-secondary">-- 3. Calculate metrics and assign directly to OUT parameters</span>
+    <span class="text-info">SELECT</span> 
+        <span class="text-warning">IFNULL</span>(<span class="text-warning">AVG</span>(gpa), 0.00),
+        <span class="text-warning">COUNT</span>(*)
+    <span class="text-info">INTO</span> out_avg_gpa, out_student_count
+    <span class="text-info">FROM</span> students
+    <span class="text-info">WHERE</span> dept_id = v_dept_id;
+<span class="text-info">END</span> //
+
+<span class="text-info">DELIMITER</span> ;
+
+<span class="text-secondary">-- Calling the procedure with session variables:</span>
+<span class="text-info">CALL</span> sp_calculate_dept_gpa(<span class="text-success">'CSE'</span>, @avg_gpa, @count);
+<span class="text-info">SELECT</span> @avg_gpa <span class="text-info">AS</span> CSE_Avg_GPA, @count <span class="text-info">AS</span> Total_Students;
+                </div>
+
+                <!-- Inspection & Management -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-tools text-secondary me-2"></i>Procedure Inspection &amp; Lifecycle Commands</h6>
+                <div class="bg-light p-3 rounded border font-monospace small">
+<div><span class="text-primary">SHOW PROCEDURE STATUS</span> WHERE Db = DATABASE(); <span class="text-muted">-- List all procedures in current DB</span></div>
+<div><span class="text-primary">SHOW CREATE PROCEDURE</span> sp_calculate_dept_gpa; <span class="text-muted">-- View exact source code</span></div>
+<div><span class="text-primary">DROP PROCEDURE IF EXISTS</span> sp_calculate_dept_gpa; <span class="text-muted">-- Safely delete routine</span></div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.3 Practical Procedures from Project Schema -->
+    <section class="mb-5" id="procedures-examples">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Live College Schema Stored Procedures</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Our application includes four pre-installed, verified stored procedures in <code>database/08_stored_procedures.sql</code>:
+                </p>
+
+                <div class="accordion" id="accordionProcedures">
+                    
+                    <!-- Procedure 1 -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingProc1">
+                            <button class="accordion-button collapsed fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProc1">
+                                1. sp_get_students_by_department(IN in_dept_code VARCHAR(10))
+                            </button>
+                        </h2>
+                        <div id="collapseProc1" class="accordion-collapse collapse" data-bs-parent="#accordionProcedures">
+                            <div class="accordion-body bg-light">
+                                <p class="small text-muted mb-2">Accepts a department code (e.g. <code>'CSE'</code>) and returns all enrolled students with mentor names via a multi-table JOIN.</p>
+                                <div class="bg-dark text-light p-2 rounded small font-monospace">
+CREATE PROCEDURE sp_get_students_by_department(IN in_dept_code VARCHAR(10))
+BEGIN
+    SELECT s.student_id, s.roll_no, CONCAT(s.first_name, ' ', s.last_name) AS student_name,
+           s.semester, s.gpa, d.dept_name,
+           IFNULL(CONCAT(m.first_name, ' ', m.last_name), 'No Mentor') AS mentor_name
+    FROM students s
+    INNER JOIN departments d ON s.dept_id = d.dept_id
+    LEFT JOIN students m ON s.mentor_id = m.student_id
+    WHERE d.dept_code = in_dept_code
+    ORDER BY s.roll_no ASC;
+END;
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Procedure 2 -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingProc2">
+                            <button class="accordion-button collapsed fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProc2">
+                                2. sp_get_event_roster(IN in_event_id INT)
+                            </button>
+                        </h2>
+                        <div id="collapseProc2" class="accordion-collapse collapse" data-bs-parent="#accordionProcedures">
+                            <div class="accordion-body bg-light">
+                                <p class="small text-muted mb-2">Returns the complete attendee roster and registration status for a designated event ID.</p>
+                                <div class="bg-dark text-light p-2 rounded small font-monospace">
+CREATE PROCEDURE sp_get_event_roster(IN in_event_id INT)
+BEGIN
+    SELECT e.event_name, e.event_date, s.roll_no,
+           CONCAT(s.first_name, ' ', s.last_name) AS attendee_name,
+           r.registration_date, r.attendance_status
+    FROM registrations r
+    INNER JOIN events e ON r.event_id = e.event_id
+    INNER JOIN students s ON r.student_id = s.student_id
+    WHERE r.event_id = in_event_id
+    ORDER BY r.registration_date ASC;
+END;
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Procedure 3 -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingProc3">
+                            <button class="accordion-button collapsed fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProc3">
+                                3. sp_register_student_safe(IN student_id, IN event_id, OUT status, OUT message)
+                            </button>
+                        </h2>
+                        <div id="collapseProc3" class="accordion-collapse collapse" data-bs-parent="#accordionProcedures">
+                            <div class="accordion-body bg-light">
+                                <p class="small text-muted mb-2">Encapsulates business rules: checks if student already registered, checks event capacity, and performs safe atomic registration.</p>
+                                <div class="bg-dark text-light p-2 rounded small font-monospace">
+CREATE PROCEDURE sp_register_student_safe(
+    IN in_student_id INT, IN in_event_id INT,
+    OUT out_status VARCHAR(20), OUT out_message VARCHAR(150)
+)
+BEGIN
+    DECLARE v_exists INT;
+    DECLARE v_curr_count INT;
+    DECLARE v_max_cap INT;
+
+    SELECT COUNT(*) INTO v_exists FROM registrations 
+    WHERE student_id = in_student_id AND event_id = in_event_id;
+
+    IF v_exists > 0 THEN
+        SET out_status = 'REJECTED';
+        SET out_message = 'Student is already registered for this event.';
+    ELSE
+        SELECT COUNT(*) INTO v_curr_count FROM registrations WHERE event_id = in_event_id;
+        SELECT max_capacity INTO v_max_cap FROM events WHERE event_id = in_event_id;
+
+        IF v_curr_count >= v_max_cap THEN
+            SET out_status = 'REJECTED';
+            SET out_message = 'Event capacity reached.';
+        ELSE
+            INSERT INTO registrations (student_id, event_id, registration_date, attendance_status)
+            VALUES (in_student_id, in_event_id, CURDATE(), 'Registered');
+            SET out_status = 'SUCCESS';
+            SET out_message = 'Registration successfully completed.';
+        END IF;
+    END IF;
+END;
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.4 Interactive Procedure Laboratory -->
+    <section class="mb-5" id="procedures-lab">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Live Interactive Procedure Laboratory</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="fw-bold"><i class="bi bi-play-btn-fill text-success me-2"></i>Stored Procedure Execution Console</span>
+                <span class="badge bg-success-subtle text-success">Live MySQL 8 Engine</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-muted mb-3">
+                    Choose one of the database's live stored procedures, provide arguments, and execute the routine directly against MySQL:
+                </p>
+
+                <!-- Procedure Selection Form -->
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold text-dark">Select Stored Procedure:</label>
+                        <select class="form-select form-select-sm" id="select-procedure">
+                            <option value="sp_get_students_by_department" selected>sp_get_students_by_department (IN dept_code)</option>
+                            <option value="sp_get_event_roster">sp_get_event_roster (IN event_id)</option>
+                            <option value="sp_calculate_dept_gpa">sp_calculate_dept_gpa (IN dept_code, OUT avg, OUT count)</option>
+                            <option value="sp_register_student_safe">sp_register_student_safe (IN student_id, IN event_id, OUT status, OUT msg)</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Parameter Input Container -->
+                    <div class="col-md-4" id="procedure-params-container">
+                        <label class="form-label small fw-bold text-dark" id="lbl-param1">Department Code (IN):</label>
+                        <input type="text" class="form-control form-control-sm font-monospace" id="input-param1" value="CSE" placeholder="e.g. CSE, ECE, MECH">
+                        <input type="hidden" id="input-param2" value="">
+                    </div>
+
+                    <div class="col-md-3">
+                        <button class="btn btn-success btn-sm w-100" id="btn-call-procedure">
+                            <i class="bi bi-lightning-fill me-1"></i> Call Stored Procedure
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Results Area -->
+                <div id="procedure-results" class="p-3 bg-light rounded border small font-monospace" style="min-height: 140px;">
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-terminal fs-3 d-block mb-1"></i>
+                        Click "Call Stored Procedure" to execute the routine and inspect live MySQL output.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.5 Practice Exercises -->
+    <section class="mb-5" id="procedures-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 4.1 (Beginner)</span>
+                        <span class="text-muted small">IN Parameter Procedure</span>
+                    </div>
+                    <p class="fw-bold mb-1">Students by Minimum GPA:</p>
+                    <p class="small text-secondary mb-2">
+                        Write a stored procedure named <code>sp_filter_by_min_gpa</code> that accepts <code>IN min_gpa DECIMAL(3,2)</code> and returns all students who have <code>gpa &gt;= min_gpa</code> ordered by GPA descending.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-proc-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-proc-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong><br>
+                            <code>CREATE PROCEDURE sp_filter_by_min_gpa(IN min_gpa DECIMAL(3,2)) BEGIN SELECT student_id, roll_no, first_name, gpa FROM students WHERE gpa &gt;= min_gpa ORDER BY gpa DESC; END;</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 4.2 (Advanced)</span>
+                        <span class="text-muted small">OUT Parameter &amp; Logic</span>
+                    </div>
+                    <p class="fw-bold mb-1">Count Registrations Procedure with OUT Parameter:</p>
+                    <p class="small text-secondary mb-2">
+                        Write a procedure named <code>sp_count_student_events</code> that accepts <code>IN p_student_id INT</code> and assigns the total number of events the student registered for into an <code>OUT p_total INT</code> parameter.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-proc-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-proc-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong><br>
+                            <code>CREATE PROCEDURE sp_count_student_events(IN p_student_id INT, OUT p_total INT) BEGIN SELECT COUNT(*) INTO p_total FROM registrations WHERE student_id = p_student_id; END;</code>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.6 Topic 4 Knowledge Check Quiz -->
+    <section class="mb-5" id="procedures-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.6</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Topic 4 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase4-procedures">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. Which parameter mode in a MySQL stored procedure allows passing an initial value into the routine and returning an updated value back to the caller?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_proc_0" id="q_proc_0_a" value="a">
+                            <label class="form-check-label" for="q_proc_0_a">A) IN</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_proc_0" id="q_proc_0_b" value="b">
+                            <label class="form-check-label" for="q_proc_0_b">B) OUT</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_proc_0" id="q_proc_0_c" value="c" data-correct="true">
+                            <label class="form-check-label" for="q_proc_0_c">C) INOUT</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. What is a primary performance benefit of using stored procedures over sending individual SQL strings?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_proc_1" id="q_proc_1_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_proc_1_a">A) Substantially reduced network chatter and reuse of precompiled execution structures</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_proc_1" id="q_proc_1_b" value="b">
+                            <label class="form-check-label" for="q_proc_1_b">B) Stored procedures completely bypass the InnoDB storage engine</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_proc_1" id="q_proc_1_c" value="c">
+                            <label class="form-check-label" for="q_proc_1_c">C) Stored procedures disable all constraints for faster writing</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. Can a MySQL stored procedure be directly embedded inside a <code>WHERE</code> clause like <code>WHERE gpa &gt; CALL my_proc()</code>?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_proc_2" id="q_proc_2_a" value="a">
+                            <label class="form-check-label" for="q_proc_2_a">A) Yes, if it takes no parameters</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_proc_2" id="q_proc_2_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_proc_2_b">B) No &mdash; procedures are called via CALL and cannot be embedded in SQL expressions; only User-Defined Functions (UDFs) can</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_proc_2" id="q_proc_2_c" value="c">
+                            <label class="form-check-label" for="q_proc_2_c">C) Yes, if the procedure returns an integer</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase4-procedures">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

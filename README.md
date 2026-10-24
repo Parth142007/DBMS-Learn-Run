@@ -35,39 +35,39 @@ Project/
 │   ├── 04_views.sql            # Educational views (self-join, multi-join)
 │   ├── 05_triggers.sql         # Audit log & capacity validation triggers
 │   ├── 06_practice_queries.sql # Ready-to-run queries mapped to syllabus
-│   └── 07_practice_table.sql   # Isolated practice_students sandbox table
+│   ├── 07_practice_table.sql   # Isolated practice_students sandbox table
+│   └── 08_stored_procedures.sql # Stored procedures for department lookups, GPA calculation & safe registration
 │
 ├── templates/                  # Jinja2 Templates
-│   ├── base.html               # Main layout with 16-topic syllabus sidebar & Phase 3 links
+│   ├── base.html               # Main layout with 16-topic syllabus sidebar & Phase 4 navigation
 │   ├── index.html              # Live dashboard & interactive SQL runner
 │   ├── schema.html             # Relational schema inspector (8 tables)
 │   ├── phase2.html             # Phase 2 Learning Module container
 │   ├── phase2/                 # Modular Phase 2 topic partials (Topics 1-4)
 │   ├── phase3.html             # Phase 3 Learning Dashboard & SQL Lab container
-│   └── phase3/                 # Modular Phase 3 topic partials (Topics 1-10)
-│       ├── topic1_ddl.html         # Topic 1: DDL (CREATE, ALTER, DROP, TRUNCATE, constraints)
-│       ├── topic2_dml.html         # Topic 2: DML (INSERT, UPDATE, DELETE, autocommit)
-│       ├── topic3_dql.html         # Topic 3: DQL (SELECT, filtering, execution pipeline)
-│       ├── topic4_inner_join.html  # Topic 4: INNER JOIN (Intersection & matching rows)
-│       ├── topic5_left_join.html   # Topic 5: LEFT JOIN (Left preservation & anti-joins)
-│       ├── topic6_right_join.html  # Topic 6: RIGHT JOIN (Right preservation)
-│       ├── topic7_self_join.html   # Topic 7: SELF JOIN (Student mentorship hierarchy)
-│       ├── topic8_cross_join.html  # Topic 8: CROSS JOIN (Cartesian & 5-join matrix)
-│       ├── topic9_aggregates.html  # Topic 9: Aggregates, GROUP BY & HAVING
-│       └── topic10_subqueries.html # Topic 10: Nested Subqueries (Scalar, Multi-row, Correlated)
+│   ├── phase3/                 # Modular Phase 3 topic partials (Topics 1-10)
+│   ├── phase4.html             # Phase 4 Views, Triggers & Security Module container
+│   └── phase4/                 # Modular Phase 4 topic partials (Topics 1-5)
+│       ├── topic1_views.html       # Topic 1: Views, updatability & WITH CHECK OPTION
+│       ├── topic2_triggers.html    # Topic 2: BEFORE/AFTER triggers & audit logging
+│       ├── topic3_constraints.html # Topic 3: PK, FK, UNIQUE, NOT NULL, CHECK, DEFAULT
+│       ├── topic4_procedures.html  # Topic 4: Stored procedures, IN/OUT params & procedural logic
+│       └── topic5_security.html    # Topic 5: Authorization, GRANT/REVOKE, MySQL 8 Roles & SQLi defense
 │
 ├── static/                     # Static assets
-│   ├── css/style.css           # Styling for tabs, diagrams, and code snippets
+│   ├── css/style.css           # Styling for tabs, diagrams, role cards & code snippets
 │   └── js/
 │       ├── app.js              # Dynamic query execution & output rendering
 │       ├── phase2.js           # Phase 2 progress, quizzes & simulator
-│       └── phase3.js           # Phase 3 SQL Lab, tab routing, quizzes & table reset
+│       ├── phase3.js           # Phase 3 SQL Lab, tab routing, quizzes & table reset
+│       └── phase4.js           # Phase 4 laboratories, procedure runner, RBAC simulator & progress
 │
-└── tests/                      # Automated test suite (31 tests passing)
+└── tests/                      # Automated test suite (39 tests passing)
     ├── test_database.py        # Database helper & serialization tests
     ├── test_sql_lab.py         # SQL parsing & safety tests
     ├── test_phase2.py          # Phase 2 routes, topics, quizzes, and regression tests
-    └── test_phase3.py          # Phase 3 routes, 10 topics, joins, aggregates, subqueries, safeguards
+    ├── test_phase3.py          # Phase 3 routes, 10 topics, joins, aggregates, subqueries, safeguards
+    └── test_phase4.py          # Phase 4 routes, views, triggers, constraints, procedures & security
 ```
 
 ---
@@ -254,3 +254,75 @@ Access the live module at: **`http://localhost:5000/phase-3`** (or alias **`/sql
 - [x] **Testing & Verification:**
   - Comprehensive test suite in `tests/test_phase3.py` (14 new automated tests).
   - 100% test pass rate across all 31 unit tests (`python -m unittest discover tests`).
+
+---
+
+## Phase 4 Deliverables Summary &mdash; Views, Triggers & Security (NEPC42)
+
+Access the live module at: **`http://localhost:5000/phase-4`** (or alias **`/views-triggers`**)
+
+- [x] **Dedicated Phase 4 Learning Module & Sticky Navigation:**
+  - Clean, responsive layout with sticky topic navigation pills across all 5 syllabus topics (`views`, `triggers`, `constraints`, `procedures`, `security`).
+  - Browser `localStorage` progress tracking with dynamic progress bar (0%–100%) and 5 topic status indicators.
+  - Estimated study time (~135 mins) with Prev / Next footer navigation controls.
+  - Safe live laboratories connected directly to MySQL 8 with isolated sandbox tables.
+
+- [x] **Topic 1 &mdash; Views & Updatable Views:**
+  - Virtual table concepts, data abstraction, external schema level mapping, and disk storage comparison (0 bytes of row data vs physical base tables).
+  - SQL commands: `CREATE VIEW`, `CREATE OR REPLACE VIEW`, `SHOW CREATE VIEW`, `DROP VIEW`, and `SELECT` through views.
+  - Updatability criteria: 1:1 mapping requirements, rules on single base table, why aggregate functions (`AVG`, `SUM`), `GROUP BY`, `DISTINCT`, and calculated columns invalidate updatability.
+  - Detailed explanation of `WITH CHECK OPTION` and its role in preventing out-of-predicate inserts and updates.
+  - **Live Interactive View Laboratory:**
+    - Live **View Inspector** querying `SHOW CREATE VIEW` and displaying live preview rows from `vw_student_mentorship`, `vw_department_statistics`, `vw_event_occupancy`, `vw_practice_students`, and `vw_practice_honor_students`.
+    - **Updatable View DML Sandbox:** Test permitted updates through `vw_practice_students` vs. rejected updates violating `WITH CHECK OPTION` (`ERROR 1369: CHECK OPTION failed`).
+
+- [x] **Topic 2 &mdash; BEFORE and AFTER Triggers:**
+  - Event-driven database programming concepts, trigger lifecycle, and comparison with application-level validation.
+  - Complete coverage of all 6 trigger permutations: `BEFORE INSERT`, `AFTER INSERT`, `BEFORE UPDATE`, `AFTER UPDATE`, `BEFORE DELETE`, and `AFTER DELETE`.
+  - Pseudorecords availability matrix: `NEW` and `OLD` access across `INSERT`, `UPDATE`, and `DELETE`.
+  - `DELIMITER` client command explanation, `SIGNAL SQLSTATE '45000'` error raising, and the MySQL Error 1442 mutating-table restriction.
+  - **Live Interactive Trigger Laboratory:**
+    - Test **BEFORE INSERT Capacity Enforcement** (`trg_check_event_capacity`) on an overbooked workshop event, observing transaction abort and error message.
+    - Test **AFTER INSERT Security Audit Logging** (`trg_audit_new_registration`) and inspect live records generated in `registration_audit`.
+
+- [x] **Topic 3 &mdash; Relational Database Constraints:**
+  - Declarative data integrity vs procedural application code.
+  - Comprehensive coverage of `PRIMARY KEY`, `FOREIGN KEY`, `UNIQUE`, `NOT NULL`, `CHECK`, and `DEFAULT`.
+  - Deep-dive into PRIMARY KEY vs UNIQUE constraint differences regarding NULL values in MySQL InnoDB.
+  - Foreign key referential actions: `CASCADE`, `RESTRICT` / `NO ACTION`, and `SET NULL`.
+  - MySQL 8.0+ strict enforcement of `CHECK` constraints (contrast with MySQL 5.7 ignored check syntax).
+  - Distinction between `DEFAULT` fallback values and `NOT NULL` constraints.
+  - **Live Interactive Constraint Laboratory:**
+    - Dedicated test buttons for 6 scenarios: Duplicate Primary Key (`duplicate_pk`), Duplicate Unique Roll No (`duplicate_unique`), Missing Required First Name (`not_null_violation`), Out-of-Range GPA (`check_violation`), Nonexistent Department Reference (`fk_violation`), and Successful DEFAULT Fallback (`default_test`).
+    - Real-time display of attempted SQL, MySQL error codes (Error 1062, Error 1048, Error 3819, Error 1452), and educational explanations.
+
+- [x] **Topic 4 &mdash; MySQL Stored Procedures:**
+  - Procedural programming inside the database catalog: reduced network traffic, precompiled execution plans, and security encapsulation.
+  - Comparison between Stored Procedures (`CALL`, 0-to-many result sets, `OUT` parameters) and User-Defined Functions (`RETURN` scalar, embeddable in expressions).
+  - Parameter modes: `IN`, `OUT`, and `INOUT`. Local variable declaration (`DECLARE`, `SET`) and conditional branching (`IF ... THEN ... ELSE`).
+  - Pre-installed routines in `database/08_stored_procedures.sql`:
+    1. `sp_get_students_by_department(IN dept_code)`
+    2. `sp_get_event_roster(IN event_id)`
+    3. `sp_calculate_dept_gpa(IN dept_code, OUT avg_gpa, OUT student_count)`
+    4. `sp_register_student_safe(IN student_id, IN event_id, OUT status, OUT message)`
+  - **Live Interactive Stored Procedure Laboratory:**
+    - Interactive procedure caller with parameter inputs, executing `CALL sp(...)` against live MySQL and rendering returned multi-row tabular results or `OUT` parameters with execution timing.
+
+- [x] **Topic 5 &mdash; Authorization, Roles & Database Security:**
+  - Authentication ("Who are you?") vs Authorization ("What can you do?").
+  - Account format `'username'@'hostname'` and the Principle of Least Privilege (PoLP).
+  - DCL statements: `CREATE USER`, `GRANT`, `REVOKE`, `SHOW GRANTS`, and privilege scopes (Global, Database, Table, Column).
+  - MySQL 8 native Roles: creating roles, granting privileges to roles, granting roles to accounts, and role activation (`SET DEFAULT ROLE`).
+  - Defense-in-depth: dynamic SQL string concatenation vulnerability vs. secure parameterized queries (`%s`), credentials protection via `.env`, and auditability.
+  - **Interactive Role-Based Access Control (RBAC) Sandbox:**
+    - Simulation interface allowing students to switch between roles (`student_portal`, `event_coordinator`, `db_admin`) and test operations against the privilege matrix, inspecting simulated MySQL access decisions (`PERMISSION GRANTED` vs. `ERROR 1142: command denied`).
+
+- [x] **Interactive Assessments & Practice:**
+  - 5 interactive knowledge check quizzes (15 multiple-choice questions total) with instant validation and technical explanations.
+  - 10 practice exercises with revealable hints and full SQL solutions.
+  - Isolated sandbox reset endpoint (`/api/reset-practice`) to safely restore practice tables and views without modifying core learning tables.
+
+- [x] **Testing & Verification:**
+  - Full automated test suite in `tests/test_phase4.py` (8 new test methods covering routes, API endpoints, triggers, constraints, views, and procedures).
+  - 100% test pass rate across all 39 unit tests in the project (`python -m unittest discover tests`).
+

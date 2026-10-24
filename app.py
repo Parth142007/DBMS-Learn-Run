@@ -72,6 +72,21 @@ def phase_3():
         topic = "ddl"
     return render_template("phase3.html", active_page="phase3", current_topic=topic)
 
+@app.route("/phase-4")
+@app.route("/views-triggers")
+def phase_4():
+    """
+    Phase 4: Views, Triggers & Security
+    Comprehensive interactive module covering Views & Updatable Views,
+    BEFORE & AFTER Triggers, Database Constraints, Stored Procedures,
+    and Authorization & Security.
+    """
+    topic = request.args.get("topic", "views")
+    valid_topics = ["views", "triggers", "constraints", "procedures", "security"]
+    if topic not in valid_topics:
+        topic = "views"
+    return render_template("phase4.html", active_page="phase4", current_topic=topic)
+
 # ====================================================================
 # REST API ENDPOINTS
 # ====================================================================
@@ -99,6 +114,7 @@ def api_tables():
     })
 
 @app.route("/api/reset-practice-table", methods=["POST"])
+@app.route("/api/reset-practice", methods=["POST"])
 def api_reset_practice_table():
     """Reset the dedicated practice_students table with clean sample rows."""
     res = db.reset_practice_table()
@@ -137,6 +153,51 @@ def api_test_connection():
 
     res = db.test_connection(password=password, user=user, host=host, port=port)
     return jsonify(res)
+
+@app.route("/api/procedure/call", methods=["POST"])
+def api_call_procedure():
+    """Execute a whitelisted stored procedure with safe parameterized inputs."""
+    data = request.get_json() or {}
+    proc_name = data.get("procedure_name", "").strip()
+    params = data.get("params", {})
+    if not proc_name:
+        return jsonify({"success": False, "error": "Procedure name is required."}), 400
+    res = db.call_stored_procedure(proc_name, params)
+    status_code = 200 if res.get("success", False) else 400
+    return jsonify(res), status_code
+
+@app.route("/api/view/inspect", methods=["POST"])
+def api_inspect_view():
+    """Inspect a database view: definition, updatability, and sample rows."""
+    data = request.get_json() or {}
+    view_name = data.get("view_name", "").strip()
+    if not view_name:
+        return jsonify({"success": False, "error": "View name is required."}), 400
+    res = db.get_view_inspection(view_name)
+    status_code = 200 if res.get("success", False) else 400
+    return jsonify(res), status_code
+
+@app.route("/api/constraint/test", methods=["POST"])
+def api_test_constraint():
+    """Test a database constraint violation scenario."""
+    data = request.get_json() or {}
+    scenario = data.get("scenario", "").strip()
+    if not scenario:
+        return jsonify({"success": False, "error": "Constraint scenario key is required."}), 400
+    res = db.test_constraint_scenario(scenario)
+    status_code = 200 if res.get("success", False) else 400
+    return jsonify(res), status_code
+
+@app.route("/api/trigger/test", methods=["POST"])
+def api_test_trigger():
+    """Test trigger execution behavior (BEFORE capacity check or AFTER audit logging)."""
+    data = request.get_json() or {}
+    action = data.get("action", "").strip()
+    if not action:
+        return jsonify({"success": False, "error": "Trigger action is required."}), 400
+    res = db.test_trigger_scenario(action)
+    status_code = 200 if res.get("success", False) else 400
+    return jsonify(res), status_code
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))

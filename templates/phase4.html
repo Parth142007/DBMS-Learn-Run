@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Phase 4 — Views, Triggers & Security | NEPC42 Syllabus{% endblock %}
+
+{% block content %}
+<!-- Phase 4 Module Header -->
+<div class="topic-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold">
+                    <i class="bi bi-mortarboard-fill me-1"></i> NEPC42 Syllabus &bull; Module 4
+                </span>
+                <span class="badge bg-light text-secondary border">Advanced Concepts &amp; Security</span>
+            </div>
+            <h1 class="topic-title">Phase 4 &mdash; Views, Triggers &amp; Security</h1>
+            <p class="topic-subtitle">
+                Virtual Tables, Event-Driven Triggers, Relational Integrity Constraints, Stored Procedures &amp; RBAC Authorization
+            </p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <a href="/" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Main Dashboard
+            </a>
+            <a href="/phase-3" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-database me-1"></i> Phase 3: SQL Lab
+            </a>
+            <a href="/schema" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-diagram-3 me-1"></i> Schema Inspector
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Learning Objectives & Module Overview Banner -->
+<div class="card shadow-sm border mb-4 bg-white">
+    <div class="card-body p-4">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-8">
+                <h5 class="fw-bold text-dark mb-2">
+                    <i class="bi bi-book-half text-success me-2"></i>Module Learning Objectives
+                </h5>
+                <p class="small text-secondary mb-3">
+                    By completing this comprehensive interactive module, students will be able to:
+                </p>
+                <div class="row g-2 small text-secondary">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Define and query <strong>Database Views</strong>, determine updatability, and enforce <code>WITH CHECK OPTION</code>.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Construct <strong>BEFORE and AFTER Triggers</strong> for input validation and security audit logging.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Enforce <strong>Relational Constraints</strong> (PK, FK, UNIQUE, NOT NULL, CHECK, and DEFAULT) at the engine level.</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Program and execute <strong>MySQL Stored Procedures</strong> using <code>IN</code>, <code>OUT</code>, and <code>INOUT</code> parameters.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Apply <strong>Principle of Least Privilege</strong>, <code>GRANT</code> / <code>REVOKE</code>, MySQL 8 Roles, and defend against SQL Injection.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 border-start-lg ps-lg-4">
+                <div class="p-3 bg-light rounded border text-center">
+                    <span class="text-uppercase small fw-bold text-muted d-block mb-1">Estimated Total Study Time</span>
+                    <span class="h3 fw-bold text-dark d-block mb-1">
+                        <i class="bi bi-clock-history text-primary me-1"></i> ~135 mins
+                    </span>
+                    <span class="small text-muted d-block mb-3">5 Topics &bull; 15 Quiz Questions &bull; 5 Live Laboratories</span>
+                    <button class="btn btn-gfg btn-sm w-100" id="btn-start-reading">
+                        <i class="bi bi-play-circle me-1"></i> Start Module Reading
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Learning Progress Tracker Card -->
+<div class="card shadow-sm border mb-4 bg-white" id="progress-card">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-trophy-fill text-warning fs-5"></i>
+                <span class="fw-bold text-dark">Phase 4 Learning Progress:</span>
+                <span class="badge bg-success" id="progress-percentage-badge">0% Complete</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 small text-muted">
+                <span class="badge bg-light text-secondary border">
+                    <i class="bi bi-hdd-network me-1"></i> Saved locally in browser
+                </span>
+                <button class="btn btn-link btn-sm text-danger p-0 text-decoration-none" id="btn-reset-all-progress" title="Reset all Phase 4 progress">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="progress mb-3" style="height: 10px;">
+            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+                 id="phase4-progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <!-- 5 Topic Status Indicators -->
+        <div class="row g-2 text-center small">
+            <div class="col-6 col-md">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-views">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">1. Views</span>
+                    <span class="d-block text-muted" style="font-size: 0.75rem;" id="quiz-status-views">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-triggers">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">2. Triggers</span>
+                    <span class="d-block text-muted" style="font-size: 0.75rem;" id="quiz-status-triggers">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-constraints">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">3. Constraints</span>
+                    <span class="d-block text-muted" style="font-size: 0.75rem;" id="quiz-status-constraints">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-procedures">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">4. Procedures</span>
+                    <span class="d-block text-muted" style="font-size: 0.75rem;" id="quiz-status-procedures">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-12 col-md">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-security">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">5. Security</span>
+                    <span class="d-block text-muted" style="font-size: 0.75rem;" id="quiz-status-security">Quiz: 0/3</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Topic Navigation Tabs (Sticky Toolbar) -->
+<div class="topic-nav-sticky mb-4">
+    <div class="nav nav-pills nav-fill p-1 bg-white border rounded shadow-sm gap-1" id="phase4-topic-tabs" role="tablist">
+        <button class="nav-link py-2 px-2 active fw-semibold" id="tab-btn-views" data-target="views">
+            <i class="bi bi-eye me-1"></i> 1. Views
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary" id="tab-btn-triggers" data-target="triggers">
+            <i class="bi bi-lightning-charge me-1"></i> 2. Triggers
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary" id="tab-btn-constraints" data-target="constraints">
+            <i class="bi bi-slash-circle me-1"></i> 3. Constraints
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary" id="tab-btn-procedures" data-target="procedures">
+            <i class="bi bi-play-btn me-1"></i> 4. Stored Procedures
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary" id="tab-btn-security" data-target="security">
+            <i class="bi bi-shield-lock me-1"></i> 5. Security &amp; Roles
+        </button>
+    </div>
+</div>
+
+<!-- ====================================================================
+     Topic Content Containers
+     ==================================================================== -->
+<div id="topic-container-views" class="topic-section-panel">
+    {% include 'phase4/topic1_views.html' %}
+</div>
+
+<div id="topic-container-triggers" class="topic-section-panel d-none">
+    {% include 'phase4/topic2_triggers.html' %}
+</div>
+
+<div id="topic-container-constraints" class="topic-section-panel d-none">
+    {% include 'phase4/topic3_constraints.html' %}
+</div>
+
+<div id="topic-container-procedures" class="topic-section-panel d-none">
+    {% include 'phase4/topic4_procedures.html' %}
+</div>
+
+<div id="topic-container-security" class="topic-section-panel d-none">
+    {% include 'phase4/topic5_security.html' %}
+</div>
+
+<!-- Prev / Next Navigation Footer -->
+<div class="card border shadow-sm mt-4 bg-white">
+    <div class="card-body p-3 d-flex justify-content-between align-items-center">
+        <button class="btn btn-outline-secondary btn-sm" id="btn-prev-topic" disabled>
+            <i class="bi bi-chevron-left me-1"></i> Previous Topic
+        </button>
+        <span class="small text-muted" id="topic-indicator-text">Viewing Topic 1 of 5: Views</span>
+        <button class="btn btn-gfg btn-sm" id="btn-next-topic">
+            Next Topic: Triggers <i class="bi bi-chevron-right ms-1"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Toast for Copy & Feedback -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1090">
+    <div id="phase4-toast" class="toast align-items-center text-bg-success border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body small" id="phase4-toast-msg">
+                Action completed successfully!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/phase4.js') }}"></script>
+{% endblock %}

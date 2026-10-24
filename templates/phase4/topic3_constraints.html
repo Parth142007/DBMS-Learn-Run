@@ -1,0 +1,436 @@
+<!-- ====================================================================
+     Topic 3: Database Constraints
+     NEPC42 Syllabus — Module 4: Views, Triggers & Security
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-constraints">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 3 of 5</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">3. Relational Database Constraints</h2>
+            <p class="text-secondary mb-0">
+                Master declarative integrity enforcement in MySQL 8 &mdash; discover how <code>PRIMARY KEY</code>, <code>FOREIGN KEY</code>, <code>UNIQUE</code>, <code>CHECK</code>, <code>NOT NULL</code>, and <code>DEFAULT</code> guarantee schema validity at the engine level.
+            </p>
+        </div>
+    </div>
+
+    <!-- 3.1 Overview of Constraints -->
+    <section class="mb-5" id="constraints-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Data Integrity &amp; Constraint Rules</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A <strong>database constraint</strong> is a declarative rule defined on a column or table that the database engine enforces on every single <code>INSERT</code> and <code>UPDATE</code> statement. If any incoming data violates the constraint, MySQL immediately rejects the transaction and preserves data integrity.
+                </p>
+
+                <!-- 6 Major Constraints Grid -->
+                <div class="row g-3 my-2">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-primary mb-2">PRIMARY KEY</span>
+                            <h6 class="fw-bold mb-1">Row Identity</h6>
+                            <p class="small text-muted mb-0">Uniquely identifies each tuple in the table. Must be unique and implicitly <code>NOT NULL</code>. Exactly one PK per table.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-info text-dark mb-2">FOREIGN KEY</span>
+                            <h6 class="fw-bold mb-1">Referential Integrity</h6>
+                            <p class="small text-muted mb-0">Enforces relationships between parent and child tables. Value must exist in the referenced table or be NULL.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-success mb-2">UNIQUE</span>
+                            <h6 class="fw-bold mb-1">Alternate Key</h6>
+                            <p class="small text-muted mb-0">Ensures no two rows have the same value. Multiple UNIQUE keys allowed per table. MySQL allows multiple NULLs in UNIQUE columns.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-danger mb-2">NOT NULL</span>
+                            <h6 class="fw-bold mb-1">Mandatory Presence</h6>
+                            <p class="small text-muted mb-0">Guarantees that a column cannot store NULL missing values. Essential for names, dates, and primary keys.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-warning text-dark mb-2">CHECK</span>
+                            <h6 class="fw-bold mb-1">Domain Predicate (MySQL 8)</h6>
+                            <p class="small text-muted mb-0">Validates Boolean expressions (e.g., <code>gpa BETWEEN 0.00 AND 10.00</code>). Fully parsed and enforced in MySQL 8!</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-secondary mb-2">DEFAULT</span>
+                            <h6 class="fw-bold mb-1">Fallback Value</h6>
+                            <p class="small text-muted mb-0">Supplies an automatic fallback value if the inserting statement omits the column during an <code>INSERT</code>.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.2 Deep Dive: PK, Unique & Foreign Keys -->
+    <section class="mb-5" id="constraints-keys">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Primary Key, Unique &amp; Foreign Key Referential Actions</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- PK vs Unique Table -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-key-fill text-warning me-2"></i>Primary Key vs Unique Constraint</h6>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 25%;">Characteristic</th>
+                                <th style="width: 37.5%;" class="text-primary">PRIMARY KEY</th>
+                                <th style="width: 37.5%;" class="text-success">UNIQUE Constraint</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Quantity per Table</td>
+                                <td>Strictly <strong>only 1</strong> per table.</td>
+                                <td><strong>Multiple</strong> permitted on any columns.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">NULL Value Handling</td>
+                                <td>Cannot be NULL (implicitly <code>NOT NULL</code>).</td>
+                                <td>In InnoDB, allows multiple NULL entries (NULL != NULL).</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Clustering Index</td>
+                                <td>Forms the table's clustered index in InnoDB.</td>
+                                <td>Creates a secondary non-clustered B-Tree index.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Foreign Key Referential Actions -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-link-45deg text-primary me-2"></i>Foreign Key Referential Integrity Actions</h6>
+                <p class="small text-secondary mb-3">
+                    When a parent row (e.g., in <code>departments</code>) is deleted or updated, what happens to referencing child rows in <code>students</code>?
+                </p>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-danger mb-1">CASCADE</span>
+                            <p class="small text-muted mb-0">Deletes or updates child records automatically when the parent row is deleted/updated.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-warning text-dark mb-1">RESTRICT / NO ACTION</span>
+                            <p class="small text-muted mb-0">Default behavior. Prevents deleting or updating the parent row if child rows reference it.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-info text-dark mb-1">SET NULL</span>
+                            <p class="small text-muted mb-0">Sets the child foreign key column to NULL when the parent record is deleted.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-secondary mb-1">SET DEFAULT</span>
+                            <p class="small text-muted mb-0">Sets child foreign key to its column default (rarely supported by InnoDB).</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.3 CHECK, NOT NULL & DEFAULT in MySQL 8 -->
+    <section class="mb-5" id="constraints-check-default">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">CHECK, NOT NULL &amp; DEFAULT in MySQL 8</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h6 class="fw-bold text-dark"><i class="bi bi-shield-check text-success me-1"></i> MySQL 8 CHECK Constraint Enforcement</h6>
+                            <p class="small text-muted mb-2">
+                                In MySQL 5.7 and older, <code>CHECK</code> clauses were parsed for compatibility but ignored by the storage engine. <strong>MySQL 8.0+ strictly enforces CHECK constraints!</strong>
+                            </p>
+                            <div class="bg-dark text-light p-2 rounded small font-monospace">
+CONSTRAINT chk_student_gpa 
+  CHECK (gpa &gt;= 0.00 AND gpa &lt;= 10.00)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h6 class="fw-bold text-dark"><i class="bi bi-gear-fill text-primary me-1"></i> DEFAULT vs NOT NULL Distinction</h6>
+                            <p class="small text-muted mb-2">
+                                <code>DEFAULT</code> only supplies a value if the column is <strong>omitted</strong> from the <code>INSERT</code> list. If you explicitly insert <code>NULL</code> into a column marked <code>NOT NULL DEFAULT 'Active'</code>, MySQL throws an error &mdash; <code>DEFAULT</code> does not overwrite an explicit <code>NULL</code>!
+                            </p>
+                            <div class="bg-dark text-light p-2 rounded small font-monospace">
+status VARCHAR(20) NOT NULL DEFAULT 'Active'
+-- INSERT (col) VALUES (NULL) -> Error 1048!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.4 Interactive Constraint Laboratory -->
+    <section class="mb-5" id="constraints-lab">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Live Interactive Constraint Laboratory</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="fw-bold"><i class="bi bi-slash-circle-fill text-danger me-2"></i>Constraint Enforcement Sandbox</span>
+                <span class="badge bg-success-subtle text-success">Live MySQL 8 Engine</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-muted mb-3">
+                    Execute real SQL statements against our live database that intentionally trigger or satisfy MySQL 8 constraint rules:
+                </p>
+
+                <!-- Constraint Test Grid -->
+                <div class="row g-3">
+                    
+                    <!-- Test 1: Duplicate PK -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-danger mb-2">Test 1: PRIMARY KEY</span>
+                            <h6 class="fw-bold small mb-1">Duplicate Primary Key</h6>
+                            <p class="text-muted" style="font-size: 0.8rem;">Attempts to insert student with <code>student_id = 1</code> (already exists in database):</p>
+                            <button class="btn btn-sm btn-outline-danger w-100 btn-run-constraint-test" data-scenario="duplicate_pk">
+                                <i class="bi bi-play-circle me-1"></i> Test Duplicate PK
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Test 2: Duplicate UNIQUE -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-warning text-dark mb-2">Test 2: UNIQUE</span>
+                            <h6 class="fw-bold small mb-1">Duplicate Unique Roll No</h6>
+                            <p class="text-muted" style="font-size: 0.8rem;">Attempts to insert duplicate roll number <code>'CS2021001'</code>:</p>
+                            <button class="btn btn-sm btn-outline-warning text-dark w-100 btn-run-constraint-test" data-scenario="duplicate_unique">
+                                <i class="bi bi-play-circle me-1"></i> Test Duplicate UNIQUE
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Test 3: NOT NULL Violation -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-danger mb-2">Test 3: NOT NULL</span>
+                            <h6 class="fw-bold small mb-1">Missing Required First Name</h6>
+                            <p class="text-muted" style="font-size: 0.8rem;">Attempts to insert a row with explicit <code>first_name = NULL</code>:</p>
+                            <button class="btn btn-sm btn-outline-danger w-100 btn-run-constraint-test" data-scenario="not_null_violation">
+                                <i class="bi bi-play-circle me-1"></i> Test NOT NULL Rejection
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Test 4: CHECK Violation -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-info text-dark mb-2">Test 4: CHECK (MySQL 8)</span>
+                            <h6 class="fw-bold small mb-1">Illegal GPA Value (11.5)</h6>
+                            <p class="text-muted" style="font-size: 0.8rem;">Attempts to insert student with <code>gpa = 11.50</code> (violates <code>gpa &lt;= 10.00</code>):</p>
+                            <button class="btn btn-sm btn-outline-info text-dark w-100 btn-run-constraint-test" data-scenario="check_violation">
+                                <i class="bi bi-play-circle me-1"></i> Test CHECK Rejection
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Test 5: Foreign Key Violation -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-danger mb-2">Test 5: FOREIGN KEY</span>
+                            <h6 class="fw-bold small mb-1">Nonexistent Department ID</h6>
+                            <p class="text-muted" style="font-size: 0.8rem;">Attempts to insert student referencing <code>dept_id = 9999</code>:</p>
+                            <button class="btn btn-sm btn-outline-danger w-100 btn-run-constraint-test" data-scenario="fk_violation">
+                                <i class="bi bi-play-circle me-1"></i> Test FK Rejection
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Test 6: DEFAULT Successful Fallback -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-success mb-2">Test 6: DEFAULT</span>
+                            <h6 class="fw-bold small mb-1">Omit Semester -> Default 1</h6>
+                            <p class="text-muted" style="font-size: 0.8rem;">Omits semester column during insert and verifies MySQL supplies default 1:</p>
+                            <button class="btn btn-sm btn-outline-success w-100 btn-run-constraint-test" data-scenario="default_test">
+                                <i class="bi bi-check-circle me-1"></i> Test DEFAULT Fallback
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Live Results Display Container -->
+                <div id="constraint-test-results" class="mt-4 p-3 bg-light rounded border small font-monospace" style="min-height: 120px;">
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-shield-shaded fs-3 d-block mb-1"></i>
+                        Click any of the constraint test buttons above to trigger live MySQL validation responses.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.5 Practice Exercises -->
+    <section class="mb-5" id="constraints-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 3.1 (Beginner)</span>
+                        <span class="text-muted small">CHECK Constraint</span>
+                    </div>
+                    <p class="fw-bold mb-1">Enforce Semester Range Constraint:</p>
+                    <p class="small text-secondary mb-2">
+                        Write an <code>ALTER TABLE</code> statement on <code>students</code> to add a constraint named <code>chk_valid_semester</code> that requires <code>semester BETWEEN 1 AND 8</code>.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-cst-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-cst-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> <code>ALTER TABLE students ADD CONSTRAINT chk_valid_semester CHECK (semester BETWEEN 1 AND 8);</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 3.2 (Advanced)</span>
+                        <span class="text-muted small">ON DELETE CASCADE</span>
+                    </div>
+                    <p class="fw-bold mb-1">Course Registrations Cascade Rule:</p>
+                    <p class="small text-secondary mb-2">
+                        Explain why deleting a student currently causes an error if the foreign key in <code>registrations</code> uses <code>ON DELETE RESTRICT</code>, and write the DDL required to change it to <code>ON DELETE CASCADE</code>.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-cst-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-cst-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> <code>RESTRICT</code> rejects deletion of a parent record as long as referencing child rows exist to prevent orphaned data. To change it:<br>
+                            <code>ALTER TABLE registrations DROP FOREIGN KEY fk_reg_student;</code><br>
+                            <code>ALTER TABLE registrations ADD CONSTRAINT fk_reg_student FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE;</code>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.6 Topic 3 Knowledge Check Quiz -->
+    <section class="mb-5" id="constraints-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.6</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Topic 3 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase4-constraints">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. How do PRIMARY KEY and UNIQUE constraints differ regarding NULL values in MySQL InnoDB?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_cst_0" id="q_cst_0_a" value="a">
+                            <label class="form-check-label" for="q_cst_0_a">A) Both forbid any NULL values under all conditions</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_cst_0" id="q_cst_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_cst_0_b">B) PRIMARY KEY strictly forbids NULLs; UNIQUE permits multiple NULL values because in SQL NULL is not equal to NULL</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_cst_0" id="q_cst_0_c" value="c">
+                            <label class="form-check-label" for="q_cst_0_c">C) UNIQUE allows at most one NULL, while PRIMARY KEY allows multiple NULLs</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. What happens in MySQL 8 if you insert a row with <code>gpa = -1.5</code> into a table with <code>CHECK (gpa &gt;= 0)</code>?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_cst_1" id="q_cst_1_a" value="a">
+                            <label class="form-check-label" for="q_cst_1_a">A) The value is rounded to 0.00 and saved silently</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_cst_1" id="q_cst_1_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_cst_1_b">B) MySQL aborts the insert with ERROR 3819: Check constraint is violated</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_cst_1" id="q_cst_1_c" value="c">
+                            <label class="form-check-label" for="q_cst_1_c">C) The row is saved and the check constraint is permanently disabled</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. What is the effect of <code>ON DELETE CASCADE</code> on a child foreign key?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_cst_2" id="q_cst_2_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_cst_2_a">A) When a parent row is deleted, all referencing child rows are automatically deleted</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_cst_2" id="q_cst_2_b" value="b">
+                            <label class="form-check-label" for="q_cst_2_b">B) It blocks the deletion of the parent row until all children are manual removed</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_cst_2" id="q_cst_2_c" value="c">
+                            <label class="form-check-label" for="q_cst_2_c">C) It sets the parent row to NULL</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase4-constraints">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

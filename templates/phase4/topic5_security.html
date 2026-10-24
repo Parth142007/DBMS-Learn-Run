@@ -1,0 +1,444 @@
+<!-- ====================================================================
+     Topic 5: Authorization and Database Security
+     NEPC42 Syllabus — Module 4: Views, Triggers & Security
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-security">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 5 of 5</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">5. Authorization, Roles &amp; Database Security</h2>
+            <p class="text-secondary mb-0">
+                Safeguard relational databases against unauthorized access and attacks &mdash; explore Authentication vs Authorization, <code>GRANT</code> / <code>REVOKE</code> syntax, MySQL 8 Roles, the Principle of Least Privilege, and defense-in-depth against SQL Injection.
+            </p>
+        </div>
+    </div>
+
+    <!-- 5.1 Authentication vs Authorization & Least Privilege -->
+    <section class="mb-5" id="security-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Authentication vs. Authorization &amp; Least Privilege</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Database security operates on two fundamental gatekeeping layers:
+                </p>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-primary mb-2">Layer 1: Authentication (Identity)</span>
+                            <h6 class="fw-bold mb-1">"Who are you?"</h6>
+                            <p class="small text-muted mb-0">
+                                Verifies client identity using credentials (username, password hash, SSL/TLS certificate, or PAM plugin). In MySQL, an account is identified by both name and host: <code>'username'@'hostname'</code>.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-success mb-2">Layer 2: Authorization (Permissions)</span>
+                            <h6 class="fw-bold mb-1">"What are you allowed to do?"</h6>
+                            <p class="small text-muted mb-0">
+                                Determines which specific operations (<code>SELECT</code>, <code>INSERT</code>, <code>DROP</code>) an authenticated user may perform on specific database objects (databases, tables, views, columns).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Principle of Least Privilege -->
+                <div class="p-3 bg-warning-subtle border rounded mb-3">
+                    <h6 class="fw-bold text-dark mb-1"><i class="bi bi-shield-lock-fill text-warning me-2"></i>The Principle of Least Privilege (PoLP)</h6>
+                    <p class="small text-secondary mb-2">
+                        Every process, user, and web application service must be granted <strong>only the minimum set of privileges</strong> strictly required to complete its legitimate business purpose &mdash; and nothing more!
+                    </p>
+                    <p class="small text-danger mb-0">
+                        <strong>Why Never Connect Applications as 'root'?</strong> If a web application connects to MySQL as <code>'root'@'localhost'</code>, any SQL injection vulnerability gives the attacker complete control to drop the entire database, create backdoor accounts, or read server files.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5.2 SQL Authorization Commands (GRANT & REVOKE) -->
+    <section class="mb-5" id="security-grant-revoke">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">User Management: GRANT &amp; REVOKE Syntax</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    MySQL manages permissions through Data Control Language (DCL) statements:
+                </p>
+
+                <!-- Privilege Scope Hierarchy -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-layers-fill text-primary me-2"></i>Privilege Scope Levels</h6>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered table-sm align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 25%;">Scope Level</th>
+                                <th style="width: 35%;">Syntax Pattern</th>
+                                <th style="width: 40%;">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Global</td>
+                                <td><code>ON *.*</code></td>
+                                <td>Applies to all databases and all tables on the MySQL server instance.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Database Level</td>
+                                <td><code>ON college_db.*</code></td>
+                                <td>Applies to all existing and future tables/views within <code>college_db</code>.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Table Level</td>
+                                <td><code>ON college_db.students</code></td>
+                                <td>Restricted strictly to the designated table.</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Column Level</td>
+                                <td><code>SELECT (roll_no, first_name) ON ...</code></td>
+                                <td>Finest granularity &mdash; restricts reading to specific non-sensitive columns.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Syntax Examples -->
+                <div class="bg-dark text-light p-3 rounded font-monospace small mb-3">
+<span class="text-secondary">-- 1. Create a dedicated application user account</span>
+<span class="text-info">CREATE USER</span> <span class="text-success">'web_app_user'</span>@<span class="text-success">'192.168.1.%'</span> 
+<span class="text-info">IDENTIFIED BY</span> <span class="text-warning">'StrongSecretPwd#2024'</span>;
+
+<span class="text-secondary">-- 2. Grant read-only access to views and select on students</span>
+<span class="text-info">GRANT SELECT</span> <span class="text-info">ON</span> college_db.vw_student_mentorship <span class="text-info">TO</span> <span class="text-success">'web_app_user'</span>@<span class="text-success">'192.168.1.%'</span>;
+<span class="text-info">GRANT SELECT, INSERT</span> <span class="text-info">ON</span> college_db.registrations <span class="text-info">TO</span> <span class="text-success">'web_app_user'</span>@<span class="text-success">'192.168.1.%'</span>;
+
+<span class="text-secondary">-- 3. Inspect granted permissions</span>
+<span class="text-info">SHOW GRANTS FOR</span> <span class="text-success">'web_app_user'</span>@<span class="text-success">'192.168.1.%'</span>;
+
+<span class="text-secondary">-- 4. Revoke insert capability if policy changes</span>
+<span class="text-info">REVOKE INSERT ON</span> college_db.registrations <span class="text-info">FROM</span> <span class="text-success">'web_app_user'</span>@<span class="text-success">'192.168.1.%'</span>;
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5.3 MySQL 8 Roles -->
+    <section class="mb-5" id="security-roles">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">MySQL 8 Roles: Role-Based Access Control (RBAC)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    In large production environments with dozens of microservices and hundreds of developers, granting privileges individually to every account is error-prone. <strong>MySQL 8 introduced native Roles</strong> &mdash; named collections of privileges that can be granted to users:
+                </p>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100 text-center">
+                            <span class="badge bg-secondary mb-2">Step 1: Create Role</span>
+                            <div class="font-monospace small text-primary">CREATE ROLE 'student_auditor';</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100 text-center">
+                            <span class="badge bg-secondary mb-2">Step 2: Assign Privileges</span>
+                            <div class="font-monospace small text-primary">GRANT SELECT ON college_db.* TO 'student_auditor';</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100 text-center">
+                            <span class="badge bg-secondary mb-2">Step 3: Bind to User</span>
+                            <div class="font-monospace small text-primary">GRANT 'student_auditor' TO 'alice'@'%';</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info small mb-0">
+                    <strong class="d-block mb-1"><i class="bi bi-info-circle me-1"></i> Role Activation in MySQL 8:</strong>
+                    By default, when a user logs in, their assigned roles are not active until enabled, or unless configured via: <code>SET DEFAULT ROLE ALL TO 'alice'@'%';</code>.
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5.4 SQL Injection Defense -->
+    <section class="mb-5" id="security-sqli">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">SQL Injection Defense &amp; Parameterized Queries</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    <strong>SQL Injection (SQLi)</strong> occurs when untrusted user input is directly concatenated into a dynamic SQL query string without sanitization, allowing an adversary to alter query syntax and execute arbitrary commands.
+                </p>
+
+                <div class="row g-3">
+                    <!-- Vulnerable Pattern -->
+                    <div class="col-md-6">
+                        <div class="p-3 border border-danger rounded bg-danger-subtle h-100">
+                            <div class="d-flex align-items-center gap-2 mb-2 text-danger fw-bold">
+                                <i class="bi bi-x-circle-fill"></i> INSECURE: String Concatenation
+                            </div>
+                            <div class="bg-dark text-light p-2 rounded small font-monospace mb-2">
+# Python / Flask vulnerability:
+user_input = "' OR '1'='1"
+query = f"SELECT * FROM users WHERE roll = '{user_input}'"
+# Evaluates to:
+# SELECT * FROM users WHERE roll = '' OR '1'='1'
+cursor.execute(query) # Leaks entire table!
+                            </div>
+                            <p class="small text-danger-emphasis mb-0">Treats malicious input text as executable SQL code instructions.</p>
+                        </div>
+                    </div>
+
+                    <!-- Secure Parameterized Pattern -->
+                    <div class="col-md-6">
+                        <div class="p-3 border border-success rounded bg-success-subtle h-100">
+                            <div class="d-flex align-items-center gap-2 mb-2 text-success fw-bold">
+                                <i class="bi bi-check-circle-fill"></i> SECURE: Parameterized Query
+                            </div>
+                            <div class="bg-dark text-light p-2 rounded small font-monospace mb-2">
+# Safe parameterized query used in our project:
+user_input = "' OR '1'='1"
+query = "SELECT * FROM users WHERE roll = %s"
+# Sent as separate protocol message:
+cursor.execute(query, (user_input,))
+                            </div>
+                            <p class="small text-success-emphasis mb-0">MySQL precompiles query grammar first. Input is treated strictly as literal data.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5.5 Interactive Role & Permission Simulator -->
+    <section class="mb-5" id="security-lab">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Interactive Role-Based Access Control (RBAC) Sandbox</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="fw-bold"><i class="bi bi-person-badge-fill text-warning me-2"></i>Authorization &amp; Privilege Enforcement Simulator</span>
+                <span class="badge bg-primary">Educational RBAC Simulator</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-muted mb-3">
+                    Select an application security role, choose an attempted database operation, and test how MySQL's authorization subsystem responds based on granted privileges:
+                </p>
+
+                <!-- Role Selection Grid -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light text-center h-100 cursor-pointer role-card border-success" data-role="student_portal" style="cursor: pointer;">
+                            <span class="badge bg-success mb-2">Role A</span>
+                            <h6 class="fw-bold mb-1">student_portal</h6>
+                            <p class="small text-muted mb-0"><code>SELECT</code> on <code>vw_student_mentorship</code>, <code>vw_event_occupancy</code>.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light text-center h-100 cursor-pointer role-card" data-role="event_coordinator" style="cursor: pointer;">
+                            <span class="badge bg-info text-dark mb-2">Role B</span>
+                            <h6 class="fw-bold mb-1">event_coordinator</h6>
+                            <p class="small text-muted mb-0"><code>SELECT</code>, <code>INSERT</code> on <code>registrations</code>; <code>EXECUTE</code> on procedures.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light text-center h-100 cursor-pointer role-card" data-role="db_admin" style="cursor: pointer;">
+                            <span class="badge bg-danger mb-2">Role C</span>
+                            <h6 class="fw-bold mb-1">db_admin</h6>
+                            <p class="small text-muted mb-0"><code>ALL PRIVILEGES</code> on all schema tables and routines.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Tester Controls -->
+                <div class="row g-2 align-items-center mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label small fw-bold text-dark mb-1">Attempt Operation as Selected Role:</label>
+                        <select class="form-select form-select-sm font-monospace" id="select-auth-operation">
+                            <option value="op_read_views">SELECT * FROM vw_event_occupancy; (Read Public Views)</option>
+                            <option value="op_insert_reg">INSERT INTO registrations ... (Register Attendee)</option>
+                            <option value="op_call_sp">CALL sp_get_event_roster(1); (Execute Procedure)</option>
+                            <option value="op_update_gpa">UPDATE students SET gpa = 9.99; (Modify Student Records)</option>
+                            <option value="op_drop_table">DROP TABLE students; (Destructive DDL Command)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mt-md-4">
+                        <button class="btn btn-primary btn-sm w-100" id="btn-test-authorization">
+                            <i class="bi bi-shield-check me-1"></i> Verify Permission
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Simulation Output Box -->
+                <div id="auth-simulation-result" class="p-3 bg-light rounded border small font-monospace" style="min-height: 120px;">
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-shield-lock fs-3 d-block mb-1"></i>
+                        Click "Verify Permission" to evaluate the operation against the selected security role.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5.6 Practice Exercises -->
+    <section class="mb-5" id="security-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.6</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 5.1 (Beginner)</span>
+                        <span class="text-muted small">GRANT &amp; REVOKE</span>
+                    </div>
+                    <p class="fw-bold mb-1">Grant Read and Registration Privileges:</p>
+                    <p class="small text-secondary mb-2">
+                        Write the SQL statement to grant <code>SELECT</code> on <code>courses</code> and <code>INSERT</code> on <code>registrations</code> in database <code>college_db</code> to an account named <code>'student_portal'@'localhost'</code>.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-sec-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-sec-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong><br>
+                            <code>GRANT SELECT ON college_db.courses TO 'student_portal'@'localhost';</code><br>
+                            <code>GRANT INSERT ON college_db.registrations TO 'student_portal'@'localhost';</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 5.2 (Advanced)</span>
+                        <span class="text-muted small">Role-Based Access Control</span>
+                    </div>
+                    <p class="fw-bold mb-1">Create and Assign Academic Advisor Role:</p>
+                    <p class="small text-secondary mb-2">
+                        Write the sequence of MySQL 8 statements to create a role named <code>'advisor_role'</code>, grant it <code>SELECT</code> and <code>UPDATE</code> on <code>students</code>, grant the role to <code>'prof_smith'@'%'</code>, and set it as default.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-sec-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-sec-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong><br>
+                            <code>CREATE ROLE 'advisor_role';</code><br>
+                            <code>GRANT SELECT, UPDATE ON college_db.students TO 'advisor_role';</code><br>
+                            <code>GRANT 'advisor_role' TO 'prof_smith'@'%';</code><br>
+                            <code>SET DEFAULT ROLE ALL TO 'prof_smith'@'%';</code>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5.7 Topic 5 Knowledge Check Quiz -->
+    <section class="mb-5" id="security-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.7</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Topic 5 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase4-security">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. What is the fundamental difference between Authentication and Authorization in database systems?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_sec_0" id="q_sec_0_a" value="a">
+                            <label class="form-check-label" for="q_sec_0_a">A) Authentication checks disk space; Authorization allocates RAM</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_sec_0" id="q_sec_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_sec_0_b">B) Authentication verifies identity ("Who are you?"); Authorization determines permissions ("What operations are you allowed to execute?")</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_sec_0" id="q_sec_0_c" value="c">
+                            <label class="form-check-label" for="q_sec_0_c">C) Both terms refer to identical password verification mechanisms</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. What is the primary reason parameterized / prepared statements prevent SQL injection attacks?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_sec_1" id="q_sec_1_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_sec_1_a">A) The query grammar is compiled before user parameters are bound, ensuring input values are treated strictly as data literals rather than executable SQL syntax</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_sec_1" id="q_sec_1_b" value="b">
+                            <label class="form-check-label" for="q_sec_1_b">B) Parameterized queries encrypt all SQL strings using AES-256</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_sec_1" id="q_sec_1_c" value="c">
+                            <label class="form-check-label" for="q_sec_1_c">C) Parameterized queries automatically disable the root user</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. Why should web applications never connect to MySQL using an unrestricted <code>root</code> administrative account?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_sec_2" id="q_sec_2_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_sec_2_a">A) It violates the Principle of Least Privilege and maximizes attack blast radius &mdash; any SQL injection could drop tables or compromise the entire server</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_sec_2" id="q_sec_2_b" value="b">
+                            <label class="form-check-label" for="q_sec_2_b">B) MySQL prohibits root users from running SELECT statements</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_sec_2" id="q_sec_2_c" value="c">
+                            <label class="form-check-label" for="q_sec_2_c">C) Root connections execute queries 50% slower due to extra audit logging</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase4-security">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

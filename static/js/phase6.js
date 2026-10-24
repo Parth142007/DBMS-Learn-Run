@@ -103,13 +103,8 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // ====================================================================
-    // 3. INITIALIZATION & TOPIC NAVIGATION
+    // 3. NAVIGATION CONTROLLER
     // ====================================================================
-    initNavigation();
-    initQuizHandlers();
-    initRelationalAlgebraLab();
-    initErDiagramBuilder();
-    syncProgressWithBackend();
 
     function initNavigation() {
         // Parse topic from query params
@@ -816,41 +811,47 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function initErDiagramBuilder() {
-        // Try restoring from local storage if available
         try {
-            const saved = localStorage.getItem("dbms_phase6_er_diagram");
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                if (parsed && Array.isArray(parsed.entities) && parsed.entities.length > 0) {
-                    erModel = parsed;
+            // Try restoring from local storage if available
+            try {
+                const saved = localStorage.getItem("dbms_phase6_er_diagram");
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && Array.isArray(parsed.entities) && parsed.entities.length > 0) {
+                        erModel = parsed;
+                    }
                 }
-            }
-        } catch (e) {}
+            } catch (e) {}
 
-        // Initial snapshot in history
-        historyStack = [JSON.stringify(erModel)];
-        historyIndex = 0;
-        updateUndoRedoButtons();
+            // Initial snapshot in history
+            historyStack = [JSON.stringify(erModel)];
+            historyIndex = 0;
+            updateUndoRedoButtons();
 
-        populateBuilderSelects();
-        renderErDiagramCanvas();
-        updateInspectorUI();
-        generateRelationalSchemaFromModel(false);
+            populateBuilderSelects();
+            renderErDiagramCanvas();
+            updateInspectorUI();
+            generateRelationalSchemaFromModel(false);
 
-        // Bind Left Panel Forms & Controls
-        bindAddForms();
+            // Bind Left Panel Forms & Controls
+            bindAddForms();
 
-        // Bind Visual Editor Toolbar
-        bindToolbarControls();
+            // Bind Visual Editor Toolbar
+            bindToolbarControls();
 
-        // Bind Canvas Mouse/Pointer Interaction (Drag, Pan, Zoom, Selection)
-        bindCanvasInteractions();
+            // Bind Canvas Mouse/Pointer Interaction (Drag, Pan, Zoom, Selection)
+            bindCanvasInteractions();
 
-        // Bind Global Keyboard Shortcuts
-        bindKeyboardShortcuts();
+            // Bind Global Keyboard Shortcuts
+            bindKeyboardShortcuts();
 
-        // Bind Schema & File Export Buttons
-        bindExportAndPersistence();
+            // Bind Schema & File Export Buttons
+            bindExportAndPersistence();
+
+            console.log("Interactive ER Diagram Builder initialized successfully.");
+        } catch (err) {
+            console.error("Error initializing ER Diagram Builder:", err);
+        }
     }
 
     // ====================================================================
@@ -859,50 +860,77 @@ document.addEventListener("DOMContentLoaded", function () {
     function bindAddForms() {
         // 1. Add Entity
         const btnAddEntity = document.getElementById("btn-builder-add-entity");
+        const entityNameInput = document.getElementById("builder-entity-name");
+        const entityWeakCheck = document.getElementById("builder-entity-is-weak");
+
+        function handleAddEntity() {
+            if (!entityNameInput) return;
+            const isWeak = entityWeakCheck ? entityWeakCheck.checked : false;
+            const rawVal = (entityNameInput.value || "").trim();
+            if (!rawVal) {
+                alert("Please provide an alphanumeric Entity name (e.g. STUDENT, INSTRUCTOR, DEPARTMENT).");
+                entityNameInput.focus();
+                return;
+            }
+            const name = rawVal.toUpperCase().replace(/[^A-Z0-9_]/g, "");
+            if (!name) {
+                alert("Entity name must contain letters, numbers, or underscores.");
+                entityNameInput.focus();
+                return;
+            }
+            if (erModel.entities.some(e => e.name.toUpperCase() === name)) {
+                alert(`Entity '${name}' already exists in the diagram.`);
+                entityNameInput.focus();
+                return;
+            }
+
+            // Compute smart initial position avoiding existing entities
+            const newPos = getNextEntityPosition();
+            const newEnt = {
+                id: `e_${Date.now()}`,
+                name: name,
+                isWeak: isWeak,
+                x: newPos.x,
+                y: newPos.y
+            };
+
+            erModel.entities.push(newEnt);
+            selectedItem = { type: "entity", id: newEnt.id };
+            pushHistory(`Add Entity '${name}'`);
+
+            entityNameInput.value = "";
+            if (entityWeakCheck) entityWeakCheck.checked = false;
+
+            populateBuilderSelects();
+            renderErDiagramCanvas();
+            updateInspectorUI();
+            generateRelationalSchemaFromModel(false);
+            showToast(`Entity '${name}' created and selected.`);
+        }
+
         if (btnAddEntity) {
-            btnAddEntity.addEventListener("click", function () {
-                const nameInput = document.getElementById("builder-entity-name");
-                const isWeak = document.getElementById("builder-entity-is-weak").checked;
-                const name = (nameInput.value || "").trim().toUpperCase().replace(/[^A-Z0-9_]/g, "");
+            btnAddEntity.addEventListener("click", function (e) {
+                e.preventDefault();
+                handleAddEntity();
+            });
+        }
 
-                if (!name) {
-                    alert("Please provide an alphanumeric Entity name.");
-                    return;
+        if (entityNameInput) {
+            entityNameInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddEntity();
                 }
-                if (erModel.entities.some(e => e.name.toUpperCase() === name)) {
-                    alert(`Entity '${name}' already exists.`);
-                    return;
-                }
-
-                // Compute smart initial position avoiding existing entities
-                const newPos = getNextEntityPosition();
-                const newEnt = {
-                    id: `e_${Date.now()}`,
-                    name: name,
-                    isWeak: isWeak,
-                    x: newPos.x,
-                    y: newPos.y
-                };
-
-                erModel.entities.push(newEnt);
-                selectedItem = { type: "entity", id: newEnt.id };
-                pushHistory("Add Entity");
-
-                nameInput.value = "";
-                document.getElementById("builder-entity-is-weak").checked = false;
-
-                populateBuilderSelects();
-                renderErDiagramCanvas();
-                updateInspectorUI();
-                generateRelationalSchemaFromModel(false);
-                showToast(`Entity '${name}' created and selected.`);
             });
         }
 
         // 2. Add Attribute
         const btnAddAttr = document.getElementById("btn-builder-add-attr");
+        const attrTargetSelect = document.getElementById("builder-attr-target");
+        const attrNameInput = document.getElementById("builder-attr-name");
         const selectAttrType = document.getElementById("builder-attr-type");
         const compParentCont = document.getElementById("builder-attr-composite-parent-container");
+        const parentCompSelect = document.getElementById("builder-attr-composite-parent");
 
         if (selectAttrType && compParentCont) {
             selectAttrType.addEventListener("change", function () {
@@ -910,92 +938,146 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
+        function handleAddAttribute() {
+            const targetEntityId = attrTargetSelect ? attrTargetSelect.value : null;
+            const attrType = selectAttrType ? selectAttrType.value : "simple";
+            const rawName = (attrNameInput ? attrNameInput.value : "").trim();
+            if (!targetEntityId) {
+                alert("Please select a target entity first. Create an entity if none exist.");
+                return;
+            }
+            if (!rawName) {
+                alert("Please provide an attribute name (e.g. StudentID, Email, GPA).");
+                if (attrNameInput) attrNameInput.focus();
+                return;
+            }
+            const attrName = rawName.replace(/[^a-zA-Z0-9_]/g, "");
+            if (!attrName) {
+                alert("Attribute name must contain alphanumeric characters.");
+                if (attrNameInput) attrNameInput.focus();
+                return;
+            }
+
+            const existing = erModel.attributes.filter(a => a.entityId === targetEntityId);
+            if (existing.some(a => a.name.toLowerCase() === attrName.toLowerCase())) {
+                alert(`Attribute '${attrName}' already exists on this entity.`);
+                if (attrNameInput) attrNameInput.focus();
+                return;
+            }
+
+            const parentAttrId = (compParentCont && !compParentCont.classList.contains("d-none") && parentCompSelect)
+                ? (parentCompSelect.value || null)
+                : null;
+
+            const newAttr = {
+                id: `a_${Date.now()}`,
+                entityId: targetEntityId,
+                name: attrName,
+                type: attrType,
+                parentAttrId: parentAttrId
+            };
+
+            erModel.attributes.push(newAttr);
+            selectedItem = { type: "attribute", id: newAttr.id };
+            pushHistory(`Add Attribute '${attrName}'`);
+
+            if (attrNameInput) attrNameInput.value = "";
+            renderErDiagramCanvas();
+            updateCompositeParentOptions();
+            updateInspectorUI();
+            generateRelationalSchemaFromModel(false);
+            showToast(`Attribute '${attrName}' attached.`);
+        }
+
         if (btnAddAttr) {
-            btnAddAttr.addEventListener("click", function () {
-                const targetEntityId = document.getElementById("builder-attr-target").value;
-                const attrNameInput = document.getElementById("builder-attr-name");
-                const attrType = document.getElementById("builder-attr-type").value;
-                const attrName = (attrNameInput.value || "").trim().replace(/[^a-zA-Z0-9_]/g, "");
-                const parentCompSelect = document.getElementById("builder-attr-composite-parent");
-                const parentAttrId = (compParentCont && !compParentCont.classList.contains("d-none") && parentCompSelect)
-                    ? (parentCompSelect.value || null)
-                    : null;
+            btnAddAttr.addEventListener("click", function (e) {
+                e.preventDefault();
+                handleAddAttribute();
+            });
+        }
 
-                if (!targetEntityId || !attrName) {
-                    alert("Select an entity and provide a valid attribute name.");
-                    return;
+        if (attrNameInput) {
+            attrNameInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddAttribute();
                 }
-
-                const existing = erModel.attributes.filter(a => a.entityId === targetEntityId);
-                if (existing.some(a => a.name.toLowerCase() === attrName.toLowerCase())) {
-                    alert(`Attribute '${attrName}' already exists on this entity.`);
-                    return;
-                }
-
-                const newAttr = {
-                    id: `a_${Date.now()}`,
-                    entityId: targetEntityId,
-                    name: attrName,
-                    type: attrType,
-                    parentAttrId: parentAttrId
-                };
-
-                erModel.attributes.push(newAttr);
-                selectedItem = { type: "attribute", id: newAttr.id };
-                pushHistory("Add Attribute");
-
-                attrNameInput.value = "";
-                renderErDiagramCanvas();
-                updateCompositeParentOptions();
-                updateInspectorUI();
-                generateRelationalSchemaFromModel(false);
-                showToast(`Attribute '${attrName}' attached.`);
             });
         }
 
         // 3. Add Relationship
         const btnAddRel = document.getElementById("btn-builder-add-rel");
+        const relNameInput = document.getElementById("builder-rel-name");
+        const selRelE1 = document.getElementById("builder-rel-e1");
+        const selRelE2 = document.getElementById("builder-rel-e2");
+        const selRelCard = document.getElementById("builder-rel-card");
+        const selRelPartE1 = document.getElementById("builder-rel-part-e1");
+        const selRelPartE2 = document.getElementById("builder-rel-part-e2");
+
+        function handleAddRelationship() {
+            const e1Id = selRelE1 ? selRelE1.value : null;
+            const e2Id = selRelE2 ? selRelE2.value : null;
+            const card = selRelCard ? selRelCard.value : "M:N";
+            const partE1 = (selRelPartE1 && selRelPartE1.value) || "partial";
+            const partE2 = (selRelPartE2 && selRelPartE2.value) || "partial";
+            const rawRelName = (relNameInput ? relNameInput.value : "").trim();
+            const relName = rawRelName.replace(/[^a-zA-Z0-9_]/g, "") || "Relates";
+
+            if (!e1Id || !e2Id) {
+                alert("Please ensure at least two entities exist to connect a relationship.");
+                return;
+            }
+            if (e1Id === e2Id) {
+                alert("Please select two distinct entities for the relationship.");
+                return;
+            }
+
+            const e1 = erModel.entities.find(e => e.id === e1Id);
+            const e2 = erModel.entities.find(e => e.id === e2Id);
+            if (!e1 || !e2) {
+                alert("Selected entities could not be found.");
+                return;
+            }
+
+            const midX = Math.round((e1.x + e2.x) / 2);
+            const midY = Math.round((e1.y + e2.y) / 2);
+
+            const newRel = {
+                id: `r_${Date.now()}`,
+                name: relName,
+                e1Id: e1Id,
+                e2Id: e2Id,
+                cardinality: card,
+                e1Participation: partE1,
+                e2Participation: partE2,
+                x: midX,
+                y: midY
+            };
+
+            erModel.relationships.push(newRel);
+            selectedItem = { type: "relationship", id: newRel.id };
+            pushHistory(`Add Relationship '${relName}'`);
+
+            if (relNameInput) relNameInput.value = "";
+            renderErDiagramCanvas();
+            updateInspectorUI();
+            generateRelationalSchemaFromModel(false);
+            showToast(`Relationship '${relName}' connected.`);
+        }
+
         if (btnAddRel) {
-            btnAddRel.addEventListener("click", function () {
-                const relNameInput = document.getElementById("builder-rel-name");
-                const e1Id = document.getElementById("builder-rel-e1").value;
-                const e2Id = document.getElementById("builder-rel-e2").value;
-                const card = document.getElementById("builder-rel-card").value;
-                const partE1 = (document.getElementById("builder-rel-part-e1")?.value) || "partial";
-                const partE2 = (document.getElementById("builder-rel-part-e2")?.value) || "partial";
-                const relName = (relNameInput.value || "").trim().replace(/[^a-zA-Z0-9_]/g, "") || "Relates";
+            btnAddRel.addEventListener("click", function (e) {
+                e.preventDefault();
+                handleAddRelationship();
+            });
+        }
 
-                if (!e1Id || !e2Id || e1Id === e2Id) {
-                    alert("Select two distinct entities for the relationship.");
-                    return;
+        if (relNameInput) {
+            relNameInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddRelationship();
                 }
-
-                const e1 = erModel.entities.find(e => e.id === e1Id);
-                const e2 = erModel.entities.find(e => e.id === e2Id);
-                const midX = Math.round((e1.x + e2.x) / 2);
-                const midY = Math.round((e1.y + e2.y) / 2);
-
-                const newRel = {
-                    id: `r_${Date.now()}`,
-                    name: relName,
-                    e1Id: e1Id,
-                    e2Id: e2Id,
-                    cardinality: card,
-                    e1Participation: partE1,
-                    e2Participation: partE2,
-                    x: midX,
-                    y: midY
-                };
-
-                erModel.relationships.push(newRel);
-                selectedItem = { type: "relationship", id: newRel.id };
-                pushHistory("Add Relationship");
-
-                relNameInput.value = "";
-                renderErDiagramCanvas();
-                updateInspectorUI();
-                generateRelationalSchemaFromModel(false);
-                showToast(`Relationship '${relName}' connected.`);
             });
         }
     }
@@ -1246,6 +1328,14 @@ document.addEventListener("DOMContentLoaded", function () {
     // C. TOOLBAR CONTROLS & SHORTCUTS
     // ====================================================================
     function bindToolbarControls() {
+        // Selection tool
+        document.getElementById("btn-tool-select")?.addEventListener("click", () => {
+            selectedItem = null;
+            renderErDiagramCanvas();
+            updateInspectorUI();
+            showToast("Selection Tool: Click any entity, attribute, or relationship on canvas.");
+        });
+
         // Deselect & Delete in Inspector
         document.getElementById("btn-builder-deselect")?.addEventListener("click", () => {
             selectedItem = null;
@@ -1511,6 +1601,74 @@ document.addEventListener("DOMContentLoaded", function () {
             x: (clientX - rect.left - viewport.panX) / viewport.zoom,
             y: (clientY - rect.top - viewport.panY) / viewport.zoom
         };
+    }
+
+    function updateViewportTransform() {
+        const vp = document.getElementById("er-viewport");
+        if (vp) {
+            vp.setAttribute("transform", `translate(${viewport.panX}, ${viewport.panY}) scale(${viewport.zoom})`);
+        }
+        const badge = document.getElementById("er-zoom-level-badge");
+        if (badge) {
+            badge.textContent = `Zoom: ${Math.round(viewport.zoom * 100)}%`;
+        }
+    }
+
+    function setZoom(newZoom, centerX, centerY) {
+        const clampedZoom = Math.max(0.3, Math.min(3.0, newZoom));
+        const container = document.getElementById("er-canvas-container");
+        if (centerX === undefined && container) centerX = container.clientWidth / 2;
+        if (centerY === undefined && container) centerY = container.clientHeight / 2;
+
+        const ratio = clampedZoom / viewport.zoom;
+        viewport.panX = (centerX !== undefined ? centerX : 0) - ratio * ((centerX !== undefined ? centerX : 0) - viewport.panX);
+        viewport.panY = (centerY !== undefined ? centerY : 0) - ratio * ((centerY !== undefined ? centerY : 0) - viewport.panY);
+        viewport.zoom = clampedZoom;
+        updateViewportTransform();
+    }
+
+    function resetZoom() {
+        viewport.zoom = 1.0;
+        viewport.panX = 0;
+        viewport.panY = 0;
+        updateViewportTransform();
+    }
+
+    function fitView() {
+        if (!erModel.entities || erModel.entities.length === 0) {
+            resetZoom();
+            return;
+        }
+        const container = document.getElementById("er-canvas-container");
+        const cw = container ? (container.clientWidth || 800) : 800;
+        const ch = container ? (container.clientHeight || 500) : 500;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        erModel.entities.forEach(e => {
+            minX = Math.min(minX, e.x - 90);
+            minY = Math.min(minY, e.y - 70);
+            maxX = Math.max(maxX, e.x + 90);
+            maxY = Math.max(maxY, e.y + 70);
+        });
+
+        const modelW = maxX - minX;
+        const modelH = maxY - minY;
+        if (modelW <= 0 || modelH <= 0) {
+            resetZoom();
+            return;
+        }
+
+        const scaleX = (cw - 80) / modelW;
+        const scaleY = (ch - 80) / modelH;
+        const fitScale = Math.max(0.4, Math.min(1.4, Math.min(scaleX, scaleY)));
+
+        const midX = (minX + maxX) / 2;
+        const midY = (minY + maxY) / 2;
+
+        viewport.zoom = fitScale;
+        viewport.panX = Math.round(cw / 2 - midX * fitScale);
+        viewport.panY = Math.round(ch / 2 - midY * fitScale);
+        updateViewportTransform();
     }
 
     // ====================================================================
@@ -2218,6 +2376,15 @@ document.addEventListener("DOMContentLoaded", function () {
     // G. EXPORT, IMPORT & LOCAL PERSISTENCE
     // ====================================================================
     function bindExportAndPersistence() {
+        // Generate Relational Schema
+        document.getElementById("btn-builder-generate-schema")?.addEventListener("click", function () {
+            generateRelationalSchemaFromModel(true);
+            const card = document.getElementById("builder-generated-schema-card");
+            if (card) {
+                card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        });
+
         // Copy SQL
         document.getElementById("btn-copy-generated-sql")?.addEventListener("click", function () {
             const output = document.getElementById("builder-schema-output");
@@ -2371,5 +2538,19 @@ document.addEventListener("DOMContentLoaded", function () {
             const toast = new bootstrap.Toast(toastElem, { delay: 3500 });
             toast.show();
         }
+    }
+
+    // ====================================================================
+    // LAUNCH ALL PHASE 6 MODULE ENGINES
+    // ====================================================================
+    try {
+        initNavigation();
+        initQuizHandlers();
+        initRelationalAlgebraLab();
+        initErDiagramBuilder();
+        syncProgressWithBackend();
+        console.log("Phase 6 engines successfully initialized.");
+    } catch (err) {
+        console.error("Critical error launching Phase 6 engines:", err);
     }
 });

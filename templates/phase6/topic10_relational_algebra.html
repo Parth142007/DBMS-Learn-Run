@@ -233,10 +233,10 @@
                                 <i class="bi bi-cursor-fill me-1"></i> Selection Inspector
                             </span>
                             <div class="d-flex gap-1">
-                                <button class="btn btn-outline-danger btn-sm py-0 px-2 d-none" id="btn-builder-delete-selected" title="Delete selected element (Del)">
+                                <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 d-none" id="btn-builder-delete-selected" title="Delete selected element (Del)">
                                     <i class="bi bi-trash"></i> Delete
                                 </button>
-                                <button class="btn btn-outline-secondary btn-sm py-0 px-2 d-none" id="btn-builder-deselect" title="Deselect element (Esc)">
+                                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 d-none" id="btn-builder-deselect" title="Deselect element (Esc)">
                                     <i class="bi bi-x"></i>
                                 </button>
                             </div>
@@ -323,7 +323,7 @@
                         <div class="card-body p-3">
                             <div class="input-group input-group-sm mb-2">
                                 <input type="text" class="form-control" id="builder-entity-name" placeholder="Entity Name (e.g. STUDENT)">
-                                <button class="btn btn-outline-success" id="btn-builder-add-entity">Add</button>
+                                <button type="button" class="btn btn-outline-success" id="btn-builder-add-entity">Add</button>
                             </div>
                             <div class="form-check form-check-inline small">
                                 <input class="form-check-input" type="checkbox" id="builder-entity-is-weak">
@@ -357,7 +357,7 @@
                                 <label class="form-label small text-muted mb-1">Parent Composite Attribute:</label>
                                 <select class="form-select form-select-sm" id="builder-attr-composite-parent"></select>
                             </div>
-                            <button class="btn btn-outline-primary btn-sm w-100" id="btn-builder-add-attr">
+                            <button type="button" class="btn btn-outline-primary btn-sm w-100" id="btn-builder-add-attr">
                                 <i class="bi bi-plus-circle me-1"></i> Attach Attribute
                             </button>
                         </div>
@@ -411,7 +411,7 @@
                             </div>
                             <!-- Hidden legacy field for backward compatibility -->
                             <input type="hidden" id="builder-rel-part" value="partial">
-                            <button class="btn btn-outline-warning text-dark btn-sm w-100" id="btn-builder-add-rel">
+                            <button type="button" class="btn btn-outline-warning text-dark btn-sm w-100" id="btn-builder-add-rel">
                                 <i class="bi bi-link me-1"></i> Connect Relationship
                             </button>
                         </div>
@@ -420,27 +420,27 @@
                     <!-- Builder Action Buttons & Data Management -->
                     <div class="card border mb-3 shadow-none bg-light">
                         <div class="card-body p-3">
-                            <button class="btn btn-gfg btn-sm w-100 mb-2 fw-semibold" id="btn-builder-generate-schema">
+                            <button type="button" class="btn btn-gfg btn-sm w-100 mb-2 fw-semibold" id="btn-builder-generate-schema">
                                 <i class="bi bi-file-earmark-code me-1"></i> Generate Relational Schema
                             </button>
-                            <button class="btn btn-outline-primary btn-sm w-100 mb-2" id="btn-builder-load-sample">
+                            <button type="button" class="btn btn-outline-primary btn-sm w-100 mb-2" id="btn-builder-load-sample">
                                 <i class="bi bi-mortarboard me-1"></i> Load College Sample Diagram
                             </button>
                             <div class="row g-2 mb-2">
                                 <div class="col-6">
-                                    <button class="btn btn-outline-secondary btn-sm w-100" id="btn-builder-save-local" title="Save diagram to browser local storage">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="btn-builder-save-local" title="Save diagram to browser local storage">
                                         <i class="bi bi-floppy me-1"></i> Save
                                     </button>
                                 </div>
                                 <div class="col-6">
-                                    <button class="btn btn-outline-secondary btn-sm w-100" id="btn-builder-load-local" title="Restore diagram from browser local storage">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100" id="btn-builder-load-local" title="Restore diagram from browser local storage">
                                         <i class="bi bi-arrow-clockwise me-1"></i> Restore
                                     </button>
                                 </div>
                             </div>
                             <div class="row g-2 mb-2">
                                 <div class="col-4">
-                                    <button class="btn btn-outline-dark btn-sm w-100" id="btn-builder-export-json" title="Download model as JSON file">
+                                    <button type="button" class="btn btn-outline-dark btn-sm w-100" id="btn-builder-export-json" title="Download model as JSON file">
                                         <i class="bi bi-download me-1"></i> JSON
                                     </button>
                                 </div>
@@ -451,12 +451,12 @@
                                     </label>
                                 </div>
                                 <div class="col-4">
-                                    <button class="btn btn-outline-dark btn-sm w-100" id="btn-builder-export-svg" title="Export diagram as SVG file">
+                                    <button type="button" class="btn btn-outline-dark btn-sm w-100" id="btn-builder-export-svg" title="Export diagram as SVG file">
                                         <i class="bi bi-filetype-svg me-1"></i> SVG
                                     </button>
                                 </div>
                             </div>
-                            <button class="btn btn-outline-danger btn-sm w-100" id="btn-builder-reset-all">
+                            <button type="button" class="btn btn-outline-danger btn-sm w-100" id="btn-builder-reset-all">
                                 <i class="bi bi-trash me-1"></i> Reset Diagram Canvas
                             </button>
                         </div>
@@ -543,10 +543,10 @@
                                 <span class="badge bg-success" id="builder-validation-badge">Model Validated</span>
                             </div>
                             <div class="d-flex gap-1">
-                                <button class="btn btn-outline-light btn-sm py-0 px-2 font-monospace" id="btn-copy-generated-sql" title="Copy SQL to clipboard">
+                                <button type="button" class="btn btn-outline-light btn-sm py-0 px-2 font-monospace" id="btn-copy-generated-sql" title="Copy SQL to clipboard">
                                     <i class="bi bi-clipboard me-1"></i> Copy SQL
                                 </button>
-                                <button class="btn btn-outline-light btn-sm py-0 px-2 font-monospace" id="btn-download-generated-sql" title="Download .sql file">
+                                <button type="button" class="btn btn-outline-light btn-sm py-0 px-2 font-monospace" id="btn-download-generated-sql" title="Download .sql file">
                                     <i class="bi bi-download me-1"></i> Download .sql
                                 </button>
                             </div>

@@ -1,0 +1,302 @@
+/* ====================================================================
+   DBMS Learn & Run: Core Stylesheet
+   Clean, educational GeeksforGeeks-inspired styling
+   ==================================================================== */
+
+:root {
+    --gfg-green: #2f8d46;
+    --gfg-green-hover: #26753a;
+    --gfg-green-light: #e8f5e9;
+    --gfg-dark: #1f2937;
+    --gfg-gray: #4b5563;
+    --gfg-light: #f9fafb;
+    --gfg-border: #e5e7eb;
+    --sidebar-width: 280px;
+    --topbar-height: 60px;
+    --code-bg: #1e1e1e;
+    --code-text: #e0e0e0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: var(--gfg-dark);
+    background-color: #f8fafc;
+    margin: 0;
+    padding: 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* Top Navigation Bar */
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    font-size: 1.25rem;
+    color: var(--gfg-green) !important;
+}
+
+.brand-badge {
+    background-color: var(--gfg-green-light);
+    color: var(--gfg-green);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-left: 6px;
+    text-transform: uppercase;
+}
+
+.top-navbar {
+    height: var(--topbar-height);
+    background: #ffffff;
+    border-bottom: 1px solid var(--gfg-border);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+/* Main Layout: Sidebar & Content */
+.app-container {
+    display: flex;
+    min-height: calc(100vh - var(--topbar-height));
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    background-color: #ffffff;
+    border-right: 1px solid var(--gfg-border);
+    height: calc(100vh - var(--topbar-height));
+    position: sticky;
+    top: var(--topbar-height);
+    overflow-y: auto;
+    padding: 1rem 0;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 2rem;
+    max-width: 1280px;
+    overflow-x: hidden;
+}
+
+/* Sidebar Navigation Items */
+.sidebar-header {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 1.25rem;
+    margin-top: 0.5rem;
+}
+
+.sidebar-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 1.25rem;
+    color: var(--gfg-gray);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-nav-link:hover {
+    color: var(--gfg-green);
+    background-color: #f0fdf4;
+    border-left-color: var(--gfg-green);
+}
+
+.sidebar-nav-link.active {
+    color: var(--gfg-green);
+    background-color: #f0fdf4;
+    border-left-color: var(--gfg-green);
+    font-weight: 600;
+}
+
+/* Content Header & Topic Cards */
+.topic-header {
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.topic-title {
+    font-weight: 800;
+    font-size: 1.85rem;
+    color: #111827;
+    margin-bottom: 0.35rem;
+}
+
+.topic-subtitle {
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+/* Status Cards */
+.card-stat {
+    background: #ffffff;
+    border: 1px solid var(--gfg-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    transition: box-shadow 0.2s ease;
+}
+
+.card-stat:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.card-stat .stat-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.card-stat .stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 0.25rem;
+}
+
+/* SQL Practical Editor Panel */
+.sql-panel {
+    background: #ffffff;
+    border: 1px solid var(--gfg-border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.sql-panel-header {
+    background-color: #f3f4f6;
+    border-bottom: 1px solid var(--gfg-border);
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sql-editor-textarea {
+    width: 100%;
+    min-height: 140px;
+    background-color: var(--code-bg);
+    color: var(--code-text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.92rem;
+    padding: 1rem;
+    border: none;
+    outline: none;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.sql-toolbar {
+    background-color: #f9fafb;
+    border-top: 1px solid var(--gfg-border);
+    padding: 0.65rem 1rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Result Table */
+.result-table-container {
+    max-height: 420px;
+    overflow: auto;
+    border: 1px solid var(--gfg-border);
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+.table-sql {
+    margin-bottom: 0;
+    font-size: 0.88rem;
+}
+
+.table-sql thead th {
+    background-color: #f9fafb;
+    color: #374151;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+/* Badges & Tags */
+.badge-status {
+    padding: 0.35em 0.65em;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+}
+
+.badge-connected {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.badge-disconnected {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+/* Syntax & Example Boxes (GeeksforGeeks tutorial style) */
+.syntax-box {
+    background-color: #f3f4f6;
+    border-left: 4px solid var(--gfg-green);
+    padding: 1rem 1.25rem;
+    border-radius: 0 6px 6px 0;
+    font-family: 'Consolas', monospace;
+    font-size: 0.92rem;
+    color: #1f2937;
+    margin: 1rem 0;
+}
+
+.info-callout {
+    background-color: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 1rem;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    color: #1e40af;
+    margin: 1rem 0;
+}
+
+/* Buttons */
+.btn-gfg {
+    background-color: var(--gfg-green);
+    color: #ffffff;
+    font-weight: 600;
+    border: none;
+}
+
+.btn-gfg:hover {
+    background-color: var(--gfg-green-hover);
+    color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .app-container {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        top: 0;
+        border-right: none;
+        border-bottom: 1px solid var(--gfg-border);
+    }
+    .main-content {
+        padding: 1rem;
+    }
+}

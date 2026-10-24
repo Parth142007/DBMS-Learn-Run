@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Schema Inspector — DBMS Learn & Run{% endblock %}
+
+{% block content %}
+<div class="topic-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="topic-title">Relational Schema Inspector</h1>
+            <p class="topic-subtitle">Detailed structure, constraints, foreign keys, and indexes of <code>dbms_learn_run</code></p>
+        </div>
+        <div>
+            <a href="/" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="info-callout mb-4">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-info-circle-fill fs-4 me-3 text-primary"></i>
+        <div>
+            <strong>Educational Schema Design:</strong>
+            This schema models a university event management and mentoring ecosystem. It is specifically designed with matching and non-matching records so that students can visibly observe the differences between <strong>INNER JOIN</strong>, <strong>LEFT JOIN</strong>, <strong>RIGHT JOIN</strong>, and <strong>SELF JOIN</strong>.
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Tables Accordion -->
+<div class="accordion mb-5" id="schemaAccordion">
+    {% set table_details = [
+        {
+            'name': 'departments',
+            'desc': 'Represents academic engineering departments. Civil Engineering (CIVIL) intentionally has 0 enrolled students and 0 events to demonstrate outer joins.',
+            'badge': 'Primary Entity',
+            'badge_color': 'primary'
+        },
+        {
+            'name': 'students',
+            'desc': 'Contains student roll numbers, GPA, semester, and a self-referencing mentor_id foreign key that points back to students(student_id) to demonstrate SELF JOIN. Students 8, 9, 10 have 0 event registrations.',
+            'badge': 'Self-Referencing Entity',
+            'badge_color': 'success'
+        },
+        {
+            'name': 'courses',
+            'desc': 'Academic subjects offered by departments with credit values between 1 and 6.',
+            'badge': 'Academic Entity',
+            'badge_color': 'secondary'
+        },
+        {
+            'name': 'events',
+            'desc': 'Campus technical workshops and hackathons. Event 6 (Cybersecurity Summit) intentionally has 0 registrations to demonstrate RIGHT JOIN.',
+            'badge': 'Event Entity',
+            'badge_color': 'info'
+        },
+        {
+            'name': 'organizers',
+            'desc': 'Many-to-Many junction table associating students who serve as coordinators/volunteers for specific campus events.',
+            'badge': 'Junction Table (M:N)',
+            'badge_color': 'warning'
+        },
+        {
+            'name': 'registrations',
+            'desc': 'Student event registration transactions. Contains composite UNIQUE constraint on (student_id, event_id) and ENUM status (Confirmed, Pending, Cancelled).',
+            'badge': 'Transaction Table',
+            'badge_color': 'danger'
+        },
+        {
+            'name': 'attendance',
+            'desc': 'Event check-in records for confirmed attendees. Demonstrates 1-to-1 relationship with registrations.',
+            'badge': '1-to-1 Sub-Entity',
+            'badge_color': 'dark'
+        },
+        {
+            'name': 'feedback',
+            'desc': 'Student feedback and numerical ratings (1-5 with CHECK constraint) linked to event registrations.',
+            'badge': '1-to-1 Feedback',
+            'badge_color': 'primary'
+        }
+    ] %}
+
+    {% for tbl in table_details %}
+    <div class="accordion-item shadow-sm border mb-3 rounded overflow-hidden">
+        <h2 class="accordion-header" id="heading-{{ tbl.name }}">
+            <button class="accordion-button {% if not loop.first %}collapsed{% endif %} py-3" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#collapse-{{ tbl.name }}">
+                <div class="d-flex align-items-center justify-content-between w-100 pe-3 flex-wrap gap-2">
+                    <div>
+                        <i class="bi bi-table text-success me-2"></i>
+                        <strong class="fs-6 me-2">{{ tbl.name }}</strong>
+                        <span class="badge bg-{{ tbl.badge_color }}-subtle text-{{ tbl.badge_color }} border border-{{ tbl.badge_color }}-subtle small">{{ tbl.badge }}</span>
+                    </div>
+                    <span class="text-muted small">Click to toggle column attributes</span>
+                </div>
+            </button>
+        </h2>
+        <div id="collapse-{{ tbl.name }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" 
+             data-bs-parent="#schemaAccordion">
+            <div class="accordion-body bg-light p-3">
+                <p class="text-muted small mb-3">{{ tbl.desc }}</p>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-semibold small text-dark"><i class="bi bi-columns me-1"></i> Column Definitions & Constraints</span>
+                    <a href="/?query=SELECT * FROM {{ tbl.name }} LIMIT 10;#quick-sql-lab" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-play-fill me-1"></i> Query {{ tbl.name }}
+                    </a>
+                </div>
+
+                {% if schema_info and tbl.name in schema_info %}
+                <div class="table-responsive bg-white rounded border">
+                    <table class="table table-sm table-hover mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Field Name</th>
+                                <th>Data Type</th>
+                                <th>Null Allowed</th>
+                                <th>Key Type</th>
+                                <th>Default</th>
+                                <th>Extra Attributes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for col in schema_info[tbl.name].columns %}
+                            <tr>
+                                <td class="fw-bold font-monospace text-primary">
+                                    {% if col.Key == 'PRI' %}
+                                        <i class="bi bi-key-fill text-warning me-1" title="Primary Key"></i>
+                                    {% elif col.Key == 'MUL' %}
+                                        <i class="bi bi-link-45deg text-info me-1" title="Foreign Key / Index"></i>
+                                    {% elif col.Key == 'UNI' %}
+                                        <i class="bi bi-star-fill text-secondary me-1" title="Unique Key"></i>
+                                    {% endif %}
+                                    {{ col.Field }}
+                                </td>
+                                <td class="font-monospace text-secondary">{{ col.Type }}</td>
+                                <td>
+                                    {% if col.Null == 'NO' %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">NOT NULL</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-muted border">NULL</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if col.Key == 'PRI' %}
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning">PRIMARY KEY</span>
+                                    {% elif col.Key == 'MUL' %}
+                                        <span class="badge bg-info-subtle text-info border">FOREIGN KEY</span>
+                                    {% elif col.Key == 'UNI' %}
+                                        <span class="badge bg-secondary-subtle text-secondary border">UNIQUE</span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ col.Default if col.Default is not none else 'None' }}</td>
+                                <td><span class="text-muted">{{ col.Extra }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-light border small text-muted mb-0">
+                    Connect to MySQL to introspect live columns from the database.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

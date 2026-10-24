@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DBMS Learn & Run — Interactive MySQL Learning Platform{% endblock %}</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg top-navbar px-3 px-lg-4">
+        <div class="container-fluid px-0">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <i class="bi bi-database-fill-gear me-2"></i>
+                <span>DBMS Learn & Run</span>
+                <span class="brand-badge d-none d-sm-inline">NEPC42 Syllabus</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNavContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="topNavContent">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'dashboard' %}active fw-semibold text-success{% endif %}" href="/">
+                            <i class="bi bi-grid-fill me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'schema' %}active fw-semibold text-success{% endif %}" href="/schema">
+                            <i class="bi bi-diagram-3-fill me-1"></i> Schema Inspector
+                        </a>
+                    </li>
+
+                    <!-- Live Database Connection Status Pill -->
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-sm {% if db_status.connected and db_status.database_exists %}btn-outline-success{% else %}btn-outline-danger{% endif %} rounded-pill px-3 py-1"
+                                data-bs-toggle="modal" data-bs-target="#dbConfigModal" title="Click to view/test MySQL connection">
+                            <span class="spinner-grow spinner-grow-sm me-1" style="width: 0.5rem; height: 0.5rem;" role="status"></span>
+                            {% if db_status.connected and db_status.database_exists %}
+                                <i class="bi bi-check-circle me-1"></i> MySQL 8.0: <strong>Connected</strong> ({{ db_status.table_count }} tables)
+                            {% else %}
+                                <i class="bi bi-exclamation-triangle me-1"></i> MySQL: <strong>Action Needed</strong>
+                            {% endif %}
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container: Sidebar + Content -->
+    <div class="app-container">
+        <!-- LEFT SIDEBAR: Syllabus Topics -->
+        <aside class="sidebar">
+            <div class="sidebar-header">Core DBMS Concepts</div>
+            <a href="/" class="sidebar-nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-house-door"></i> Platform Overview
+            </a>
+            <a href="/schema" class="sidebar-nav-link {% if active_page == 'schema' %}active{% endif %}">
+                <i class="bi bi-table"></i> Database Schema (8 Tables)
+            </a>
+
+            <div class="sidebar-header">Module 1: Foundations</div>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 2">
+                <i class="bi bi-journal-text"></i> Introduction to DBMS
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 2">
+                <i class="bi bi-hdd-network"></i> Database Architecture
+            </a>
+
+            <div class="sidebar-header">Module 2: Modeling & Algebra</div>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4/5">
+                <i class="bi bi-bounding-box"></i> ER Model & Schemas
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4/5">
+                <i class="bi bi-layers"></i> Relational Model
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4">
+                <i class="bi bi-calculator"></i> Relational Algebra Lab
+            </a>
+
+            <div class="sidebar-header">Module 3: SQL Mastery</div>
+            <a href="#quick-sql-lab" class="sidebar-nav-link">
+                <i class="bi bi-terminal"></i> Interactive SQL Runner
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 2">
+                <i class="bi bi-plus-square"></i> DDL & DML Commands
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 3">
+                <i class="bi bi-intersect"></i> SQL JOINs Laboratory
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4">
+                <i class="bi bi-funnel"></i> Aggregate & GROUP BY
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4">
+                <i class="bi bi-box-arrow-in-down-right"></i> Nested & Subqueries
+            </a>
+
+            <div class="sidebar-header">Module 4: Advanced SQL</div>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4">
+                <i class="bi bi-eye"></i> Views & Security
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4">
+                <i class="bi bi-lightning-charge"></i> Triggers & Procedures
+            </a>
+
+            <div class="sidebar-header">Module 5: Design & Theory</div>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 5">
+                <i class="bi bi-diagram-2"></i> Normalization (1NF to BCNF)
+            </a>
+
+            <div class="sidebar-header">Module 6: Transactions</div>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 6">
+                <i class="bi bi-arrow-repeat"></i> ACID & Transactions
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 6">
+                <i class="bi bi-shield-lock"></i> Concurrency & Deadlocks
+            </a>
+            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 6">
+                <i class="bi bi-patch-question"></i> Practice Exercises
+            </a>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- MySQL Connection Settings Modal -->
+    <div class="modal fade" id="dbConfigModal" tabindex="-1" aria-labelledby="dbConfigModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="dbConfigModalLabel">
+                        <i class="bi bi-database me-2 text-primary"></i>MySQL Connection Configuration
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">
+                        This platform communicates with your local <strong>MySQL 8.0 Server</strong>. You can verify or update your connection parameters below.
+                    </p>
+                    <form id="form-test-connection">
+                        <div class="row g-2 mb-2">
+                            <div class="col-8">
+                                <label class="form-label small fw-semibold">Host</label>
+                                <input type="text" id="modal-mysql-host" class="form-control form-control-sm" value="{{ db_status.host }}">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small fw-semibold">Port</label>
+                                <input type="number" id="modal-mysql-port" class="form-control form-control-sm" value="{{ db_status.port }}">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">User</label>
+                                <input type="text" id="modal-mysql-user" class="form-control form-control-sm" value="{{ db_status.user }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Password</label>
+                                <input type="password" id="modal-mysql-password" class="form-control form-control-sm" placeholder="Your MySQL root password">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Database Schema</label>
+                            <input type="text" class="form-control form-control-sm" value="{{ db_status.database }}" readonly>
+                        </div>
+                    </form>
+                    <div id="test-conn-feedback"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success btn-sm" id="btn-test-conn-submit">
+                        <i class="bi bi-plug-fill me-1"></i> Test Connection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Application JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

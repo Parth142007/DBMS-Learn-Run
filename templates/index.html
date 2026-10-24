@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard & SQL Runner — DBMS Learn & Run{% endblock %}
+
+{% block content %}
+<!-- Topic Header -->
+<div class="topic-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="topic-title">DBMS Learn & Run</h1>
+            <p class="topic-subtitle">Interactive MySQL Educational Platform for NEPC42 Database Management Systems</p>
+        </div>
+        <div>
+            <a href="/schema" class="btn btn-outline-primary btn-sm me-2">
+                <i class="bi bi-diagram-3 me-1"></i> View Schema (8 Tables)
+            </a>
+            <button class="btn btn-gfg btn-sm" data-bs-toggle="modal" data-bs-target="#dbConfigModal">
+                <i class="bi bi-gear-fill me-1"></i> Connection Settings
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Database Connection Health Callout -->
+{% if not db_status.connected %}
+<div class="alert alert-warning border-warning shadow-sm mb-4">
+    <div class="d-flex align-items-center mb-2">
+        <i class="bi bi-exclamation-triangle-fill text-warning fs-3 me-3"></i>
+        <div>
+            <h5 class="fw-bold mb-0">MySQL Connection Action Required</h5>
+            <div class="small text-muted">The MySQL 8.0 Windows service is running, but authentication or database setup is needed.</div>
+        </div>
+    </div>
+    <hr class="my-2">
+    <div class="small">
+        <p class="mb-1"><strong>Error details:</strong> <code>{{ db_status.error }}</code></p>
+        <p class="mb-2"><strong>How to connect in 1 step:</strong></p>
+        <ol class="mb-2 ps-3">
+            <li>Open the <code>.env</code> file in this folder and enter your MySQL root password:
+                <code>MYSQL_PASSWORD=your_root_password</code>
+            </li>
+            <li>Run the database initialization script in PowerShell:
+                <code>python init_db.py --password your_root_password</code>
+            </li>
+            <li>Or click the <strong>Connection Settings</strong> button above to test right in this browser!</li>
+        </ol>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success border-success shadow-sm mb-4 py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+        <div>
+            <span class="fw-bold text-success">Live MySQL 8.0 Connected</span> &mdash;
+            <span class="text-secondary small">Database: <code>{{ db_status.database }}</code> | MySQL Engine: <code>{{ db_status.mysql_version }}</code></span>
+        </div>
+    </div>
+    <div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle">
+            <i class="bi bi-check2-all me-1"></i> All 8 Schema Tables Active
+        </span>
+    </div>
+</div>
+{% endif %}
+
+<!-- Key Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card-stat">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Database Status</span>
+                <i class="bi bi-server text-primary fs-4"></i>
+            </div>
+            <div class="stat-value">
+                {% if db_status.connected %}
+                    <span class="text-success"><i class="bi bi-shield-check me-1"></i>Active</span>
+                {% else %}
+                    <span class="text-warning"><i class="bi bi-shield-exclamation me-1"></i>Setup</span>
+                {% endif %}
+            </div>
+            <small class="text-muted">Port {{ db_status.port }} @ {{ db_status.host }}</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card-stat">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Schema Tables</span>
+                <i class="bi bi-table text-success fs-4"></i>
+            </div>
+            <div class="stat-value">{{ db_status.table_count }}</div>
+            <small class="text-muted">InnoDB Relational Schema</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card-stat">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Syllabus Scope</span>
+                <i class="bi bi-journal-bookmark text-info fs-4"></i>
+            </div>
+            <div class="stat-value">6 Modules</div>
+            <small class="text-muted">NEPC42 DBMS Syllabus</small>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card-stat">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="stat-label">Execution Engine</span>
+                <i class="bi bi-lightning-charge text-warning fs-4"></i>
+            </div>
+            <div class="stat-value">Live API</div>
+            <small class="text-muted">Real MySQL Server Queries</small>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: Interactive SQL Practical Panel -->
+<div class="sql-panel shadow-sm" id="quick-sql-lab">
+    <div class="sql-panel-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-terminal-fill text-dark"></i>
+            <span class="fw-bold">Interactive SQL Laboratory</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle small">Live Query Engine</span>
+        </div>
+        <div class="small text-muted" id="execution-stats">
+            Ready to execute
+        </div>
+    </div>
+
+    <!-- SQL Editor Area -->
+    <textarea id="sql-query-input" class="sql-editor-textarea" spellcheck="false"
+        data-default-query="SELECT s.roll_no, CONCAT(s.first_name, ' ', s.last_name) AS student_name, d.dept_name, s.gpa FROM students s INNER JOIN departments d ON s.dept_id = d.dept_id ORDER BY s.gpa DESC;">SELECT s.roll_no, CONCAT(s.first_name, ' ', s.last_name) AS student_name, d.dept_name, s.gpa 
+FROM students s 
+INNER JOIN departments d ON s.dept_id = d.dept_id 
+ORDER BY s.gpa DESC;</textarea>
+
+    <!-- Toolbar Controls -->
+    <div class="sql-toolbar justify-content-between">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <button id="btn-run-query" class="btn btn-gfg btn-sm px-3">
+                <i class="bi bi-play-fill me-1"></i> Run Query
+            </button>
+            <button id="btn-reset-query" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+            </button>
+            <button id="btn-clear-query" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-trash3 me-1"></i> Clear
+            </button>
+        </div>
+
+        <!-- Quick Load Example Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-light border btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-code-slash me-1"></i> Load Query Example
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li><h6 class="dropdown-header">Basic Queries</h6></li>
+                <li><button class="dropdown-item small btn-load-preset" data-query="SELECT * FROM students ORDER BY gpa DESC;">SELECT all students by GPA</button></li>
+                <li><button class="dropdown-item small btn-load-preset" data-query="SELECT dept_name, building, budget FROM departments;">SELECT department budgets</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">JOIN Demonstrations</h6></li>
+                <li><button class="dropdown-item small btn-load-preset" data-query="SELECT s.roll_no, CONCAT(s.first_name, ' ', s.last_name) AS student, e.event_title FROM students s INNER JOIN registrations r ON s.student_id = r.student_id INNER JOIN events e ON r.event_id = e.event_id;">INNER JOIN: Student Event Registrations</button></li>
+                <li><button class="dropdown-item small btn-load-preset" data-query="SELECT s.roll_no, CONCAT(s.first_name, ' ', s.last_name) AS student, r.registration_id FROM students s LEFT JOIN registrations r ON s.student_id = r.student_id WHERE r.registration_id IS NULL;">LEFT JOIN: Students with NO registrations</button></li>
+                <li><button class="dropdown-item small btn-load-preset" data-query="SELECT s.roll_no AS student_roll, CONCAT(s.first_name, ' ', s.last_name) AS student_name, CONCAT(m.first_name, ' ', m.last_name) AS mentor_name FROM students s INNER JOIN students m ON s.mentor_id = m.student_id;">SELF JOIN: Students & Mentors</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">Aggregates & Grouping</h6></li>
+                <li><button class="dropdown-item small btn-load-preset" data-query="SELECT d.dept_name, COUNT(s.student_id) AS student_count, ROUND(AVG(s.gpa), 2) AS avg_gpa FROM departments d LEFT JOIN students s ON d.dept_id = s.dept_id GROUP BY d.dept_id, d.dept_name;">GROUP BY: Dept Student Count & Avg GPA</button></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Alert / Status Notice -->
+    <div id="query-status-alert" class="d-none"></div>
+
+    <!-- Query Results Output Table -->
+    <div class="p-3 bg-light border-top">
+        <div id="query-results-container">
+            <div class="text-center text-muted p-4 border rounded bg-white">
+                <i class="bi bi-play-circle fs-3 text-secondary d-block mb-2"></i>
+                <span>Click <strong>Run Query</strong> above to execute the SQL statement against the MySQL database.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: Schema Tables Overview Grid -->
+<div class="card shadow-sm mb-4 border">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-0">
+                <i class="bi bi-database me-2 text-primary"></i>Practice Database Schema: <code>dbms_learn_run</code>
+            </h5>
+            <small class="text-muted">Realistic tables with deliberate matching and non-matching records for JOIN learning</small>
+        </div>
+        <a href="/schema" class="btn btn-outline-secondary btn-sm">Full Schema Details &rarr;</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Table Name</th>
+                        <th>Educational Purpose</th>
+                        <th>Relationships</th>
+                        <th>Row Count</th>
+                        <th class="text-end pe-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set table_meta = {
+                        'departments': {'purpose': 'Academic departments with budget and year', 'rels': 'Parent to students, courses, events', 'icon': 'building'},
+                        'students': {'purpose': 'Student records with GPA and mentor_id', 'rels': 'FK -> departments; Self FK -> students (mentors)', 'icon': 'people'},
+                        'courses': {'purpose': 'Offered academic courses and credits', 'rels': 'FK -> departments', 'icon': 'book'},
+                        'events': {'purpose': 'Campus technical events & hackathons', 'rels': 'FK -> departments; Event 6 has 0 registrations', 'icon': 'calendar-event'},
+                        'organizers': {'purpose': 'Student event coordinators', 'rels': 'Many-to-Many junction (students & events)', 'icon': 'person-badge'},
+                        'registrations': {'purpose': 'Event registration transactions', 'rels': 'FK -> students, events (Confirmed/Pending)', 'icon': 'ticket-perforated'},
+                        'attendance': {'purpose': 'Event check-in tracking', 'rels': '1-to-1 FK -> registrations', 'icon': 'check2-square'},
+                        'feedback': {'purpose': 'Event ratings (1-5) and reviews', 'rels': '1-to-1 FK -> registrations', 'icon': 'star'}
+                    } %}
+                    {% for t in db_status.tables %}
+                    <tr>
+                        <td class="ps-3 fw-semibold">
+                            <i class="bi bi-{{ table_meta[t.name].icon if t.name in table_meta else 'table' }} text-success me-2"></i>
+                            <code>{{ t.name }}</code>
+                        </td>
+                        <td class="small text-secondary">{{ table_meta[t.name].purpose if t.name in table_meta else 'Database table' }}</td>
+                        <td class="small text-muted">{{ table_meta[t.name].rels if t.name in table_meta else '-' }}</td>
+                        <td>
+                            <span class="badge bg-secondary-subtle text-dark border">{{ t.rows }} rows</span>
+                        </td>
+                        <td class="text-end pe-3">
+                            <button class="btn btn-sm btn-outline-primary btn-load-table py-1 px-2" data-table="{{ t.name }}" title="Query this table">
+                                <i class="bi bi-eye me-1"></i> Inspect
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="bi bi-info-circle me-1"></i> No tables detected yet. Run <code>python init_db.py</code> to initialize the schema.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION: Educational Syllabus Roadmap (GeeksforGeeks Structure) -->
+<div class="card shadow-sm border mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-mortarboard-fill text-success me-2"></i>NEPC42 Syllabus Curriculum Roadmap
+        </h5>
+        <small class="text-muted">Structured learning pathway with explanations, syntax, and live database practice</small>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="border rounded p-3 h-100 bg-white">
+                    <span class="badge bg-success mb-2">Module 1</span>
+                    <h6 class="fw-bold mb-1">Introduction to DBMS</h6>
+                    <p class="small text-muted mb-2">Database system architecture, data models, 3-tier schema architecture, and data independence.</p>
+                    <span class="badge bg-light text-secondary border">Phase 2</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-3 h-100 bg-white">
+                    <span class="badge bg-success mb-2">Module 2</span>
+                    <h6 class="fw-bold mb-1">ER & Relational Model</h6>
+                    <p class="small text-muted mb-2">Entity-Relationship modeling, participation constraints, relational algebra operators, and schema mapping.</p>
+                    <span class="badge bg-light text-secondary border">Phase 4/5</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-3 h-100 bg-white">
+                    <span class="badge bg-success mb-2">Module 3</span>
+                    <h6 class="fw-bold mb-1">SQL & Relational Queries</h6>
+                    <p class="small text-muted mb-2">DDL, DML, DQL, INNER, LEFT, RIGHT, SELF, CROSS joins, aggregate functions, and nested subqueries.</p>
+                    <span class="badge bg-success text-white">Interactive Now</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-3 h-100 bg-white">
+                    <span class="badge bg-success mb-2">Module 4</span>
+                    <h6 class="fw-bold mb-1">Views, Triggers & Security</h6>
+                    <p class="small text-muted mb-2">Updatable views, BEFORE/AFTER triggers, constraints, stored procedures, and authorization.</p>
+                    <span class="badge bg-light text-secondary border">Phase 4</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-3 h-100 bg-white">
+                    <span class="badge bg-success mb-2">Module 5</span>
+                    <h6 class="fw-bold mb-1">Database Design & Normalization</h6>
+                    <p class="small text-muted mb-2">Functional dependencies, Armstrong's axioms, 1NF, 2NF, 3NF, BCNF decomposition and anomalies.</p>
+                    <span class="badge bg-light text-secondary border">Phase 5</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-3 h-100 bg-white">
+                    <span class="badge bg-success mb-2">Module 6</span>
+                    <h6 class="fw-bold mb-1">Transactions & Concurrency</h6>
+                    <p class="small text-muted mb-2">ACID properties, serializability, two-phase locking, deadlock recovery, and WAL logging.</p>
+                    <span class="badge bg-light text-secondary border">Phase 6</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Hook preset buttons to load sample queries into the editor
+    document.querySelectorAll(".btn-load-preset").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const query = btn.getAttribute("data-query");
+            const queryInput = document.getElementById("sql-query-input");
+            const runBtn = document.getElementById("btn-run-query");
+            if (queryInput && query) {
+                queryInput.value = query;
+                queryInput.scrollIntoView({ behavior: "smooth", block: "center" });
+                if (runBtn) runBtn.click();
+            }
+        });
+    });
+</script>
+{% endblock %}

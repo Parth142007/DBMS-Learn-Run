@@ -1,0 +1,295 @@
+<!-- Lesson 3: Transaction States -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 3</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Transaction States &amp; Lifecycle Management</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: Overview of States -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-diagram-3-fill me-2"></i>1. The Standard Transaction State Model
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                During its lifetime from issuance to conclusion, a database transaction moves through a series of well-defined states. The classical textbook state machine model identifies six distinct phases:
+            </p>
+
+            <div class="row g-3 my-3">
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-primary mb-2">1. Active</span>
+                        <h6 class="fw-bold text-dark">Execution in Progress</h6>
+                        <p class="small text-muted mb-0">The initial state upon <code>START TRANSACTION</code>. The transaction resides here while actively executing read, write, and compute statements.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-info text-dark mb-2">2. Partially Committed</span>
+                        <h6 class="fw-bold text-dark">Final Statement Executed</h6>
+                        <p class="small text-muted mb-0">Reached immediately after the final statement has completed in memory, but before the commit log record is guaranteed flushed to durable disk storage.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-success mb-2">3. Committed</span>
+                        <h6 class="fw-bold text-dark">Durably Recorded</h6>
+                        <p class="small text-muted mb-0">The commit record is written to durable storage. Modifications are permanent and irreversible. Changes can never be undone except by a new compensating transaction.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-warning text-dark mb-2">4. Failed</span>
+                        <h6 class="fw-bold text-dark">Error Detected</h6>
+                        <p class="small text-muted mb-0">Entered when execution can no longer proceed due to hardware failure, constraint violations (e.g., duplicate key), timeout, or deadlock abort.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-danger mb-2">5. Aborted</span>
+                        <h6 class="fw-bold text-dark">Rollback Finished</h6>
+                        <p class="small text-muted mb-0">The transaction has finished rolling back all its tentative writes using the undo log. The database state is cleanly restored to before the transaction began.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-secondary mb-2">6. Terminated</span>
+                        <h6 class="fw-bold text-dark">Lifecycle Complete</h6>
+                        <p class="small text-muted mb-0">The final exit state. All allocated locks, internal transaction ID slots, and memory buffers are returned to the DBMS connection pool.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info border d-flex gap-3 align-items-center mb-0">
+                <i class="bi bi-lightbulb-fill text-info fs-3 flex-shrink-0"></i>
+                <div class="small">
+                    <strong>Implementation Nuance:</strong>
+                    Exact state terminology can vary slightly across textbooks and database engines. For example, in MySQL InnoDB's source code, internal transaction states are tracked as <code>TRX_STATE_NOT_STARTED</code>, <code>TRX_STATE_ACTIVE</code>, <code>TRX_STATE_PREPARED</code> (in two-phase commits / XA), and <code>TRX_STATE_COMMITTED_IN_MEMORY</code>. Classical database theory models this cleanly using the 6-state transition graph below.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Interactive State Diagram -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-diagram-2 me-2"></i>2. Interactive State Transition Diagram
+            </h5>
+            <p class="text-secondary small mb-3">
+                Step through a transaction execution to observe transitions live on the state diagram:
+            </p>
+
+            <div class="card border bg-light mb-3">
+                <div class="card-body p-3 text-center">
+                    <!-- SVG State Machine Visualizer -->
+                    <div class="d-flex justify-content-center overflow-x-auto py-2">
+                        <svg width="780" height="260" viewBox="0 0 780 260" id="tx-state-svg" style="max-width: 100%; height: auto;">
+                            <defs>
+                                <marker id="arrow-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+                                </marker>
+                                <marker id="arrow-head-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#198754"/>
+                                </marker>
+                            </defs>
+
+                            <!-- Node 1: Active -->
+                            <g id="state-node-active" class="state-node" transform="translate(60, 100)">
+                                <rect width="130" height="50" rx="8" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+                                <text x="65" y="30" text-anchor="middle" font-weight="bold" fill="#312e81" font-size="14">ACTIVE</text>
+                            </g>
+
+                            <!-- Node 2: Partially Committed -->
+                            <g id="state-node-part-committed" class="state-node" transform="translate(290, 40)">
+                                <rect width="180" height="50" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+                                <text x="90" y="30" text-anchor="middle" font-weight="bold" fill="#0369a1" font-size="13">PARTIALLY COMMITTED</text>
+                            </g>
+
+                            <!-- Node 3: Committed -->
+                            <g id="state-node-committed" class="state-node" transform="translate(560, 40)">
+                                <rect width="150" height="50" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                                <text x="75" y="30" text-anchor="middle" font-weight="bold" fill="#15803d" font-size="14">COMMITTED</text>
+                            </g>
+
+                            <!-- Node 4: Failed -->
+                            <g id="state-node-failed" class="state-node" transform="translate(290, 160)">
+                                <rect width="150" height="50" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+                                <text x="75" y="30" text-anchor="middle" font-weight="bold" fill="#92400e" font-size="14">FAILED</text>
+                            </g>
+
+                            <!-- Node 5: Aborted -->
+                            <g id="state-node-aborted" class="state-node" transform="translate(560, 160)">
+                                <rect width="150" height="50" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+                                <text x="75" y="30" text-anchor="middle" font-weight="bold" fill="#991b1b" font-size="14">ABORTED</text>
+                            </g>
+
+                            <!-- Transitions Arrows -->
+                            <!-- Active -> Partially Committed -->
+                            <path d="M 190 115 L 290 65" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-head)" id="trans-active-part"/>
+                            <!-- Partially Committed -> Committed -->
+                            <path d="M 470 65 L 560 65" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-head)" id="trans-part-comm"/>
+                            <!-- Active -> Failed -->
+                            <path d="M 190 135 L 290 185" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-head)" id="trans-active-fail"/>
+                            <!-- Partially Committed -> Failed -->
+                            <path d="M 370 90 L 370 160" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-head)" id="trans-part-fail"/>
+                            <!-- Failed -> Aborted -->
+                            <path d="M 440 185 L 560 185" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow-head)" id="trans-fail-abort"/>
+                        </svg>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                        <div>
+                            <span class="fw-bold text-dark me-2">Current Active State:</span>
+                            <span class="badge bg-primary fs-6 px-3 py-2" id="state-badge-current">ACTIVE</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-success" id="btn-state-flow-success">
+                                <i class="bi bi-check-circle me-1"></i> Simulate Commit Path
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" id="btn-state-flow-fail">
+                                <i class="bi bi-x-circle me-1"></i> Simulate Failure Path
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" id="btn-state-reset">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border mt-3 text-start small font-monospace mb-0" id="state-stepper-msg">
+                        [Status] Transaction started via START TRANSACTION. State is ACTIVE. Ready to execute SQL operations.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Quiz -->
+        <section>
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-patch-question me-2"></i>3. Lesson 3 Assessment (5 Questions)
+            </h5>
+            <div id="quiz-topic3-container">
+                <!-- Q1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. When a transaction executes its very first SQL statement after `START TRANSACTION`, which state is it in?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic3" id="q1_t3_opt1" value="A">
+                            <label class="form-check-label" for="q1_t3_opt1">A) Partially Committed</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic3" id="q1_t3_opt2" value="B">
+                            <label class="form-check-label" for="q1_t3_opt2">B) Active</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic3" id="q1_t3_opt3" value="C">
+                            <label class="form-check-label" for="q1_t3_opt3">C) Terminated</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic3" id="q1_t3_opt4" value="D">
+                            <label class="form-check-label" for="q1_t3_opt4">D) Aborted</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. What distinguishes the 'Partially Committed' state from the 'Committed' state?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic3" id="q2_t3_opt1" value="A">
+                            <label class="form-check-label" for="q2_t3_opt1">A) In 'Partially Committed', final statements have executed in memory, but commit logs are not yet durably flushed to disk.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic3" id="q2_t3_opt2" value="B">
+                            <label class="form-check-label" for="q2_t3_opt2">B) In 'Partially Committed', the user has logged off but the query is still compiling.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic3" id="q2_t3_opt3" value="C">
+                            <label class="form-check-label" for="q2_t3_opt3">C) 'Partially Committed' transactions can never transition to the 'Failed' state.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic3" id="q2_t3_opt4" value="D">
+                            <label class="form-check-label" for="q2_t3_opt4">D) There is no distinction; they are identical states in all database theory.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. If a disk write error occurs while a transaction is in the 'Partially Committed' state, to which state does it immediately transition?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic3" id="q3_t3_opt1" value="A">
+                            <label class="form-check-label" for="q3_t3_opt1">A) Committed</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic3" id="q3_t3_opt2" value="B">
+                            <label class="form-check-label" for="q3_t3_opt2">B) Failed</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic3" id="q3_t3_opt3" value="C">
+                            <label class="form-check-label" for="q3_t3_opt3">C) Active</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic3" id="q3_t3_opt4" value="D">
+                            <label class="form-check-label" for="q3_t3_opt4">D) Standby</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. Once a transaction enters the 'Committed' state, can it ever be rolled back?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic3" id="q4_t3_opt1" value="A">
+                            <label class="form-check-label" for="q4_t3_opt1">A) Yes &mdash; Calling ROLLBACK within 24 hours always reverts committed rows.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic3" id="q4_t3_opt2" value="B">
+                            <label class="form-check-label" for="q4_t3_opt2">B) No &mdash; A committed transaction is permanent; reversing its effects requires a new compensating transaction.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. What must take place when a transaction transitions from 'Failed' to 'Aborted'?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic3" id="q5_t3_opt1" value="A">
+                            <label class="form-check-label" for="q5_t3_opt1">A) All modifications made by the transaction must be undone, restoring the database to its pre-transaction state.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic3" id="q5_t3_opt2" value="B">
+                            <label class="form-check-label" for="q5_t3_opt2">B) The user's database account must be dropped immediately.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic3" id="q5_t3_opt3" value="C">
+                            <label class="form-check-label" for="q5_t3_opt3">C) All tables must be converted to CSV files.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic3" id="q5_t3_opt4" value="D">
+                            <label class="form-check-label" for="q5_t3_opt4">D) The transaction is committed anyway to prevent slowdowns.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic3">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 3 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic3">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

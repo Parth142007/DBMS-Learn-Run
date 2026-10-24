@@ -36,23 +36,27 @@ Project/
 │   ├── 05_triggers.sql         # Audit log & capacity validation triggers
 │   ├── 06_practice_queries.sql # Ready-to-run queries mapped to syllabus
 │   ├── 07_practice_table.sql   # Isolated practice_students sandbox table
-│   └── 08_stored_procedures.sql # Stored procedures for department lookups, GPA calculation & safe registration
+│   ├── 08_stored_procedures.sql # Stored procedures for department lookups, GPA calculation & safe registration
+│   ├── 09_normalization_progress.sql # Phase 5 progress tracking table
+│   ├── 10_phase6_progress.sql  # Phase 6 progress tracking table
+│   └── 11_phase7_progress.sql  # Phase 7 progress tracking table
 │
 ├── templates/                  # Jinja2 Templates
-│   ├── base.html               # Main layout with 16-topic syllabus sidebar & Phase 4 navigation
-│   ├── index.html              # Live dashboard & interactive SQL runner
+│   ├── base.html               # Main layout with 16-topic syllabus sidebar & Phase 7 navigation
+│   ├── index.html              # Live dashboard, syllabus roadmap & interactive SQL runner
 │   ├── schema.html             # Relational schema inspector (8 tables)
 │   ├── phase2.html             # Phase 2 Learning Module container
 │   ├── phase2/                 # Modular Phase 2 topic partials (Topics 1-4)
 │   ├── phase3.html             # Phase 3 Learning Dashboard & SQL Lab container
 │   ├── phase3/                 # Modular Phase 3 topic partials (Topics 1-10)
 │   ├── phase4.html             # Phase 4 Views, Triggers & Security Module container
-│   └── phase4/                 # Modular Phase 4 topic partials (Topics 1-5)
-│       ├── topic1_views.html       # Topic 1: Views, updatability & WITH CHECK OPTION
-│       ├── topic2_triggers.html    # Topic 2: BEFORE/AFTER triggers & audit logging
-│       ├── topic3_constraints.html # Topic 3: PK, FK, UNIQUE, NOT NULL, CHECK, DEFAULT
-│       ├── topic4_procedures.html  # Topic 4: Stored procedures, IN/OUT params & procedural logic
-│       └── topic5_security.html    # Topic 5: Authorization, GRANT/REVOKE, MySQL 8 Roles & SQLi defense
+│   ├── phase4/                 # Modular Phase 4 topic partials (Topics 1-5)
+│   ├── phase5.html             # Phase 5 Database Design & Normalization container
+│   ├── phase5/                 # Modular Phase 5 topic partials (Topics 1-10)
+│   ├── phase6.html             # Phase 6 ER & Relational Model container
+│   ├── phase6/                 # Modular Phase 6 topic partials (Topics 1-10)
+│   ├── phase7.html             # Phase 7 Transactions & Concurrency container
+│   └── phase7/                 # Modular Phase 7 topic partials (Topics 1-10)
 │
 ├── static/                     # Static assets
 │   ├── css/style.css           # Styling for tabs, diagrams, role cards & code snippets
@@ -60,14 +64,20 @@ Project/
 │       ├── app.js              # Dynamic query execution & output rendering
 │       ├── phase2.js           # Phase 2 progress, quizzes & simulator
 │       ├── phase3.js           # Phase 3 SQL Lab, tab routing, quizzes & table reset
-│       └── phase4.js           # Phase 4 laboratories, procedure runner, RBAC simulator & progress
+│       ├── phase4.js           # Phase 4 laboratories, procedure runner, RBAC simulator & progress
+│       ├── phase5.js           # Phase 5 normalization engine, axiom explorer, closure & decomposition
+│       ├── phase6.js           # Phase 6 relational algebra engine & ER diagram builder
+│       └── phase7.js           # Phase 7 transaction simulator, schedule analyzer, 2PL, WFG & recovery
 │
-└── tests/                      # Automated test suite (39 tests passing)
+└── tests/                      # Automated test suite (83 tests passing)
     ├── test_database.py        # Database helper & serialization tests
     ├── test_sql_lab.py         # SQL parsing & safety tests
     ├── test_phase2.py          # Phase 2 routes, topics, quizzes, and regression tests
     ├── test_phase3.py          # Phase 3 routes, 10 topics, joins, aggregates, subqueries, safeguards
-    └── test_phase4.py          # Phase 4 routes, views, triggers, constraints, procedures & security
+    ├── test_phase4.py          # Phase 4 routes, views, triggers, constraints, procedures & security
+    ├── test_phase5.py          # Phase 5 routes, functional dependencies, normal forms, decomposition
+    ├── test_phase6.py          # Phase 6 routes, relational algebra, ER builder, integrity constraints
+    └── test_phase7.py          # Phase 7 routes, schedule analyzer, WAL recovery, progress API, ACID
 ```
 
 ---
@@ -544,5 +554,119 @@ Implemented **Phase 6 &mdash; ER &amp; Relational Model** as a complete, interac
 - **Full Suite Run:** `python -m unittest discover tests` executed **66 tests in 6.546s with 100% pass rate and zero regressions**.
 - **All Previous Phases Preserved:** Phases 2, 3, 4, and 5 remain fully functional and tested.
 
+---
 
+## Phase 7 &mdash; Transactions & Concurrency (Completed & Verified)
 
+Implemented **Phase 7 &mdash; Transactions & Concurrency** as the final major capstone module in the NEPC42 DBMS learning roadmap. Accessible via `/phase-7` and aliases `/transactions`, `/concurrency`, and `/transaction-lab`.
+
+### Module Overview & Scope
+- **Estimated Study Time:** ~240 minutes across 10 structured lessons.
+- **50 Assessment Questions:** 5 multiple-choice questions per lesson with instant technical feedback, detailed explanations for correct and incorrect answers, and retry capabilities.
+- **Dual Persistence:** Browser `localStorage` synced with server-side MySQL table `phase7_learning_progress` via REST endpoint `/api/progress/phase7`.
+- **Safe Educational Environment:** All transaction simulations, lock schedules, deadlocks, and WAL crash recoveries run in isolated in-memory sandboxes with sample data, with zero risk of modifying or locking the live database.
+
+### Implemented Lessons Breakdown
+
+- [x] **Lesson 1 &mdash; Transaction Concept & Boundaries:**
+  - Logical Unit of Work (LUW) definition and transaction boundaries (`START TRANSACTION`, `COMMIT`, `ROLLBACK`).
+  - Read-write operations model: $R(X)$ and $W(X)$.
+  - Concrete banking transfer case study: Transferring ₹5,000 from Alice to Bob with step-by-step intermediate state inspection.
+  - Failure scenarios and the danger of partial execution without transaction controls.
+  - **Interactive Bank Transfer Simulator:** Students can execute steps individually, trigger simulated mid-transfer network crashes, observe the inconsistent intermediate state, and perform rollback recovery.
+
+- [x] **Lesson 2 &mdash; ACID Properties Deep Dive:**
+  - **Atomicity:** All-or-nothing execution, undo mechanisms, and rollback logs.
+  - **Consistency:** Explicit schema integrity constraints vs. implicit enterprise business invariants; transaction preservation of consistent states.
+  - **Isolation:** Concurrency illusion, non-interference, and intermediate state protection.
+  - **Durability:** Persistence guarantees, non-volatile storage, and write-ahead logging (WAL).
+  - Concrete real-world analogies (Flight reservation, ATM cash withdrawal) and comprehensive summary matrix.
+  - **Interactive ACID Property Explorer:** Deep-dive tabs with failure simulations and DBMS protection strategies for each property.
+
+- [x] **Lesson 3 &mdash; Transaction States & Lifecycle:**
+  - Complete 6-state transition model: `ACTIVE`, `PARTIALLY COMMITTED`, `COMMITTED`, `FAILED`, `ABORTED`, and `TERMINATED`.
+  - Step-by-step transition conditions (last operation completed, unrecoverable error, rollback completed).
+  - Clarification: Difference between `PARTIALLY COMMITTED` (in-memory log flushed) and `COMMITTED` (hardened on disk).
+  - **Interactive SVG State Machine Diagram:** Visual state machine with interactive triggers (`EXECUTE_OPS`, `SUCCESS`, `ERROR`, `ROLLBACK`, `END`) dynamically highlighting current states, active transitions, and explanatory log messages.
+
+- [x] **Lesson 4 &mdash; Concurrency & Data Anomalies:**
+  - Concurrent execution benefits: improved throughput and reduced response times.
+  - Interleaved executions and interleaving vs. parallel execution.
+  - 5 major concurrency anomalies analyzed with step-by-step interleaved schedule tables:
+    1. **Lost Update Anomaly ($WW$ clash):** Blind overwrite erasing concurrent edits.
+    2. **Dirty Read Anomaly / Uncommitted Dependency ($WR$ clash):** Reading data from a transaction that later aborts.
+    3. **Non-Repeatable Read ($RW$ clash):** Re-reading a row whose values were altered by another committed transaction.
+    4. **Phantom Read:** Range query re-execution returning newly inserted or deleted rows matching the predicate.
+    5. **Inconsistent Summary Anomaly:** Aggregate calculation reading half-updated records.
+  - **Interactive Concurrency Anomaly Stepper:** Step through each anomaly timeline operation-by-operation with live variable monitors.
+
+- [x] **Lesson 5 &mdash; Serializability & Schedule Analysis:**
+  - Serial vs. Non-Serial schedules.
+  - Conflicting operations rules: two operations conflict if they belong to different transactions, access the same item, and at least one is a write (`RW`, `WR`, `WW`).
+  - Conflict Equivalence and Conflict Serializability.
+  - **Precedence Graph (Serialization Graph) Algorithm:**
+    - Edge $T_i \to T_j$ creation rules.
+    - Cycle detection theorem: A schedule is conflict serializable iff its precedence graph has no directed cycles.
+    - Topological sort (Kahn's algorithm) to obtain equivalent serial order.
+  - View Serializability: definition, view equivalence conditions (initial read, read-from, final write), blind writes, and NP-completeness proof.
+  - **Live Precedence Graph & Schedule Analyzer:** Connects to `/api/transactions/analyze-schedule` or runs client-side to parse tokens (`R1(A), W1(A), R2(A)...`), render responsive SVG precedence graphs, detect cycles, and output topological orders.
+
+- [x] **Lesson 6 &mdash; Concurrency Control via Locking (2PL):**
+  - Lock modes: Shared (S / Read) and Exclusive (X / Write).
+  - Lock compatibility matrix and conversion rules (upgrade/downgrade).
+  - Two-Phase Locking (2PL) Protocol:
+    - **Growing Phase:** Locks acquired, no locks released.
+    - **Lock Point:** Maximum locked state.
+    - **Shrinking Phase:** Locks released, no new locks acquired.
+    - Theorem: Any schedule following 2PL is guaranteed conflict serializable.
+  - 4 2PL variants: Basic 2PL, Conservative / Static 2PL (deadlock-free), Strict 2PL (cascadeless), and Rigorous 2PL (strict serial order).
+  - **Interactive 2PL Lock Simulator:** Step-by-step timeline tracking transaction phases, lock table grants, and conflict-induced waiting queues.
+
+- [x] **Lesson 7 &mdash; Deadlocks in DBMS:**
+  - Four Coffman conditions for deadlock: Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait.
+  - Wait-For Graph (WFG) definition, construction, and cycle detection.
+  - Deadlock handling strategies:
+    - **Deadlock Prevention:** Timestamp-based Wait-Die (non-preemptive) vs. Wound-Wait (preemptive).
+    - **Deadlock Detection:** Periodic WFG cycle inspection.
+    - **Deadlock Recovery:** Victim selection metrics (cost, progress, lock count) and partial vs. total rollback.
+  - **Interactive Deadlock Sandbox:** Interactive transactions acquiring resources in circular order, dynamic WFG rendering, cycle detection alert, and victim selection with automatic rollback.
+
+- [x] **Lesson 8 &mdash; Recovery Systems & Write-Ahead Logging (WAL):**
+  - Failure classifications: Transaction failure, System crash (volatile RAM lost), Disk media failure.
+  - Storage hierarchy: Volatile (RAM buffer pool), Non-volatile (SSD/HDD), Stable storage.
+  - Write-Ahead Logging (WAL) rules:
+    - Log records for an update must be flushed to disk before the updated database page is written (`Force-Log-at-Commit` / `No-Force` & `Steal` policy).
+    - Log sequence numbers (LSN), PageLSN, and FlushedLSN.
+  - Checkpointing: Naive vs. Fuzzy checkpoints, reducing recovery time.
+  - Deferred Update vs. Immediate Update policies.
+  - ARIES recovery algorithm overview: Analysis pass, Redo pass (repeating history), Undo pass (rolling back active transactions).
+  - **Interactive WAL Recovery Simulator:** Connects to `/api/transactions/simulate-recovery` or executes locally with configurable crash points, computing REDO and UNDO sets and restoring committed values.
+
+- [x] **Lesson 9 &mdash; Transaction Isolation in SQL & MySQL InnoDB:**
+  - ANSI/ISO SQL-92 isolation levels: `READ UNCOMMITTED`, `READ COMMITTED`, `REPEATABLE READ`, `SERIALIZABLE`.
+  - Anomaly prevention matrix for Dirty Read, Non-Repeatable Read, and Phantom Read.
+  - Real-world engine implementation: Lock-based vs. Multi-Version Concurrency Control (MVCC).
+  - MySQL 8.0 InnoDB specifics:
+    - Default isolation level is `REPEATABLE READ`.
+    - MVCC Read Views and undo logs for non-locking consistent snapshots.
+    - Next-Key Locking (Record Lock + Gap Lock) preventing phantom rows without table locks.
+    - Configuration and inspection commands: `SELECT @@transaction_isolation;`, `SET TRANSACTION ISOLATION LEVEL ...`, `SHOW ENGINE INNODB STATUS;`.
+  - **Interactive Isolation Level Comparator:** Visual matrix comparing performance throughput vs. consistency guarantees.
+
+- [x] **Lesson 10 &mdash; Interactive Transaction & Concurrency Lab:**
+  - Comprehensive hands-on laboratory integrating all Phase 7 concepts:
+    - **Custom Schedule Builder:** Input arbitrary schedules, analyze conflict serializability, inspect conflicting pairs, and view topological order.
+    - **Lock & Concurrency Sandbox:** Simulate 2PL lock acquisitions and visualize lock table states.
+    - **Deadlock Playground:** Build wait-for dependencies and resolve deadlocks via victim termination.
+    - **Crash Recovery Engine:** Execute custom WAL logs, inject crash LSNs, and observe REDO/UNDO passes.
+  - **Master Capstone Assessment:** 5 challenging university-level exam questions synthesizing ACID, serializability, 2PL, and recovery.
+
+### REST API Endpoints
+- `GET /api/progress/phase7` &mdash; Retrieve user completion and quiz scores across all 10 topics.
+- `POST /api/progress/phase7` &mdash; Update topic completion, quiz score, or simulator flags.
+- `POST /api/transactions/analyze-schedule` &mdash; Analyze conflict serializability, detect graph cycles, and compute topological order.
+- `POST /api/transactions/simulate-recovery` &mdash; Execute WAL crash recovery analysis, returning REDO set, UNDO set, and restored data values.
+
+### Testing & Verification
+- **Automated Tests:** 15 comprehensive unit tests in `tests/test_phase7.py`.
+- **Full Suite Run:** `python -m unittest discover tests` executed **83 tests in 8.254s with 100% pass rate and zero regressions across all Phases (2–7)**.

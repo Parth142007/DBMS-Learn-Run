@@ -1,0 +1,329 @@
+<!-- Lesson 7: Deadlocks and Recovery -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 7</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Deadlocks, Wait-For Graphs &amp; Victim Recovery</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: Deadlock Definition & Scenarios -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-slash-circle-fill me-2"></i>1. What is a Database Deadlock?
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                A <strong>Deadlock</strong> is a permanent stall condition where a set of two or more transactions are in a circular wait state: each transaction is blocked waiting for a lock that is currently held by another transaction in the cycle. Because all participating transactions are blocked waiting, none can ever progress, release locks, or commit on their own.
+            </p>
+
+            <div class="card border border-danger-subtle bg-danger-subtle mb-3">
+                <div class="card-body p-3">
+                    <h6 class="fw-bold text-danger mb-2"><i class="bi bi-exclamation-octagon-fill me-1"></i> The Classic Two-Transaction Deadlock</h6>
+                    <div class="row g-2 small font-monospace">
+                        <div class="col-md-6">
+                            <div class="p-2 border rounded bg-white">
+                                <strong class="text-primary d-block">Transaction T1:</strong>
+                                1. Holds Exclusive Lock on Item X.<br>
+                                2. Requests Exclusive Lock on Item Y.<br>
+                                <span class="badge bg-danger">BLOCKED waiting for T2</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-2 border rounded bg-white">
+                                <strong class="text-primary d-block">Transaction T2:</strong>
+                                1. Holds Exclusive Lock on Item Y.<br>
+                                2. Requests Exclusive Lock on Item X.<br>
+                                <span class="badge bg-danger">BLOCKED waiting for T1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wait-For Graph (WFG) Concept -->
+            <div class="card border bg-light mb-3">
+                <div class="card-body p-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-bezier me-1"></i> Wait-For Graph (WFG) Detection</h6>
+                    <p class="small text-secondary mb-2">
+                        A DBMS monitors deadlocks using a directed graph called a <strong>Wait-For Graph (WFG)</strong>:
+                    </p>
+                    <ul class="small text-secondary mb-2 ps-3">
+                        <li><strong>Nodes:</strong> Each currently active transaction in the system ($T_1, T_2, \dots$).</li>
+                        <li><strong>Directed Edge ($T_i \rightarrow T_j$):</strong> Transaction $T_i$ is waiting for a lock currently held by transaction $T_j$.</li>
+                    </ul>
+                    <div class="alert alert-dark py-1 small mb-0 font-monospace">
+                        <strong>Theorem:</strong> A deadlock exists in the system if and only if the Wait-For Graph contains at least one directed cycle!
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Deadlock Strategies -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-tools me-2"></i>2. Handling Deadlocks: Prevention, Detection &amp; Victim Selection
+            </h5>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-secondary mb-2">1. Deadlock Prevention</span>
+                        <h6 class="fw-bold text-dark">Timestamp Ordering</h6>
+                        <p class="small text-muted mb-2">Assigns monotonic timestamps $TS(T)$ on transaction start:</p>
+                        <ul class="small text-muted ps-3 mb-0">
+                            <li><strong>Wait-Die:</strong> If older wants lock held by younger, older waits. If younger wants lock held by older, younger dies (aborts).</li>
+                            <li><strong>Wound-Wait:</strong> If older wants lock held by younger, older wounds (preempts) younger. If younger wants lock, younger waits.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-info text-dark mb-2">2. Deadlock Detection</span>
+                        <h6 class="fw-bold text-dark">Background Graph Scanner</h6>
+                        <p class="small text-muted mb-0">The DBMS lock manager runs a background thread that periodically inspects the Wait-For Graph (or applies timeouts, e.g. <code>innodb_lock_wait_timeout</code>). If a cycle is detected, recovery is immediately initiated.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-primary mb-2">3. Victim Selection</span>
+                        <h6 class="fw-bold text-dark">Automated Rollback</h6>
+                        <p class="small text-muted mb-2">The DBMS chooses one transaction in the cycle to abort based on minimal cost heuristics:</p>
+                        <ul class="small text-muted ps-3 mb-0">
+                            <li>Fewest rows updated or inserted so far.</li>
+                            <li>Smallest undo log generated.</li>
+                            <li>Shortest running transaction.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info border d-flex gap-3 align-items-center mb-0">
+                <i class="bi bi-info-circle-fill text-info fs-3 flex-shrink-0"></i>
+                <div class="small">
+                    <strong>Real-World MySQL 8 Implementation:</strong>
+                    MySQL InnoDB has an active deadlock detector (<code>innodb_deadlock_detect = ON</code>) enabled by default. When an edge creates a cycle in its internal wait graph, InnoDB automatically rolls back the transaction that modified the fewest rows and issues error <code>ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction</code>.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Interactive Deadlock Simulator -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-play-circle me-2"></i>3. Interactive Deadlock &amp; Wait-For Graph Simulator
+            </h5>
+            <div class="card border bg-light">
+                <div class="card-body p-3">
+                    <p class="small text-secondary mb-3">
+                        Simulate the classic two-transaction deadlock, observe the cycle appear in the Wait-For Graph, select a victim transaction to abort, and watch the surviving transaction unblock and complete!
+                    </p>
+
+                    <!-- Interactive Controls -->
+                    <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+                        <button class="btn btn-sm btn-danger" id="btn-deadlock-trigger">
+                            <i class="bi bi-lightning-charge-fill me-1"></i> Trigger Deadlock (T1 &harr; T2)
+                        </button>
+                        <div class="dropdown" id="victim-selection-dropdown-container">
+                            <button class="btn btn-sm btn-warning dropdown-toggle" type="button" id="btn-victim-select" data-bs-toggle="dropdown" disabled>
+                                <i class="bi bi-person-x-fill me-1"></i> Select Victim to Abort
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item btn-victim-option" href="#" data-victim="T1">Abort Victim: T1 (Rollback T1)</a></li>
+                                <li><a class="dropdown-item btn-victim-option" href="#" data-victim="T2">Abort Victim: T2 (Rollback T2)</a></li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary ms-auto" id="btn-deadlock-reset">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Deadlock Sim
+                        </button>
+                    </div>
+
+                    <!-- SVG Wait-For Graph -->
+                    <div class="border rounded bg-white p-3 text-center mb-3">
+                        <span class="small fw-bold text-muted d-block mb-2">WAIT-FOR GRAPH (WFG) &mdash; CYCLE DETECTION</span>
+                        <div class="d-flex justify-content-center overflow-x-auto">
+                            <svg width="560" height="160" viewBox="0 0 560 160" id="wfg-svg" style="max-width: 100%; height: auto;">
+                                <defs>
+                                    <marker id="wfg-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+                                    </marker>
+                                </defs>
+                                <g id="wfg-edges"></g>
+                                <g id="wfg-nodes">
+                                    <!-- Node T1 -->
+                                    <g transform="translate(100, 50)" id="wfg-node-t1">
+                                        <circle cx="30" cy="30" r="28" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+                                        <text x="30" y="36" text-anchor="middle" font-weight="bold" fill="#312e81" font-size="14">T1</text>
+                                    </g>
+                                    <!-- Node T2 -->
+                                    <g transform="translate(400, 50)" id="wfg-node-t2">
+                                        <circle cx="30" cy="30" r="28" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2"/>
+                                        <text x="30" y="36" text-anchor="middle" font-weight="bold" fill="#312e81" font-size="14">T2</text>
+                                    </g>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="mt-2">
+                            <span class="badge bg-success" id="wfg-status-badge">No Deadlock Detected</span>
+                        </div>
+                    </div>
+
+                    <!-- Lock Ownership & Waiting State -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-2 border rounded bg-white small font-monospace" id="deadlock-t1-card">
+                                <strong class="text-primary">Transaction T1:</strong>
+                                <div id="deadlock-t1-status">Status: Idle</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-2 border rounded bg-white small font-monospace" id="deadlock-t2-card">
+                                <strong class="text-primary">Transaction T2:</strong>
+                                <div id="deadlock-t2-status">Status: Idle</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-dark py-2 small font-monospace mt-3 mb-0" id="deadlock-log">
+                        [Deadlock Detector] Ready. Click 'Trigger Deadlock' to stage the mutual blocking condition.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Quiz -->
+        <section>
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-patch-question me-2"></i>4. Lesson 7 Assessment (5 Questions)
+            </h5>
+            <div id="quiz-topic7-container">
+                <!-- Q1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic7">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. What condition mathematically indicates that a deadlock exists in a Wait-For Graph (WFG)?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic7" id="q1_t7_opt1" value="A">
+                            <label class="form-check-label" for="q1_t7_opt1">A) The graph contains at least one directed cycle.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic7" id="q1_t7_opt2" value="B">
+                            <label class="form-check-label" for="q1_t7_opt2">B) The graph contains an odd number of nodes.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic7" id="q1_t7_opt3" value="C">
+                            <label class="form-check-label" for="q1_t7_opt3">C) The graph has no edges at all.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic7" id="q1_t7_opt4" value="D">
+                            <label class="form-check-label" for="q1_t7_opt4">D) All transactions have committed simultaneously.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic7">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. In deadlock prevention using the 'Wait-Die' scheme, what happens if an older transaction requests a lock held by a younger transaction?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic7" id="q2_t7_opt1" value="A">
+                            <label class="form-check-label" for="q2_t7_opt1">A) The older transaction is permitted to wait.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic7" id="q2_t7_opt2" value="B">
+                            <label class="form-check-label" for="q2_t7_opt2">B) The older transaction is immediately aborted (dies).</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic7" id="q2_t7_opt3" value="C">
+                            <label class="form-check-label" for="q2_t7_opt3">C) Both transactions are merged into a single thread.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic7" id="q2_t7_opt4" value="D">
+                            <label class="form-check-label" for="q2_t7_opt4">D) The younger transaction is immediately committed.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic7">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. When a DBMS detects a deadlock and must select a victim transaction to abort, which criterion is commonly prioritized to minimize lost work?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic7" id="q3_t7_opt1" value="A">
+                            <label class="form-check-label" for="q3_t7_opt1">A) Choosing the transaction with the fewest rows updated and smallest undo log.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic7" id="q3_t7_opt2" value="B">
+                            <label class="form-check-label" for="q3_t7_opt2">B) Choosing the transaction with the longest execution time.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic7" id="q3_t7_opt3" value="C">
+                            <label class="form-check-label" for="q3_t7_opt3">C) Choosing the transaction connected over SSL.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic7" id="q3_t7_opt4" value="D">
+                            <label class="form-check-label" for="q3_t7_opt4">D) Randomly picking an idle connection on the server.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic7">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. How does the 'Wound-Wait' deadlock prevention scheme behave when an older transaction requests a lock held by a younger transaction?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic7" id="q4_t7_opt1" value="A">
+                            <label class="form-check-label" for="q4_t7_opt1">A) The older transaction 'wounds' (preempts/aborts) the younger transaction to seize the lock.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic7" id="q4_t7_opt2" value="B">
+                            <label class="form-check-label" for="q4_t7_opt2">B) The older transaction is permanently deleted.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic7" id="q4_t7_opt3" value="C">
+                            <label class="form-check-label" for="q4_t7_opt3">C) The younger transaction is granted root privileges.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic7" id="q4_t7_opt4" value="D">
+                            <label class="form-check-label" for="q4_t7_opt4">D) No locks are released until the server restarts.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic7">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. In MySQL 8 InnoDB, what happens by default when a deadlock is detected between two user queries?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic7" id="q5_t7_opt1" value="A">
+                            <label class="form-check-label" for="q5_t7_opt1">A) InnoDB automatically aborts the smaller transaction with Error 1213 and unblocks the other.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic7" id="q5_t7_opt2" value="B">
+                            <label class="form-check-label" for="q5_t7_opt2">B) The entire MySQL server crashes and shuts down.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic7" id="q5_t7_opt3" value="C">
+                            <label class="form-check-label" for="q5_t7_opt3">C) The operating system reboots the physical computer.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic7" id="q5_t7_opt4" value="D">
+                            <label class="form-check-label" for="q5_t7_opt4">D) The queries hang indefinitely forever until manual intervention.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic7">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 7 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic7">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

@@ -1831,4 +1831,397 @@ def evaluate_relational_algebra(operator, relation1, relation2=None, attributes=
     return {"success": False, "error": f"Unsupported relational operator '{operator}'."}
 
 
+# ====================================================================
+# PHASE 7: TRANSACTIONS & CONCURRENCY CONTROL ENGINE
+# ====================================================================
+
+def save_phase7_progress(session_id, lesson_id, completed=True, quiz_score=0, quiz_max_score=5,
+                         sim_bank_completed=False, sim_schedule_completed=False,
+                         sim_lock_completed=False, sim_deadlock_completed=False,
+                         sim_recovery_completed=False):
+    """Saves or updates progress for a Phase 7 lesson in MySQL."""
+    session_id = session_id or "default_student"
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            sql = """
+                INSERT INTO phase7_learning_progress 
+                    (session_id, lesson_id, completed, quiz_score, quiz_max_score, quiz_attempted,
+                     sim_bank_completed, sim_schedule_completed, sim_lock_completed,
+                     sim_deadlock_completed, sim_recovery_completed)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    completed = VALUES(completed),
+                    quiz_score = GREATEST(quiz_score, VALUES(quiz_score)),
+                    quiz_max_score = VALUES(quiz_max_score),
+                    quiz_attempted = VALUES(quiz_attempted),
+                    sim_bank_completed = VALUES(sim_bank_completed),
+                    sim_schedule_completed = VALUES(sim_schedule_completed),
+                    sim_lock_completed = VALUES(sim_lock_completed),
+                    sim_deadlock_completed = VALUES(sim_deadlock_completed),
+                    sim_recovery_completed = VALUES(sim_recovery_completed),
+                    updated_at = NOW();
+            """
+            cursor.execute(sql, (
+                session_id,
+                str(lesson_id),
+                bool(completed),
+                int(quiz_score),
+                int(quiz_max_score),
+                True if int(quiz_score) > 0 else False,
+                bool(sim_bank_completed),
+                bool(sim_schedule_completed),
+                bool(sim_lock_completed),
+                bool(sim_deadlock_completed),
+                bool(sim_recovery_completed)
+            ))
+        conn.close()
+        return {"success": True, "message": f"Phase 7 progress for '{lesson_id}' saved successfully."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def get_phase7_progress(session_id="default_student"):
+    """Fetches all stored Phase 7 progress for the session."""
+    session_id = session_id or "default_student"
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT lesson_id, completed, quiz_score, quiz_max_score, quiz_attempted, "
+                "sim_bank_completed, sim_schedule_completed, sim_lock_completed, "
+                "sim_deadlock_completed, sim_recovery_completed, updated_at "
+                "FROM phase7_learning_progress WHERE session_id = %s;",
+                (session_id,)
+            )
+            rows = cursor.fetchall()
+            columns = [c[0] for c in cursor.description] if cursor.description else []
+            data = [{col: serialize_value(r[col]) for col in columns} for r in rows]
+        conn.close()
+        return {"success": True, "progress": data, "count": len(data)}
+    except Exception as e:
+        return {"success": False, "error": str(e), "progress": []}
+
+
+def parse_schedule_operations(raw_input):
+    """
+    Parses a string or list of schedule operations into structured tokens.
+    Supports formats like:
+      R1(X), W1(X), R2(X), W2(X), C1, C2
+      r1[x] w1[x] r2[x] w2[x] c1 c2
+    """
+    if isinstance(raw_input, list):
+        tokens = [str(t).strip() for t in raw_input if str(t).strip()]
+    elif isinstance(raw_input, str):
+        # Split by comma, semicolon, newline, or whitespace
+        import re
+        tokens = [t.strip() for t in re.split(r"[,;\s\n]+", raw_input) if t.strip()]
+    else:
+        tokens = []
+
+    import re
+    parsed = []
+    step_num = 1
+
+    for tok in tokens:
+        clean = tok.strip()
+        if not clean:
+            continue
+
+        # Match R1(X) or R1[X]
+        m_rw = re.match(r"^([RrWw])(\d+)[\(\[]\s*([A-Za-z0-9_]+)\s*[\)\]]$", clean)
+        if m_rw:
+            op_type = "read" if m_rw.group(1).upper() == "R" else "write"
+            tx_num = int(m_rw.group(2))
+            item = m_rw.group(3).upper()
+            parsed.append({
+                "step": step_num,
+                "raw": f"{m_rw.group(1).upper()}{tx_num}({item})",
+                "op": op_type,
+                "tx": f"T{tx_num}",
+                "tx_num": tx_num,
+                "item": item
+            })
+            step_num += 1
+            continue
+
+        # Match C1, COMMIT1, A1, ABORT1
+        m_ca = re.match(r"^(?:(C|COMMIT)|(A|ABORT))(\d+)$", clean, re.IGNORECASE)
+        if m_ca:
+            is_commit = bool(m_ca.group(1))
+            tx_num = int(m_ca.group(3))
+            op_type = "commit" if is_commit else "abort"
+            parsed.append({
+                "step": step_num,
+                "raw": f"{'C' if is_commit else 'A'}{tx_num}",
+                "op": op_type,
+                "tx": f"T{tx_num}",
+                "tx_num": tx_num,
+                "item": None
+            })
+            step_num += 1
+            continue
+
+    return parsed
+
+
+def analyze_transaction_schedule(raw_input_or_ops):
+    """
+    Analyzes an interleaved transaction schedule for conflict serializability.
+    Constructs precedence graph, detects cycles using DFS and Kahn's algorithm,
+    and returns topological order or cycle explanation.
+    """
+    ops = parse_schedule_operations(raw_input_or_ops) if not (isinstance(raw_input_or_ops, list) and raw_input_or_ops and isinstance(raw_input_or_ops[0], dict) and "op" in raw_input_or_ops[0]) else raw_input_or_ops
+
+    if not ops:
+        return {
+            "success": False,
+            "error": "No valid schedule operations parsed. Example format: R1(X), W1(X), R2(X), W2(X), C1, C2"
+        }
+
+    # Extract active transactions and items
+    tx_set = sorted(list(set(op["tx"] for op in ops)), key=lambda x: int(x[1:]) if x[1:].isdigit() else x)
+    items_set = sorted(list(set(op["item"] for op in ops if op["item"] is not None)))
+
+    # Step-by-step conflict detection
+    conflicts = []
+    edges = set()
+    edge_details = []
+
+    n = len(ops)
+    for i in range(n):
+        op_i = ops[i]
+        if op_i["item"] is None:
+            continue
+
+        for j in range(i + 1, n):
+            op_j = ops[j]
+            if op_j["item"] is None:
+                continue
+
+            # Conflicts must belong to different transactions and access same data item
+            if op_i["tx"] != op_j["tx"] and op_i["item"] == op_j["item"]:
+                # At least one must be a write
+                if op_i["op"] == "write" or op_j["op"] == "write":
+                    from_tx = op_i["tx"]
+                    to_tx = op_j["tx"]
+                    item = op_i["item"]
+
+                    if op_i["op"] == "read" and op_j["op"] == "write":
+                        c_type = "Read-Write (RW) Anti-Dependency"
+                    elif op_i["op"] == "write" and op_j["op"] == "read":
+                        c_type = "Write-Read (WR) Flow Dependency"
+                    else:
+                        c_type = "Write-Write (WW) Output Dependency"
+
+                    conflict_entry = {
+                        "from_tx": from_tx,
+                        "to_tx": to_tx,
+                        "item": item,
+                        "conflict_type": c_type,
+                        "step_earlier": op_i["step"],
+                        "op_earlier": op_i["raw"],
+                        "step_later": op_j["step"],
+                        "op_later": op_j["raw"],
+                        "description": f"Step {op_i['step']} {op_i['raw']} conflicts with Step {op_j['step']} {op_j['raw']} on item {item} ({c_type})."
+                    }
+                    conflicts.append(conflict_entry)
+
+                    edge_tuple = (from_tx, to_tx)
+                    if edge_tuple not in edges:
+                        edges.add(edge_tuple)
+                        edge_details.append({
+                            "from": from_tx,
+                            "to": to_tx,
+                            "item": item,
+                            "reason": f"{op_i['raw']} (step {op_i['step']}) -> {op_j['raw']} (step {op_j['step']})",
+                            "type": c_type
+                        })
+
+    # Build Adjacency List for Graph Analysis
+    adj = {tx: [] for tx in tx_set}
+    in_degree = {tx: 0 for tx in tx_set}
+    for (u, v) in edges:
+        adj[u].append(v)
+        in_degree[v] += 1
+
+    # Cycle Detection using DFS
+    visited = {tx: 0 for tx in tx_set}  # 0 = unvisited, 1 = visiting, 2 = visited
+    cycle_nodes = []
+    parent_map = {}
+
+    def dfs_find_cycle(u, path):
+        visited[u] = 1
+        path.append(u)
+        for v in adj[u]:
+            if visited[v] == 1:
+                # Cycle found!
+                idx = path.index(v)
+                cycle_nodes.extend(path[idx:] + [v])
+                return True
+            elif visited[v] == 0:
+                parent_map[v] = u
+                if dfs_find_cycle(v, path):
+                    return True
+        path.pop()
+        visited[u] = 2
+        return False
+
+    has_cycle = False
+    for tx in tx_set:
+        if visited[tx] == 0:
+            if dfs_find_cycle(tx, []):
+                has_cycle = True
+                break
+
+    # Kahn's Algorithm for Topological Sort
+    q = [tx for tx in tx_set if in_degree[tx] == 0]
+    topological_order = []
+    temp_in_degree = dict(in_degree)
+
+    while q:
+        curr = q.pop(0)
+        topological_order.append(curr)
+        for neighbor in adj[curr]:
+            temp_in_degree[neighbor] -= 1
+            if temp_in_degree[neighbor] == 0:
+                q.append(neighbor)
+
+    is_conflict_serializable = (len(topological_order) == len(tx_set)) and not has_cycle
+
+    # Educational explanation
+    if is_conflict_serializable:
+        eq_serial = " -> ".join(topological_order)
+        explanation = (
+            f"The schedule is CONFLICT-SERIALIZABLE! The precedence (serialization) graph contains NO cycles. "
+            f"It is conflict-equivalent to the serial schedule: {eq_serial}."
+        )
+    else:
+        cycle_str = " -> ".join(cycle_nodes) if cycle_nodes else "Cycle detected among transactions"
+        explanation = (
+            f"The schedule is NOT CONFLICT-SERIALIZABLE! A directed cycle ({cycle_str}) exists in the precedence graph. "
+            f"No equivalent serial execution order exists because transaction operations have mutually conflicting orderings."
+        )
+
+    return {
+        "success": True,
+        "schedule_length": len(ops),
+        "operations": ops,
+        "transactions": tx_set,
+        "data_items": items_set,
+        "conflicts_count": len(conflicts),
+        "conflicts": conflicts,
+        "graph_nodes": tx_set,
+        "graph_edges": edge_details,
+        "is_conflict_serializable": is_conflict_serializable,
+        "has_cycle": has_cycle,
+        "cycle_path": cycle_nodes,
+        "topological_order": topological_order if is_conflict_serializable else [],
+        "equivalent_serial_schedule": " -> ".join(topological_order) if is_conflict_serializable else None,
+        "explanation": explanation
+    }
+
+
+def simulate_wal_recovery(log_records=None, crash_lsn=None, initial_values=None):
+    """
+    Simulates Write-Ahead Logging (WAL) recovery on educational log sequences.
+    Identifies Redo list (Committed) and Undo list (Uncommitted at crash),
+    and calculates final restored values with step-by-step reasoning.
+    """
+    default_initial = {"A": 5000, "B": 3000, "C": 2000}
+    state = dict(initial_values or default_initial)
+
+    default_logs = [
+        {"lsn": 1, "tx": "T1", "type": "START", "item": None, "old_val": None, "new_val": None},
+        {"lsn": 2, "tx": "T1", "type": "UPDATE", "item": "A", "old_val": 5000, "new_val": 4000},
+        {"lsn": 3, "tx": "T2", "type": "START", "item": None, "old_val": None, "new_val": None},
+        {"lsn": 4, "tx": "T1", "type": "UPDATE", "item": "B", "old_val": 3000, "new_val": 4000},
+        {"lsn": 5, "tx": "T1", "type": "COMMIT", "item": None, "old_val": None, "new_val": None},
+        {"lsn": 6, "tx": "T2", "type": "UPDATE", "item": "C", "old_val": 2000, "new_val": 2500},
+        {"lsn": 7, "tx": "T3", "type": "START", "item": None, "old_val": None, "new_val": None},
+        {"lsn": 8, "tx": "T3", "type": "UPDATE", "item": "A", "old_val": 4000, "new_val": 4800}
+    ]
+
+    logs = list(log_records or default_logs)
+    max_lsn = max(entry["lsn"] for entry in logs) if logs else 0
+    crash_lsn = int(crash_lsn) if crash_lsn is not None else max_lsn
+
+    # Filter logs executed up to crash point
+    executed_logs = [entry for entry in logs if entry["lsn"] <= crash_lsn]
+
+    # Analyze transaction status at crash
+    started_txs = set()
+    committed_txs = set()
+    aborted_txs = set()
+
+    for rec in executed_logs:
+        tx = rec["tx"]
+        rtype = rec["type"].upper()
+        if rtype == "START":
+            started_txs.add(tx)
+        elif rtype == "COMMIT":
+            committed_txs.add(tx)
+        elif rtype == "ABORT":
+            aborted_txs.add(tx)
+
+    redo_list = sorted(list(committed_txs))
+    undo_list = sorted(list(started_txs - committed_txs - aborted_txs))
+
+    # Apply database state simulation
+    # 1. Start from initial state, trace all writes before crash
+    db_at_crash = dict(state)
+    for rec in executed_logs:
+        if rec["type"].upper() == "UPDATE" and rec["item"] is not None:
+            db_at_crash[rec["item"]] = rec["new_val"]
+
+    # 2. Recovery: REDO committed transactions forward
+    redo_actions = []
+    for rec in executed_logs:
+        if rec["tx"] in committed_txs and rec["type"].upper() == "UPDATE" and rec["item"] is not None:
+            redo_actions.append({
+                "lsn": rec["lsn"],
+                "tx": rec["tx"],
+                "item": rec["item"],
+                "new_val": rec["new_val"],
+                "action": f"REDO: Reapplied {rec['tx']} update on {rec['item']} = {rec['new_val']}."
+            })
+
+    # 3. Recovery: UNDO uncommitted transactions backward
+    undo_actions = []
+    recovered_state = dict(db_at_crash)
+    for rec in reversed(executed_logs):
+        if rec["tx"] in undo_list and rec["type"].upper() == "UPDATE" and rec["item"] is not None:
+            recovered_state[rec["item"]] = rec["old_val"]
+            undo_actions.append({
+                "lsn": rec["lsn"],
+                "tx": rec["tx"],
+                "item": rec["item"],
+                "restored_val": rec["old_val"],
+                "action": f"UNDO: Rolled back {rec['tx']} update on {rec['item']} to prior value {rec['old_val']}."
+            })
+
+    explanation = (
+        f"At crash point LSN {crash_lsn}: "
+        f"Committed transactions ({', '.join(redo_list) or 'None'}) are in the REDO list to guarantee DURABILITY. "
+        f"Uncommitted active transactions ({', '.join(undo_list) or 'None'}) are in the UNDO list to guarantee ATOMICITY. "
+        f"Changes from uncommitted transactions are rolled back."
+    )
+
+    return {
+        "success": True,
+        "crash_lsn": crash_lsn,
+        "total_logs": len(logs),
+        "executed_logs": executed_logs,
+        "initial_state": state,
+        "state_at_crash": db_at_crash,
+        "redo_list": redo_list,
+        "undo_list": undo_list,
+        "redo_actions": redo_actions,
+        "undo_actions": undo_actions,
+        "recovered_state": recovered_state,
+        "explanation": explanation,
+        "disclaimer": "Educational WAL recovery model. Actual MySQL InnoDB recovery uses redo log groups (ib_logfile), undo tablespaces, doublewrite buffer, and checkpoint LSNs."
+    }
+
+
+
 

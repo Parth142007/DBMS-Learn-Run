@@ -142,6 +142,49 @@ def phase_6():
         canonical_topic = default_topic
     return render_template("phase6.html", active_page="phase6", current_topic=canonical_topic)
 
+@app.route("/phase-7")
+@app.route("/transactions")
+@app.route("/concurrency")
+@app.route("/transaction-lab")
+def phase_7():
+    """
+    Phase 7: Transactions & Concurrency
+    Comprehensive interactive module covering Transaction Concepts, ACID Properties,
+    Transaction States, Concurrency Problems, Schedules & Serializability,
+    Lock-Based Concurrency Control (2PL), Deadlocks & Wait-For Graphs,
+    Database Recovery & WAL Logging, and SQL Isolation Levels.
+    """
+    default_topic = "topic10" if request.path == "/transaction-lab" else "topic1"
+    topic = request.args.get("topic", default_topic).strip().lower()
+    valid_topics = [
+        "topic1", "topic2", "topic3", "topic4", "topic5",
+        "topic6", "topic7", "topic8", "topic9", "topic10",
+        "intro", "acid", "states", "concurrency", "problems",
+        "serializability", "schedules", "locks", "locking",
+        "deadlocks", "recovery", "wal", "isolation", "lab"
+    ]
+    alias_map = {
+        "intro": "topic1",
+        "acid": "topic2",
+        "states": "topic3",
+        "concurrency": "topic4",
+        "problems": "topic4",
+        "schedules": "topic5",
+        "serializability": "topic5",
+        "locks": "topic6",
+        "locking": "topic6",
+        "deadlocks": "topic7",
+        "recovery": "topic8",
+        "wal": "topic8",
+        "isolation": "topic9",
+        "lab": "topic10"
+    }
+    canonical_topic = alias_map.get(topic, topic)
+    if canonical_topic not in ["topic1", "topic2", "topic3", "topic4", "topic5", "topic6", "topic7", "topic8", "topic9", "topic10"]:
+        canonical_topic = default_topic
+    return render_template("phase7.html", active_page="phase7", current_topic=canonical_topic)
+
+
 
 # ====================================================================
 # REST API ENDPOINTS
@@ -248,6 +291,65 @@ def api_relational_algebra_datasets():
         "success": True,
         "datasets": db.RELATIONAL_ALGEBRA_DATASETS
     })
+
+@app.route("/api/progress/phase7", methods=["GET", "POST"])
+def api_phase7_progress():
+    """Get or save Phase 7 learning, quiz, and simulation progress."""
+    if request.method == "GET":
+        session_id = request.args.get("session_id", "default_student")
+        res = db.get_phase7_progress(session_id)
+        return jsonify(res)
+    else:
+        data = request.get_json() or {}
+        session_id = data.get("session_id", "default_student")
+        lesson_id = data.get("lesson_id", "")
+        if not lesson_id:
+            return jsonify({"success": False, "error": "lesson_id is required."}), 400
+        score = data.get("score") if data.get("score") is not None else data.get("quiz_score", 0)
+        quiz_max_score = int(data.get("quiz_max_score", 5))
+        completed = data.get("completed", True if int(score) >= 3 else False)
+        sim_bank = data.get("sim_bank_completed", False)
+        sim_schedule = data.get("sim_schedule_completed", False)
+        sim_lock = data.get("sim_lock_completed", False)
+        sim_deadlock = data.get("sim_deadlock_completed", False)
+        sim_recovery = data.get("sim_recovery_completed", False)
+
+        canonical_id = f"topic_{lesson_id}" if isinstance(lesson_id, int) else str(lesson_id)
+        res = db.save_phase7_progress(
+            session_id=session_id,
+            lesson_id=canonical_id,
+            completed=completed,
+            quiz_score=int(score),
+            quiz_max_score=quiz_max_score,
+            sim_bank_completed=sim_bank,
+            sim_schedule_completed=sim_schedule,
+            sim_lock_completed=sim_lock,
+            sim_deadlock_completed=sim_deadlock,
+            sim_recovery_completed=sim_recovery
+        )
+        return jsonify(res)
+
+@app.route("/api/transactions/analyze-schedule", methods=["POST"])
+def api_analyze_schedule():
+    """Analyze transaction schedule for conflicts, build precedence graph, and verify conflict serializability."""
+    data = request.get_json() or {}
+    schedule_input = data.get("schedule") or data.get("operations")
+    if not schedule_input:
+        return jsonify({"success": False, "error": "schedule or operations string/list is required."}), 400
+    res = db.analyze_transaction_schedule(schedule_input)
+    status_code = 200 if res.get("success", False) else 400
+    return jsonify(res), status_code
+
+@app.route("/api/transactions/simulate-recovery", methods=["POST"])
+def api_simulate_recovery():
+    """Simulate Write-Ahead Logging (WAL) recovery on transaction log sequences."""
+    data = request.get_json() or {}
+    logs = data.get("logs") or data.get("log_records")
+    crash_lsn = data.get("crash_lsn")
+    initial_values = data.get("initial_values")
+    res = db.simulate_wal_recovery(logs, crash_lsn, initial_values)
+    return jsonify(res)
+
 
 
 @app.route("/api/health", methods=["GET"])

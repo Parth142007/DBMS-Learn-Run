@@ -1,0 +1,332 @@
+<!-- Lesson 10: Interactive Transaction Lab -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 10</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Interactive Transaction Lab &amp; Capstone Assessment</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">Interactive Learning Sandbox</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Lab Header & Guidelines -->
+        <div class="alert alert-success border d-flex gap-3 align-items-center mb-4">
+            <i class="bi bi-cpu-fill text-success fs-2 flex-shrink-0"></i>
+            <div>
+                <h6 class="fw-bold mb-1">Welcome to the Safe Educational Transaction Studio</h6>
+                <p class="small text-secondary mb-0">
+                    This interactive laboratory provides a completely isolated sandbox to experiment with transaction interleaving, conflict serializability, 2PL lock acquisition, deadlocks, and Write-Ahead Logging (WAL) recovery. <em>All simulations execute safely in memory without altering the application's production tables.</em>
+                </p>
+            </div>
+        </div>
+
+        <!-- Tabbed Tool Suites in Lab -->
+        <div class="card border mb-4">
+            <div class="card-header bg-light py-2">
+                <ul class="nav nav-pills card-header-pills gap-1" id="lab-tool-tabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active py-1 px-3 fw-semibold small lab-tab-pill" id="tab-pill-schedule" data-bs-toggle="pill" data-bs-target="#lab-pane-schedule" type="button">
+                            <i class="bi bi-bezier2 me-1"></i> 1. Schedule &amp; Graph Analyzer
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link py-1 px-3 fw-semibold small lab-tab-pill" id="tab-pill-locking" data-bs-toggle="pill" data-bs-target="#lab-pane-locking" type="button">
+                            <i class="bi bi-lock-fill me-1"></i> 2. 2PL Lock Simulator
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link py-1 px-3 fw-semibold small lab-tab-pill" id="tab-pill-deadlock" data-bs-toggle="pill" data-bs-target="#lab-pane-deadlock" type="button">
+                            <i class="bi bi-slash-circle-fill me-1"></i> 3. Deadlock &amp; WFG Sandbox
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link py-1 px-3 fw-semibold small lab-tab-pill" id="tab-pill-recovery" data-bs-toggle="pill" data-bs-target="#lab-pane-recovery" type="button">
+                            <i class="bi bi-journal-text me-1"></i> 4. WAL Recovery Engine
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body p-4 tab-content" id="lab-tool-tab-content">
+                <!-- PANE 1: SCHEDULE ANALYZER -->
+                <div class="tab-pane fade show active" id="lab-pane-schedule" role="tabpanel">
+                    <h5 class="fw-bold text-dark mb-2"><i class="bi bi-bezier2 text-primary me-2"></i>Schedule &amp; Precedence Graph Analyzer</h5>
+                    <p class="small text-secondary mb-3">
+                        Construct custom schedules using operation buttons or type tokens directly. The backend and client-side graph algorithms parse the sequence, detect conflicting pairs, build the serialization graph, and verify conflict serializability.
+                    </p>
+
+                    <!-- Quick Operation Builder Buttons -->
+                    <div class="p-2 border rounded bg-light mb-3">
+                        <span class="small fw-bold text-dark d-block mb-2">Quick Insert Tokens:</span>
+                        <div class="d-flex gap-1 flex-wrap mb-2">
+                            <button class="btn btn-sm btn-outline-primary py-0 px-2 btn-quick-token" data-token="R1(X)">R1(X)</button>
+                            <button class="btn btn-sm btn-outline-primary py-0 px-2 btn-quick-token" data-token="W1(X)">W1(X)</button>
+                            <button class="btn btn-sm btn-outline-primary py-0 px-2 btn-quick-token" data-token="R1(Y)">R1(Y)</button>
+                            <button class="btn btn-sm btn-outline-primary py-0 px-2 btn-quick-token" data-token="W1(Y)">W1(Y)</button>
+                            <button class="btn btn-sm btn-outline-success py-0 px-2 btn-quick-token" data-token="C1">C1</button>
+                            <span class="border-start mx-1"></span>
+                            <button class="btn btn-sm btn-outline-info text-dark py-0 px-2 btn-quick-token" data-token="R2(X)">R2(X)</button>
+                            <button class="btn btn-sm btn-outline-info text-dark py-0 px-2 btn-quick-token" data-token="W2(X)">W2(X)</button>
+                            <button class="btn btn-sm btn-outline-info text-dark py-0 px-2 btn-quick-token" data-token="R2(Y)">R2(Y)</button>
+                            <button class="btn btn-sm btn-outline-info text-dark py-0 px-2 btn-quick-token" data-token="W2(Y)">W2(Y)</button>
+                            <button class="btn btn-sm btn-outline-success py-0 px-2 btn-quick-token" data-token="C2">C2</button>
+                            <span class="border-start mx-1"></span>
+                            <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 btn-quick-token" data-token="R3(Z)">R3(Z)</button>
+                            <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 btn-quick-token" data-token="W3(Z)">W3(Z)</button>
+                            <button class="btn btn-sm btn-outline-success py-0 px-2 btn-quick-token" data-token="C3">C3</button>
+                        </div>
+                    </div>
+
+                    <div class="input-group mb-3">
+                        <span class="input-group-text font-monospace small bg-white">Schedule:</span>
+                        <input type="text" class="form-control font-monospace" id="lab-schedule-input"
+                               value="R1(X), W1(X), R2(X), W2(X), C1, C2" placeholder="e.g. R1(X), W1(X), R2(X), W2(X), C1, C2">
+                        <button class="btn btn-gfg" id="btn-lab-analyze-schedule">
+                            <i class="bi bi-play-circle me-1"></i> Analyze
+                        </button>
+                        <button class="btn btn-outline-secondary" id="btn-lab-clear-schedule">
+                            Clear
+                        </button>
+                    </div>
+
+                    <div id="lab-schedule-results" class="p-3 bg-light border rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="fw-bold text-dark me-2">Result:</span>
+                                <span class="badge bg-success" id="lab-serializable-badge">CONFLICT-SERIALIZABLE</span>
+                            </div>
+                            <span class="small font-monospace" id="lab-topo-output">Order: T1 &rarr; T2</span>
+                        </div>
+                        <div class="alert alert-secondary py-2 small mb-0 font-monospace" id="lab-schedule-explanation">
+                            [Algorithmic Result] Precedence graph is acyclic. Conflict-equivalent to serial execution T1 -> T2.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANE 2: 2PL LOCK SIMULATOR -->
+                <div class="tab-pane fade" id="lab-pane-locking" role="tabpanel">
+                    <h5 class="fw-bold text-dark mb-2"><i class="bi bi-lock-fill text-primary me-2"></i>Two-Phase Locking (2PL) Protocol Simulator</h5>
+                    <p class="small text-secondary mb-3">
+                        Verify lock compatibility, observe blocking when incompatible locks are requested, and enforce 2PL growing and shrinking phase rules.
+                    </p>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Transaction:</label>
+                            <select class="form-select form-select-sm" id="lab-lock-tx">
+                                <option value="T1">T1</option>
+                                <option value="T2">T2</option>
+                                <option value="T3">T3</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Lock Type:</label>
+                            <select class="form-select form-select-sm" id="lab-lock-type">
+                                <option value="S">Shared (S - Read)</option>
+                                <option value="X">Exclusive (X - Write)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Item:</label>
+                            <select class="form-select form-select-sm" id="lab-lock-item">
+                                <option value="X">Item X</option>
+                                <option value="Y">Item Y</option>
+                                <option value="Z">Item Z</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-sm btn-gfg w-100" id="btn-lab-request-lock">
+                                <i class="bi bi-key-fill me-1"></i> Request Lock
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-sm btn-outline-danger" id="btn-lab-release-t1">Commit / Release T1</button>
+                        <button class="btn btn-sm btn-outline-danger" id="btn-lab-release-t2">Commit / Release T2</button>
+                        <button class="btn btn-sm btn-outline-danger" id="btn-lab-release-t3">Commit / Release T3</button>
+                        <button class="btn btn-sm btn-outline-secondary ms-auto" id="btn-lab-reset-locks">Reset Table</button>
+                    </div>
+
+                    <div class="alert alert-dark py-2 small font-monospace mb-0" id="lab-lock-log">
+                        [Lock Engine] Initialized in-memory lock table.
+                    </div>
+                </div>
+
+                <!-- PANE 3: DEADLOCK SANDBOX -->
+                <div class="tab-pane fade" id="lab-pane-deadlock" role="tabpanel">
+                    <h5 class="fw-bold text-dark mb-2"><i class="bi bi-slash-circle-fill text-danger me-2"></i>Deadlock &amp; Wait-For Graph Sandbox</h5>
+                    <p class="small text-secondary mb-3">
+                        Observe mutual dependencies, cycle detection in the Wait-For Graph, and simulate victim selection and rollback.
+                    </p>
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-sm btn-danger" id="btn-lab-deadlock-trigger">
+                            <i class="bi bi-lightning-charge-fill me-1"></i> Stage Deadlock (T1 &harr; T2)
+                        </button>
+                        <button class="btn btn-sm btn-warning" id="btn-lab-abort-victim" disabled>
+                            <i class="bi bi-person-x-fill me-1"></i> Abort Victim Transaction
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary ms-auto" id="btn-lab-deadlock-reset">
+                            Reset
+                        </button>
+                    </div>
+                    <div class="alert alert-secondary py-2 small font-monospace mb-0" id="lab-deadlock-log">
+                        [WFG Detector] Ready to analyze wait dependencies.
+                    </div>
+                </div>
+
+                <!-- PANE 4: WAL RECOVERY ENGINE -->
+                <div class="tab-pane fade" id="lab-pane-recovery" role="tabpanel">
+                    <h5 class="fw-bold text-dark mb-2"><i class="bi bi-journal-text text-primary me-2"></i>Write-Ahead Logging (WAL) Recovery Engine</h5>
+                    <p class="small text-secondary mb-3">
+                        Simulate crash recovery by setting a crash point LSN. The engine calculates the REDO list (committed transactions) and UNDO list (uncommitted active transactions) to restore data consistency.
+                    </p>
+                    <div class="d-flex gap-2 mb-3 flex-wrap">
+                        <button class="btn btn-sm btn-outline-danger btn-lab-crash" data-crash="2">Crash at LSN 2</button>
+                        <button class="btn btn-sm btn-outline-danger btn-lab-crash" data-crash="4">Crash at LSN 4</button>
+                        <button class="btn btn-sm btn-outline-success btn-lab-crash" data-crash="5">Crash at LSN 5 (T1 Committed)</button>
+                        <button class="btn btn-sm btn-outline-warning text-dark btn-lab-crash active" data-crash="8">Crash at LSN 8 (End)</button>
+                    </div>
+                    <div class="alert alert-dark py-2 small font-monospace mb-0" id="lab-recovery-log">
+                        [WAL Engine] Crash point set at LSN 8. T1 in REDO list. T2 and T3 in UNDO list.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Capstone Assessment & Final Score -->
+        <section>
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-award-fill me-2"></i>Lesson 10 Capstone Assessment &amp; Final Certification (5 Questions)
+            </h5>
+            <div id="quiz-topic10-container">
+                <!-- Q1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic10">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. Consider the schedule: `R1(X), W2(X), W1(X), C1, C2`. Why is this schedule NOT conflict-serializable?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic10" id="q1_t10_opt1" value="A">
+                            <label class="form-check-label" for="q1_t10_opt1">A) R1(X) conflicts with W2(X) (edge T1 &rarr; T2) and W2(X) conflicts with W1(X) (edge T2 &rarr; T1), creating a directed cycle.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic10" id="q1_t10_opt2" value="B">
+                            <label class="form-check-label" for="q1_t10_opt2">B) Because C1 appears before C2 in the schedule.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic10" id="q1_t10_opt3" value="C">
+                            <label class="form-check-label" for="q1_t10_opt3">C) Because only one data item (X) was accessed.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic10" id="q1_t10_opt4" value="D">
+                            <label class="form-check-label" for="q1_t10_opt4">D) It is actually conflict serializable under all conditions.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic10">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. In Strict Two-Phase Locking (Strict 2PL), when are Exclusive (X) locks released?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic10" id="q2_t10_opt1" value="A">
+                            <label class="form-check-label" for="q2_t10_opt1">A) Only after the transaction has reached its final COMMIT or ROLLBACK state.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic10" id="q2_t10_opt2" value="B">
+                            <label class="form-check-label" for="q2_t10_opt2">B) Immediately after the write statement finishes in memory.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic10" id="q2_t10_opt3" value="C">
+                            <label class="form-check-label" for="q2_t10_opt3">C) Whenever another transaction requests the lock.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic10" id="q2_t10_opt4" value="D">
+                            <label class="form-check-label" for="q2_t10_opt4">D) Exactly 5 seconds after the transaction starts.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic10">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. What is the fundamental purpose of the Write-Ahead Logging (WAL) principle during crash recovery?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic10" id="q3_t10_opt1" value="A">
+                            <label class="form-check-label" for="q3_t10_opt1">A) To ensure that uncommitted changes can be undone (Atomicity) and committed changes can be redone (Durability).</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic10" id="q3_t10_opt2" value="B">
+                            <label class="form-check-label" for="q3_t10_opt2">B) To encrypt user passwords in the log file.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic10" id="q3_t10_opt3" value="C">
+                            <label class="form-check-label" for="q3_t10_opt3">C) To automatically write JavaScript code for the frontend.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic10" id="q3_t10_opt4" value="D">
+                            <label class="form-check-label" for="q3_t10_opt4">D) To convert InnoDB storage to MyISAM storage.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic10">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. Which SQL isolation level prevents both Dirty Reads and Non-Repeatable Reads, and is the default setting in MySQL InnoDB?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic10" id="q4_t10_opt1" value="A">
+                            <label class="form-check-label" for="q4_t10_opt1">A) Repeatable Read</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic10" id="q4_t10_opt2" value="B">
+                            <label class="form-check-label" for="q4_t10_opt2">B) Read Uncommitted</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic10" id="q4_t10_opt3" value="C">
+                            <label class="form-check-label" for="q4_t10_opt3">C) Read Committed</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic10" id="q4_t10_opt4" value="D">
+                            <label class="form-check-label" for="q4_t10_opt4">D) Linear Serializable</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic10">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. If an interleaved schedule of transactions T1, T2, and T3 produces a precedence graph with directed edges T1 &rarr; T2 and T2 &rarr; T3, what is its equivalent serial execution order?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic10" id="q5_t10_opt1" value="A">
+                            <label class="form-check-label" for="q5_t10_opt1">A) T1 &rarr; T2 &rarr; T3</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic10" id="q5_t10_opt2" value="B">
+                            <label class="form-check-label" for="q5_t10_opt2">B) T3 &rarr; T2 &rarr; T1</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic10" id="q5_t10_opt3" value="C">
+                            <label class="form-check-label" for="q5_t10_opt3">C) T2 &rarr; T1 &rarr; T3</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic10" id="q5_t10_opt4" value="D">
+                            <label class="form-check-label" for="q5_t10_opt4">D) The schedule is not serializable.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic10">
+                        <i class="bi bi-check-circle me-1"></i> Submit Capstone Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic10">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

@@ -64,6 +64,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'phase7' %}active fw-semibold text-success{% endif %}" href="/phase-7">
+                            <i class="bi bi-arrow-repeat me-1"></i> Phase 7: Transactions
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if active_page == 'schema' %}active fw-semibold text-success{% endif %}" href="/schema">
                             <i class="bi bi-diagram-3-fill me-1"></i> Schema Inspector
                         </a>
@@ -246,6 +251,41 @@
             </a>
             <a href="/phase-6?topic=topic10" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic10' %}active{% endif %}">
                 <i class="bi bi-calculator"></i> 10. Relational Algebra Lab
+            </a>
+
+            <div class="sidebar-header">Module 7: Transactions &amp; Concurrency (Phase 7)</div>
+            <a href="/phase-7" class="sidebar-nav-link {% if active_page == 'phase7' and not current_topic %}active{% endif %}">
+                <i class="bi bi-award"></i> Phase 7 Dashboard
+            </a>
+            <a href="/phase-7?topic=topic1" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic1' %}active{% endif %}">
+                <i class="bi bi-arrow-repeat"></i> 1. Transaction Concepts
+            </a>
+            <a href="/phase-7?topic=topic2" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic2' %}active{% endif %}">
+                <i class="bi bi-shield-check"></i> 2. ACID Properties
+            </a>
+            <a href="/phase-7?topic=topic3" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic3' %}active{% endif %}">
+                <i class="bi bi-diagram-2"></i> 3. Transaction States
+            </a>
+            <a href="/phase-7?topic=topic4" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic4' %}active{% endif %}">
+                <i class="bi bi-exclamation-triangle"></i> 4. Concurrency Problems
+            </a>
+            <a href="/phase-7?topic=topic5" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic5' %}active{% endif %}">
+                <i class="bi bi-bezier2"></i> 5. Serializability &amp; Graphs
+            </a>
+            <a href="/phase-7?topic=topic6" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic6' %}active{% endif %}">
+                <i class="bi bi-lock"></i> 6. Lock-Based Protocols (2PL)
+            </a>
+            <a href="/phase-7?topic=topic7" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic7' %}active{% endif %}">
+                <i class="bi bi-slash-circle"></i> 7. Deadlocks &amp; Recovery
+            </a>
+            <a href="/phase-7?topic=topic8" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic8' %}active{% endif %}">
+                <i class="bi bi-journal-text"></i> 8. Recovery &amp; WAL Logging
+            </a>
+            <a href="/phase-7?topic=topic9" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic9' %}active{% endif %}">
+                <i class="bi bi-layers"></i> 9. SQL Isolation Levels
+            </a>
+            <a href="/phase-7?topic=topic10" class="sidebar-nav-link {% if active_page == 'phase7' and current_topic == 'topic10' %}active{% endif %}">
+                <i class="bi bi-cpu"></i> 10. Transaction Lab
             </a>
         </aside>
 

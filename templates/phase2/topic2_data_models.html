@@ -1,0 +1,932 @@
+<!-- ====================================================================
+     Topic 2: Data Models
+     NEPC42 Syllabus — Module 1: Foundations
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-data-models">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 2 of 4</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 30 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">2. Data Models in DBMS</h2>
+            <p class="text-secondary mb-0">
+                Explore the conceptual blueprints of database design &mdash; from historical hierarchical trees and network graphs to modern relational tables, conceptual ER models, and object-oriented paradigms.
+            </p>
+        </div>
+    </div>
+
+    <!-- Introduction to Data Models -->
+    <section class="mb-5" id="dm-intro">
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-compass text-primary me-2"></i>What is a Data Model and Why is it Fundamental?</h5>
+                <p>
+                    A <strong>Data Model</strong> is an abstract framework and collection of conceptual tools used to describe:
+                </p>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light text-center">
+                            <i class="bi bi-box-seam text-primary d-block fs-4 mb-1"></i>
+                            <strong class="small text-dark">Data Structure</strong>
+                            <div class="small text-muted" style="font-size: 0.8rem;">How data entities and attributes are arranged</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light text-center">
+                            <i class="bi bi-link-45deg text-success d-block fs-4 mb-1"></i>
+                            <strong class="small text-dark">Relationships</strong>
+                            <div class="small text-muted" style="font-size: 0.8rem;">How different entities associate with one another</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light text-center">
+                            <i class="bi bi-translate text-warning-emphasis d-block fs-4 mb-1"></i>
+                            <strong class="small text-dark">Data Semantics</strong>
+                            <div class="small text-muted" style="font-size: 0.8rem;">The real-world meaning and context of the data</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light text-center">
+                            <i class="bi bi-shield-check text-danger d-block fs-4 mb-1"></i>
+                            <strong class="small text-dark">Constraints</strong>
+                            <div class="small text-muted" style="font-size: 0.8rem;">Rules enforcing validity and referential consistency</div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-secondary small mb-0">
+                    Just as an architect draws an architectural blueprint before builders pour concrete for a skyscraper, a database designer selects and designs a <strong>data model</strong> before any SQL tables are created or queries are written. It bridges the gap between human real-world concepts (students, courses, departments) and physical computer storage (bytes, blocks, disk sectors).
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.1 Hierarchical Data Model -->
+    <section class="mb-5" id="dm-hierarchical">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Hierarchical Data Model (Tree-Based)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Developed in the late 1960s (notably by IBM in their <em>Information Management System — IMS</em> for the Apollo space program), the <strong>Hierarchical Data Model</strong> organizes data into an inverted <strong>tree structure</strong>.
+                </p>
+                <ul class="small text-secondary ps-3">
+                    <li class="mb-1"><strong>Root Node:</strong> The topmost node of the tree with zero parent nodes (e.g., <code>College</code>).</li>
+                    <li class="mb-1"><strong>Parent Node:</strong> A node that branches into one or more dependent child records.</li>
+                    <li class="mb-1"><strong>Child Node:</strong> A record subordinate to a parent. <em>Strict Cardinality Rule:</em> Every child node can have <strong>only one parent node</strong> (strict 1:N relationship).</li>
+                    <li class="mb-1"><strong>Leaf Node:</strong> A bottom-tier child node that has no further children.</li>
+                    <li><strong>Navigation:</strong> Data retrieval requires navigating top-down along pre-configured physical pointer paths from the root.</li>
+                </ul>
+
+                <!-- Hierarchical Tree SVG Diagram -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 2.1: College Hierarchical Data Model Tree</h6>
+                    <svg viewBox="0 0 760 270" class="img-fluid" style="max-height: 280px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Root Node: College -->
+                        <rect x="290" y="20" width="180" height="45" rx="8" fill="#e8f5e9" stroke="#2f8d46" stroke-width="2"/>
+                        <text x="380" y="44" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1b5e20">ROOT: University College</text>
+                        <text x="380" y="58" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#4b5563">(Level 0 &mdash; Zero Parents)</text>
+
+                        <!-- Branches from Root to Departments -->
+                        <path d="M340 65 L200 110" stroke="#2f8d46" stroke-width="2" marker-end="url(#arrowTree)"/>
+                        <path d="M420 65 L560 110" stroke="#2f8d46" stroke-width="2" marker-end="url(#arrowTree)"/>
+
+                        <!-- Level 1: Departments -->
+                        <rect x="110" y="110" width="180" height="45" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+                        <text x="200" y="134" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#1e40af">Dept: Computer Science</text>
+                        <text x="200" y="148" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#4b5563">(Parent Node)</text>
+
+                        <rect x="470" y="110" width="180" height="45" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+                        <text x="560" y="134" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#1e40af">Dept: Electronics (ECE)</text>
+                        <text x="560" y="148" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#4b5563">(Parent Node)</text>
+
+                        <!-- Branches from Departments to Students -->
+                        <path d="M160 155 L100 200" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowTreeB)"/>
+                        <path d="M240 155 L290 200" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowTreeB)"/>
+                        
+                        <path d="M520 155 L470 200" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowTreeB)"/>
+                        <path d="M600 155 L650 200" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrowTreeB)"/>
+
+                        <!-- Level 2: Leaf Students -->
+                        <rect x="30" y="200" width="140" height="40" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+                        <text x="100" y="222" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#78350f">Student: Alice</text>
+                        <text x="100" y="234" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#92400e">(Roll: 101 &bull; Leaf Node)</text>
+
+                        <rect x="220" y="200" width="140" height="40" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+                        <text x="290" y="222" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#78350f">Student: Bob</text>
+                        <text x="290" y="234" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#92400e">(Roll: 102 &bull; Leaf Node)</text>
+
+                        <rect x="400" y="200" width="140" height="40" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+                        <text x="470" y="222" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#78350f">Student: Carol</text>
+                        <text x="470" y="234" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#92400e">(Roll: 201 &bull; Leaf Node)</text>
+
+                        <rect x="580" y="200" width="140" height="40" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+                        <text x="650" y="222" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#78350f">Student: David</text>
+                        <text x="650" y="234" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#92400e">(Roll: 202 &bull; Leaf Node)</text>
+
+                        <defs>
+                            <marker id="arrowTree" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#2f8d46" />
+                            </marker>
+                            <marker id="arrowTreeB" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6" />
+                            </marker>
+                        </defs>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 2.1:</em> In the Hierarchical Model, every student record has exactly ONE parent department. There is no natural way to represent a student enrolled in multiple departments or a course taught across departments without data duplication.
+                    </p>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-success mb-2"><i class="bi bi-plus-circle me-1"></i>Advantages</h6>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li>Simple conceptual design matching natural real-world hierarchies (e.g. corporate org charts, file folder trees).</li>
+                                <li>Very fast retrieval when searching down defined 1:N tree paths via fixed pointers.</li>
+                                <li>Enforces strict referential integrity natively (a child cannot exist without its parent).</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-dash-circle me-1"></i>Severe Limitations</h6>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li><strong>Cannot represent M:N relationships:</strong> If a student takes courses in two departments, the student record must be duplicated under both parents.</li>
+                                <li><strong>Deletion Anomaly:</strong> If the <code>Electronics</code> department is deleted, all student records under it are automatically wiped out!</li>
+                                <li><strong>Rigid Navigation:</strong> Querying from child to parent or across tree branches requires complex pointer walking.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 p-2 bg-light rounded border small text-muted">
+                    <strong>Modern Resemblance:</strong> File systems (directories contain subdirectories and files) and XML / JSON hierarchical document trees operate on this exact hierarchical principle.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.2 Network Data Model -->
+    <section class="mb-5" id="dm-network">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Network Data Model (Graph-Based)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Standardized by the <em>CODASYL (Conference on Data Systems Languages) DBTG</em> in 1971, the <strong>Network Data Model</strong> was invented to overcome the single-parent limitation of the hierarchical model. It models data as a <strong>graph</strong> rather than a rigid tree.
+                </p>
+                <div class="p-3 bg-light rounded border mb-3">
+                    <h6 class="fw-bold text-dark mb-1"><i class="bi bi-stars text-primary me-2"></i>Key Structural Distinction from Hierarchical:</h6>
+                    <p class="small text-secondary mb-0">
+                        In the network model, a child record (referred to as a <strong>Member</strong>) can have <strong>multiple parent records</strong> (referred to as <strong>Owners</strong>). Relationships are known as <strong>Sets</strong> and are maintained using bidirectional pointer circular chains.
+                    </p>
+                </div>
+
+                <!-- Network Model SVG Diagram -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 2.2: Many-to-Many Record Links in the Network Model</h6>
+                    <svg viewBox="0 0 760 250" class="img-fluid" style="max-height: 260px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Owner Tier: Students -->
+                        <rect x="60" y="30" width="180" height="50" rx="8" fill="#e8f5e9" stroke="#2f8d46" stroke-width="1.5"/>
+                        <text x="150" y="55" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#1b5e20">Student: Alice</text>
+                        <text x="150" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#4b5563">(Record Node 1)</text>
+
+                        <rect x="60" y="150" width="180" height="50" rx="8" fill="#e8f5e9" stroke="#2f8d46" stroke-width="1.5"/>
+                        <text x="150" y="175" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#1b5e20">Student: Bob</text>
+                        <text x="150" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#4b5563">(Record Node 2)</text>
+
+                        <!-- Member Tier: Courses (Shared Parents) -->
+                        <rect x="520" y="30" width="180" height="50" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+                        <text x="610" y="55" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#1e40af">Course: CS101 (DBMS)</text>
+                        <text x="610" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#4b5563">(Record Node A)</text>
+
+                        <rect x="520" y="150" width="180" height="50" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+                        <text x="610" y="175" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#1e40af">Course: CS202 (Networks)</text>
+                        <text x="610" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#4b5563">(Record Node B)</text>
+
+                        <!-- Bidirectional Graph Pointer Links -->
+                        <!-- Alice -> CS101 -->
+                        <path d="M240 50 L520 50" stroke="#059669" stroke-width="2" marker-end="url(#netArrowG)"/>
+                        <!-- Alice -> CS202 -->
+                        <path d="M240 65 L520 160" stroke="#059669" stroke-width="2" marker-end="url(#netArrowG)"/>
+                        
+                        <!-- Bob -> CS101 -->
+                        <path d="M240 160 L520 65" stroke="#2563eb" stroke-width="2" marker-end="url(#netArrowB)"/>
+                        <!-- Bob -> CS202 -->
+                        <path d="M240 175 L520 175" stroke="#2563eb" stroke-width="2" marker-end="url(#netArrowB)"/>
+
+                        <!-- Central set label -->
+                        <rect x="330" y="95" width="100" height="40" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+                        <text x="380" y="112" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#1f2937">Network Sets</text>
+                        <text x="380" y="126" text-anchor="middle" font-family="Inter, sans-serif" font-size="8" fill="#64748b">(Pointer Chains)</text>
+
+                        <defs>
+                            <marker id="netArrowG" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+                            </marker>
+                            <marker id="netArrowB" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+                            </marker>
+                        </defs>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 2.2:</em> A child record can belong to multiple parent record sets. Alice is enrolled in both CS101 and CS202, and CS101 has both Alice and Bob as members. <em>(Note: This illustrates the network model's connected-record concept, distinct from an ER diagram).</em>
+                    </p>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-success mb-2"><i class="bi bi-check2-circle me-1"></i>Advantages</h6>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li>Naturally models complex real-world <strong>Many-to-Many (M:N)</strong> relationships without duplicating records.</li>
+                                <li>Provides flexible access paths &mdash; data can be queried starting from courses, students, or departments.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-x-octagon me-1"></i>Critical Drawbacks</h6>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li><strong>Extreme Internal Complexity:</strong> Every relationship requires physical disk pointers (embedded memory addresses). If a pointer breaks, the entire database becomes corrupted.</li>
+                                <li><strong>Low Data Independence:</strong> Software developers had to understand the physical pointer paths to write database queries. Changing the schema required rewriting application code.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.3 Relational Data Model -->
+    <section class="mb-5" id="dm-relational">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Relational Data Model (Table-Based)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Proposed by British computer scientist <strong>Dr. Edgar F. Codd</strong> in 1970 at IBM, the <strong>Relational Data Model</strong> revolutionized the database industry and remains the undisputed global foundation for modern systems (MySQL, PostgreSQL, Oracle, SQL Server).
+                </p>
+                <p>
+                    Instead of navigating rigid pointer chains or tree paths, the relational model stores data in intuitive, two-dimensional <strong>Tables (Relations)</strong>.
+                </p>
+
+                <!-- Relational Terminology Cards -->
+                <div class="row g-2 mb-4">
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light">
+                            <strong class="d-block text-primary small">Table &harr; Relation</strong>
+                            <span class="small text-muted">A 2D matrix of rows and columns storing records of an entity type.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light">
+                            <strong class="d-block text-success small">Row &harr; Tuple</strong>
+                            <span class="small text-muted">A single horizontal record representing one unique real-world instance.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light">
+                            <strong class="d-block text-warning-emphasis small">Column &harr; Attribute</strong>
+                            <span class="small text-muted">A vertical property or characteristic describing the entity (e.g., GPA).</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light">
+                            <strong class="d-block text-danger small">Domain</strong>
+                            <span class="small text-muted">The permissible set of atomic values for a column (e.g. GPA between 0.0-10.0).</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Relational Tables Walkthrough -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-table text-success me-2"></i>Concrete Relational Tables Walkthrough</h6>
+                <p class="small text-secondary mb-3">
+                    Notice how relationships are established &mdash; <em>not with physical memory pointers</em>, but purely by sharing <strong>matching attribute values</strong> across tables!
+                </p>
+
+                <div class="row g-3">
+                    <!-- Departments Table -->
+                    <div class="col-lg-5">
+                        <div class="border rounded overflow-hidden shadow-sm bg-white">
+                            <div class="bg-primary text-white py-2 px-3 small fw-bold d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-building me-1"></i> Relation: <code>departments</code></span>
+                                <span class="badge bg-white text-primary">Parent Entity</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-0 small text-center">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-primary"><u>dept_id</u></th>
+                                            <th>dept_name</th>
+                                            <th>building</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold text-primary">1</td>
+                                            <td>Computer Science</td>
+                                            <td>Turing Block</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-primary">2</td>
+                                            <td>Electronics</td>
+                                            <td>Tesla Block</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-primary">3</td>
+                                            <td>Mechanical</td>
+                                            <td>Watt Block</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Students Table -->
+                    <div class="col-lg-7">
+                        <div class="border rounded overflow-hidden shadow-sm bg-white">
+                            <div class="bg-success text-white py-2 px-3 small fw-bold d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-people me-1"></i> Relation: <code>students</code></span>
+                                <span class="badge bg-white text-success">Child Entity</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered mb-0 small text-center">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-success"><u>student_id</u></th>
+                                            <th>roll_no</th>
+                                            <th>first_name</th>
+                                            <th class="text-primary bg-primary-subtle">dept_id (FK)</th>
+                                            <th>gpa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="fw-bold text-success">101</td>
+                                            <td>2026CS01</td>
+                                            <td>Aarav</td>
+                                            <td class="fw-bold text-primary bg-primary-subtle">1</td>
+                                            <td>9.45</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-success">102</td>
+                                            <td>2026EC04</td>
+                                            <td>Priya</td>
+                                            <td class="fw-bold text-primary bg-primary-subtle">2</td>
+                                            <td>8.80</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-bold text-success">103</td>
+                                            <td>2026CS15</td>
+                                            <td>Rohan</td>
+                                            <td class="fw-bold text-primary bg-primary-subtle">1</td>
+                                            <td>7.95</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 p-3 bg-light rounded border small text-secondary">
+                    <strong class="text-dark"><i class="bi bi-info-circle me-1"></i>How the Relational Link Works:</strong>
+                    Aarav (Roll <code>2026CS01</code>) has <code>dept_id = 1</code>. By matching this value against the primary key <code>dept_id = 1</code> of the <code>departments</code> relation, the system knows Aarav belongs to <em>Computer Science in Turing Block</em> without needing any pointer hard-coded in disk memory.
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-success mb-2"><i class="bi bi-check-circle me-1"></i>Why Relational Model is Universally Dominant:</h6>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li><strong>Declarative Querying:</strong> Using SQL, you declare <em>what</em> data you want, not <em>how</em> to physically retrieve it from disk sectors.</li>
+                                <li><strong>High Data Independence:</strong> Internal storage reorganization does not affect application queries.</li>
+                                <li><strong>Mathematical Foundation:</strong> Built on set theory and first-order predicate logic, providing provable data integrity.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-exclamation-octagon me-1"></i>Limitations:</h6>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li>Rigid tabular schema can be inefficient for highly unstructured or nested hierarchical data (e.g. CAD drawings, deep JSON documents).</li>
+                                <li>Large relational queries requiring multi-table lookups can introduce CPU overhead compared to direct in-memory graph pointers.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.4 Entity-Relationship (ER) Model -->
+    <section class="mb-5" id="dm-er">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Entity-Relationship (ER) Model (Conceptual)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Proposed by <strong>Peter Chen</strong> in 1976, the <strong>Entity-Relationship (ER) Model</strong> is a high-level conceptual modeling tool used during the preliminary database planning phase.
+                </p>
+                <div class="alert alert-info py-2 px-3 small border-info-subtle mb-3">
+                    <i class="bi bi-info-circle-fill me-1"></i>
+                    <strong>Phase Boundary Reminder:</strong> Here we introduce the conceptual basics (Entity, Attribute, Relationship) so you understand what an ER model is. Detailed ER modeling, cardinality ratios, and relational mapping belong to <em>Phase 6</em>.
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 bg-light h-100">
+                            <h6 class="fw-bold text-primary mb-1">1. Entity</h6>
+                            <p class="small text-muted mb-2">Represented by a <strong>Rectangle</strong></p>
+                            <p class="small text-secondary mb-0">
+                                A real-world distinguishable person, place, or concept with independent existence. <em>Examples:</em> <code>Student</code>, <code>Course</code>, <code>Department</code>.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 bg-light h-100">
+                            <h6 class="fw-bold text-success mb-1">2. Attribute</h6>
+                            <p class="small text-muted mb-2">Represented by an <strong>Oval / Ellipse</strong></p>
+                            <p class="small text-secondary mb-0">
+                                A descriptive characteristic or property of an entity. <em>Examples:</em> <code>roll_no</code>, <code>name</code>, <code>credits</code>.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-3 bg-light h-100">
+                            <h6 class="fw-bold text-warning-emphasis mb-1">3. Relationship</h6>
+                            <p class="small text-muted mb-2">Represented by a <strong>Diamond</strong></p>
+                            <p class="small text-secondary mb-0">
+                                An association between two or more entities. <em>Example:</em> A student <code>Enrolls_In</code> a course.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conceptual ER SVG Diagram -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 2.3: High-Level Conceptual ER Model Diagram</h6>
+                    <svg viewBox="0 0 760 180" class="img-fluid" style="max-height: 200px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Entity 1: Student -->
+                        <rect x="60" y="70" width="160" height="50" rx="4" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+                        <text x="140" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1e40af">STUDENT</text>
+
+                        <!-- Attributes for Student -->
+                        <ellipse cx="60" cy="25" rx="50" ry="18" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+                        <text x="60" y="29" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" text-decoration="underline" fill="#1f2937">roll_no (Key)</text>
+                        <line x1="80" y1="41" x2="110" y2="70" stroke="#64748b" stroke-width="1.2"/>
+
+                        <ellipse cx="180" cy="25" rx="50" ry="18" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+                        <text x="180" y="29" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#1f2937">first_name</text>
+                        <line x1="160" y1="41" x2="140" y2="70" stroke="#64748b" stroke-width="1.2"/>
+
+                        <!-- Relationship Diamond: Enrolls_In -->
+                        <polygon points="380,60 440,95 380,130 320,95" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+                        <text x="380" y="99" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#92400e">Enrolls_In</text>
+
+                        <!-- Connecting lines between entities and diamond -->
+                        <line x1="220" y1="95" x2="320" y2="95" stroke="#1f2937" stroke-width="2"/>
+                        <line x1="440" y1="95" x2="540" y2="95" stroke="#1f2937" stroke-width="2"/>
+
+                        <!-- Entity 2: Course -->
+                        <rect x="540" y="70" width="160" height="50" rx="4" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+                        <text x="620" y="100" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1e40af">COURSE</text>
+
+                        <!-- Attributes for Course -->
+                        <ellipse cx="560" cy="25" rx="50" ry="18" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+                        <text x="560" y="29" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" text-decoration="underline" fill="#1f2937">course_code</text>
+                        <line x1="570" y1="41" x2="590" y2="70" stroke="#64748b" stroke-width="1.2"/>
+
+                        <ellipse cx="680" cy="25" rx="50" ry="18" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+                        <text x="680" y="29" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#1f2937">credits</text>
+                        <line x1="660" y1="41" x2="640" y2="70" stroke="#64748b" stroke-width="1.2"/>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 2.3:</em> Conceptual ER diagram illustrating how human stakeholders visualize business requirements before mapping to SQL tables.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.5 Object-Oriented Data Model -->
+    <section class="mb-5" id="dm-oo">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Object-Oriented Data Model (OODM)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    The <strong>Object-Oriented Data Model</strong> merges Object-Oriented Programming (OOP) paradigms with database management capabilities.
+                </p>
+                <p class="small text-secondary">
+                    In traditional relational databases, data is strictly passive (tables store numbers and strings, while application code executes separately). In an Object-Oriented database, data and the operations that mutate it are packaged together into a single unit called an <strong>Object</strong>.
+                </p>
+
+                <!-- Core OO Pillars in DBMS -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light text-center h-100">
+                            <strong class="d-block text-primary small">Objects & Classes</strong>
+                            <span class="small text-muted">A class defines the blueprint; an object is an instance with state and behavior.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light text-center h-100">
+                            <strong class="d-block text-success small">Encapsulation</strong>
+                            <span class="small text-muted">Attributes (internal state) can only be accessed through defined methods (behavior).</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light text-center h-100">
+                            <strong class="d-block text-warning-emphasis small">Inheritance</strong>
+                            <span class="small text-muted">Subclasses inherit attributes and methods (e.g. <code>GraduateStudent</code> extends <code>Student</code>).</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light text-center h-100">
+                            <strong class="d-block text-danger small">Object ID (OID)</strong>
+                            <span class="small text-muted">Every object has a persistent, system-generated unique ID independent of its values.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OO Class Diagram Representation -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 2.4: Object-Oriented Representation of Student Entity</h6>
+                    <div class="d-inline-block text-start border border-2 border-primary rounded-3 bg-white shadow-sm" style="min-width: 320px;">
+                        <div class="bg-primary text-white py-2 px-3 fw-bold small text-center">
+                            Class: Student
+                        </div>
+                        <div class="p-3 border-bottom small bg-light font-monospace">
+                            <span class="text-muted d-block">// Attributes (State):</span>
+                            - student_id: Long<br>
+                            - full_name: String<br>
+                            - enrolled_courses: List&lt;Course&gt;<br>
+                            - semester_grades: Map&lt;Course, Float&gt;
+                        </div>
+                        <div class="p-3 small font-monospace">
+                            <span class="text-muted d-block">// Methods (Behavior):</span>
+                            + calculateGPA(): Float<br>
+                            + enrollCourse(c: Course): Boolean<br>
+                            + generateGradeReport(): PDF
+                        </div>
+                    </div>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 2.4:</em> Unlike relational rows, the Student object encapsulates both properties (grades) and computational methods (<code>calculateGPA()</code>).
+                    </p>
+                </div>
+
+                <div class="p-3 bg-light rounded border small">
+                    <strong>Primary Use Cases:</strong> Computer-Aided Design (CAD/CAM), Geographic Information Systems (GIS with spatial geometries), complex 3D simulation models, and multimedia streaming architectures.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.6 Comprehensive Comparison Table of Data Models -->
+    <section class="mb-5" id="dm-comparison">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.6</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Comparison of Major Data Models</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white overflow-hidden">
+            <div class="card-header bg-light py-3">
+                <h6 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-table text-success me-2"></i>Comparative Analysis Across Data Models
+                </h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data Model</th>
+                            <th>Underlying Structure</th>
+                            <th>Data Representation</th>
+                            <th>Relationship Handling</th>
+                            <th>Main Advantages</th>
+                            <th>Main Limitations</th>
+                            <th>Common Use Cases</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-dark">Hierarchical Model</td>
+                            <td>Inverted Tree</td>
+                            <td>Parent & Child Nodes</td>
+                            <td>1:N strictly (1 parent only)</td>
+                            <td>High speed for 1:N path traversal; strict integrity</td>
+                            <td>Cannot do M:N naturally; deletion anomalies</td>
+                            <td>File systems, XML/JSON, IBM IMS</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Network Model</td>
+                            <td>Directed Graph</td>
+                            <td>Record types & Set types</td>
+                            <td>M:N supported via sets</td>
+                            <td>Handles complex M:N links without duplication</td>
+                            <td>High pointer complexity; low data independence</td>
+                            <td>IDMS, legacy mainframe logistics</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-success">Relational Model</td>
+                            <td>2D Tables (Relations)</td>
+                            <td>Tuples (rows) & Attributes (cols)</td>
+                            <td>Common matching values (Foreign Keys)</td>
+                            <td>Declarative SQL; high data independence; simple design</td>
+                            <td>Rigid schema; slower on deeply nested unstructured data</td>
+                            <td>MySQL, PostgreSQL, enterprise banking & ERP</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">ER Model</td>
+                            <td>Conceptual Diagram</td>
+                            <td>Entities, Attributes, Diamonds</td>
+                            <td>1:1, 1:N, M:N visually</td>
+                            <td>Exceptional visual communication tool for planning</td>
+                            <td>Conceptual only; cannot be queried directly by computers</td>
+                            <td>Preliminary database requirements planning</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-warning-emphasis">Object-Oriented</td>
+                            <td>Class / Object Graph</td>
+                            <td>Objects containing state + methods</td>
+                            <td>Object references & inheritance</td>
+                            <td>Direct integration with OOP code; complex spatial data</td>
+                            <td>Lack of declarative SQL standard; steep learning curve</td>
+                            <td>CAD/CAM, GIS mapping, multimedia databases</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.7 Choosing an Appropriate Data Model -->
+    <section class="mb-5" id="dm-choosing">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.7</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">How to Choose an Appropriate Data Model</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    In enterprise software engineering, <strong>no single data model is a universal silver bullet</strong>. Different business domains require different structural trade-offs:
+                </p>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-success mb-2">Scenario A</span>
+                            <h6 class="fw-bold text-dark mb-1">University Administration & Banking Portals</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Recommended: Relational Data Model.</strong> Structured transactions, tabular grade sheets, ACID guarantees, and ad-hoc SQL reporting make relational databases the optimal choice.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-primary mb-2">Scenario B</span>
+                            <h6 class="fw-bold text-dark mb-1">Database Requirements Gathering & System Blueprint</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Recommended: Entity-Relationship (ER) Model.</strong> Non-technical business analysts and developers use ER diagrams to agree on entities and business rules before creating tables.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-warning-emphasis mb-2">Scenario C</span>
+                            <h6 class="fw-bold text-dark mb-1">Computer-Aided Design (CAD) & Aeronautical Simulations</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Recommended: Object-Oriented Model.</strong> 3D geometry coordinates, mathematical transformations, and nested component assemblies are naturally modeled as objects with behavioral methods.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-secondary mb-2">Scenario D</span>
+                            <h6 class="fw-bold text-dark mb-1">Operating System File Trees & Configuration Storage</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Recommended: Hierarchical Model.</strong> Hard disk directory trees and JSON/YAML configuration hierarchies have strict 1:N nesting where every folder has exactly one parent.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Exam Preparation: Topic 2 -->
+    <section class="mb-5" id="dm-examprep">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-success-subtle py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-success-emphasis mb-0">
+                    <i class="bi bi-patch-question-fill me-2"></i>Exam Preparation: Data Models
+                </h5>
+                <span class="badge bg-success text-white">NEPC42 Exam Essentials</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="accordion" id="examAccordionDM">
+                    <!-- Q1 -->
+                    <div class="accordion-item border mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="headingDMQ1">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDMQ1">
+                                <span class="badge bg-primary-subtle text-primary me-2">2 Marks</span>
+                                <strong>What is the fundamental difference between the Hierarchical and Network data models?</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseDMQ1" class="accordion-collapse collapse" data-bs-parent="#examAccordionDM">
+                            <div class="accordion-body small bg-light text-secondary">
+                                <strong>Model Answer:</strong> In the <strong>Hierarchical model</strong>, data is organized as a tree where every child node can have <em>only one parent node</em> (strict 1:N relationship). In contrast, in the <strong>Network model</strong>, data is organized as a graph where a child record (member) can have <em>multiple parent records (owners)</em>, allowing natural representation of Many-to-Many (M:N) relationships.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div class="accordion-item border mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="headingDMQ2">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDMQ2">
+                                <span class="badge bg-primary-subtle text-primary me-2">5 Marks</span>
+                                <strong>Define Tuples, Attributes, and Domains in the Relational Model with an example.</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseDMQ2" class="accordion-collapse collapse" data-bs-parent="#examAccordionDM">
+                            <div class="accordion-body small bg-light text-secondary">
+                                <strong>Model Answer:</strong>
+                                <ul class="mt-1 mb-0 ps-3">
+                                    <li><strong>Tuple:</strong> A single horizontal row in a relation representing a specific real-world record. E.g., <code>(101, 'Aarav', 1, 9.45)</code> in <code>students</code>.</li>
+                                    <li><strong>Attribute:</strong> A named vertical column representing a specific property of the entity. E.g., <code>first_name</code>, <code>gpa</code>.</li>
+                                    <li><strong>Domain:</strong> The permissible set of atomic values for an attribute. E.g., the domain of <code>gpa</code> is decimal numbers from <code>0.00</code> to <code>10.00</code>.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 2 Interactive Knowledge Check Quiz -->
+    <section class="mb-4" id="dm-quiz">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary me-2">Knowledge Check</span>
+                    <h5 class="fw-bold d-inline mb-0">Topic 2 Quiz: Data Models</h5>
+                </div>
+                <div id="quiz2-score-badge" class="badge bg-light text-dark border">Not Attempted</div>
+            </div>
+            <div class="card-body p-4" id="quiz-container-2">
+                <p class="small text-muted mb-4">
+                    Test your understanding with 5 questions on data models.
+                </p>
+
+                <!-- Question 1 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="dm-q1">
+                    <p class="fw-semibold text-dark mb-2">1. In which data model can a child record strictly have only ONE parent node, leading to data redundancy when modeling many-to-many relationships?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="A">
+                            <strong>A.</strong> Hierarchical Data Model (Tree-Based)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> Network Data Model (Graph-Based)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Relational Data Model (Table-Based)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Object-Oriented Data Model
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="dm-q2">
+                    <p class="fw-semibold text-dark mb-2">2. How are relationships between different entities represented in the Relational Data Model?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> By storing physical memory pointer addresses inside the disk sectors.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> By matching common attribute values across tables (Keys).
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> By strictly nesting child tables directly inside parent column cells.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> By maintaining external operating system symlinks.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="dm-q3">
+                    <p class="fw-semibold text-dark mb-2">3. What was the primary operational drawback of the CODASYL Network Data Model that led to its decline?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> It could not represent Many-to-Many relationships.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> High internal pointer complexity and very low data independence, requiring programmers to know physical disk paths.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> It could only run on smartphone processors.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> It lacked support for strings and integers.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="dm-q4">
+                    <p class="fw-semibold text-dark mb-2">4. Which data model is primarily used as a conceptual, visual planning blueprint during the early requirements phase before tables are implemented in SQL?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> Hierarchical Model
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> Entity-Relationship (ER) Model
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> File System Model
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Network CODASYL Model
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="dm-q5">
+                    <p class="fw-semibold text-dark mb-2">5. What key feature distinguishes the Object-Oriented Data Model from the traditional Relational Model?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="A">
+                            <strong>A.</strong> It encapsulates both passive state (data attributes) and active behavior (methods) into persistent objects.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> It stores data only in tabular CSV text files.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> It forbids the use of primary keys and unique identifiers.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> It requires all entities to have exactly one parent node.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-secondary" id="btn-reset-quiz-2">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Quiz
+                    </button>
+                    <div id="quiz2-summary" class="small fw-semibold text-muted">Answer all 5 questions to complete Topic 2.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Footer -->
+    <div class="d-flex justify-content-between align-items-center my-4 p-3 bg-white rounded border shadow-sm">
+        <button class="btn btn-outline-secondary btn-sm btn-nav-topic" data-target="architecture">
+            <i class="bi bi-arrow-left me-1"></i> Previous: Topic 1 &mdash; Architecture
+        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm btn-mark-completed" data-topic="data-models">
+                <i class="bi bi-check-circle me-1"></i> Mark Topic 2 Completed
+            </button>
+            <button class="btn btn-gfg btn-sm btn-nav-topic" data-target="three-schema">
+                Next: Topic 3 &mdash; Three-Schema Architecture <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,613 @@
+<!-- ====================================================================
+     Topic 3: Three-Schema Architecture (ANSI/SPARC)
+     NEPC42 Syllabus — Module 1: Foundations
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-three-schema">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 3 of 4</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">3. Three-Schema Architecture (ANSI/SPARC)</h2>
+            <p class="text-secondary mb-0">
+                Master the fundamental three levels of database abstraction &mdash; External (View), Conceptual (Logical), and Internal (Physical) &mdash; along with schema mappings and the critical distinction between tiers and schemas.
+            </p>
+        </div>
+    </div>
+
+    <!-- 3.1 Introduction -->
+    <section class="mb-5" id="ts-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Introduction to Three-Schema Architecture</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Proposed in 1975 by the <strong>ANSI/X3/SPARC</strong> (American National Standards Institute / Standards Planning And Requirements Committee), the <strong>Three-Schema Architecture</strong> was created to achieve a monumental goal in database engineering:
+                </p>
+                <div class="p-3 bg-light rounded border-start border-4 border-primary my-3">
+                    <strong class="text-primary d-block mb-1 fs-6">The Prime Directive of Three-Schema Architecture:</strong>
+                    <span class="text-secondary small">
+                        To completely decouple user applications from the physical database, hide low-level storage complexities through <strong>data abstraction</strong>, allow different users to view customized slices of data, and provide the technical mechanism for <strong>data independence</strong>.
+                    </span>
+                </div>
+                <p class="small text-secondary mb-0">
+                    A <strong>Schema</strong> is the overall formal description of the database structure (tables, fields, data types, constraints). The Three-Schema architecture partitions this description into three distinct levels of abstraction: <strong>External Level</strong>, <strong>Conceptual Level</strong>, and <strong>Internal Level</strong>.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.2 External Schema — View Level -->
+    <section class="mb-5" id="ts-external">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">External Schema &mdash; View Level (Highest Abstraction)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    The <strong>External Schema</strong> (often called the <strong>View Level</strong>) describes the specific portion of the database that is relevant to a particular user group while strictly hiding the remainder of the database.
+                </p>
+
+                <!-- Crucial concept callout -->
+                <div class="alert alert-warning border-warning-subtle py-2 px-3 small mb-3">
+                    <i class="bi bi-lightbulb-fill text-warning me-1"></i>
+                    <strong>Critical Concept:</strong> An external schema is a <em>virtual projection (view)</em> of the database, <strong>NOT a separate physical copy of the database</strong>! Multiple users access the exact same underlying tables, but through different tailored lenses.
+                </div>
+
+                <h6 class="fw-bold text-dark mb-2">College Example: 3 Distinct External Views Over One University Database:</h6>
+                <div class="row g-3 my-2">
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100 border-top border-3 border-success">
+                            <span class="badge bg-success mb-2">View 1</span>
+                            <h6 class="fw-bold text-dark mb-1">Student Portal View</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>What the student sees:</strong> Their own Roll Number, full name, enrolled courses, attendance percentage, and GPA.
+                            </p>
+                            <span class="small text-danger fw-semibold"><i class="bi bi-eye-slash me-1"></i> Hidden: Other students' GPAs, faculty salaries, system logs.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100 border-top border-3 border-primary">
+                            <span class="badge bg-primary mb-2">View 2</span>
+                            <h6 class="fw-bold text-dark mb-1">Faculty / Professor View</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>What the professor sees:</strong> Course roster, student roll numbers, attendance entry checkboxes, and marks entry forms.
+                            </p>
+                            <span class="small text-danger fw-semibold"><i class="bi bi-eye-slash me-1"></i> Hidden: Student tuition fee payment status, financial aid.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100 border-top border-3 border-warning">
+                            <span class="badge bg-warning-emphasis mb-2">View 3</span>
+                            <h6 class="fw-bold text-dark mb-1">Accounts & Finance View</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>What the accountant sees:</strong> Student ID, total fee due, payment receipt numbers, bank transaction IDs.
+                            </p>
+                            <span class="small text-danger fw-semibold"><i class="bi bi-eye-slash me-1"></i> Hidden: Academic course syllabus details, assignment scores.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-light rounded border mt-3 small text-secondary">
+                    <strong>Primary Security Benefit:</strong> By confining user roles to their respective external schemas, malicious or curious users cannot accidentally or intentionally browse sensitive records outside their authorized clearance.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.3 Conceptual Schema — Logical Level -->
+    <section class="mb-5" id="ts-conceptual">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Conceptual Schema &mdash; Logical Level (Middle Level)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    The <strong>Conceptual Schema</strong> (also known as the <strong>Logical Level</strong>) describes the <strong>entire logical structure of the whole database</strong> for all users combined.
+                </p>
+                <p class="small text-secondary">
+                    It acts as the single central blueprint that defines all entities, data types, relationships between entities, and enterprise-wide integrity constraints.
+                </p>
+
+                <div class="p-3 bg-light rounded border mb-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-card-checklist text-success me-2"></i>What the Conceptual Schema Contains:</h6>
+                    <ul class="small text-secondary ps-3 mb-0">
+                        <li class="mb-1"><strong>All Tables / Entities:</strong> <code>students</code>, <code>departments</code>, <code>courses</code>, <code>registrations</code>.</li>
+                        <li class="mb-1"><strong>All Attributes & Data Types:</strong> <code>student_id (INT)</code>, <code>first_name (VARCHAR)</code>, <code>gpa (DECIMAL)</code>.</li>
+                        <li class="mb-1"><strong>All Relationships:</strong> Students belong to Departments; Registrations connect Students and Events.</li>
+                        <li><strong>Integrity Rules & Constraints:</strong> <code>PRIMARY KEY</code>, <code>FOREIGN KEY</code>, <code>NOT NULL</code>, <code>CHECK (gpa >= 0.0)</code>.</li>
+                    </ul>
+                </div>
+
+                <p class="small text-muted mb-0">
+                    <strong>Crucial Insight:</strong> The conceptual level is completely unconcerned with how bytes or tracks are physically laid out on hard disks or what index algorithms are utilized. It represents <em>what</em> data is stored, not <em>how</em> the hardware stores it.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.4 Internal Schema — Physical Level -->
+    <section class="mb-5" id="ts-internal">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Internal Schema &mdash; Physical Level (Lowest Level)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    The <strong>Internal Schema</strong> (or <strong>Physical Level</strong>) describes the low-level physical storage structure, file organization, and access paths of the database on storage hardware.
+                </p>
+                <p class="small text-secondary">
+                    It specifies the exact technical details required by the operating system and storage controllers to physically read and write bits on magnetic disks or solid-state drives (SSDs).
+                </p>
+
+                <div class="row g-2 mb-3 small">
+                    <div class="col-md-3">
+                        <div class="border rounded p-2 bg-light text-center">
+                            <strong class="text-primary d-block">Block Allocation</strong>
+                            <span class="text-muted">4KB or 16KB disk page allocations on disk storage.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-2 bg-light text-center">
+                            <strong class="text-success d-block">Record Layout</strong>
+                            <span class="text-muted">Byte offsets, fixed vs variable length fields, null bitmasks.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-2 bg-light text-center">
+                            <strong class="text-warning-emphasis d-block">B+ Tree Indexes</strong>
+                            <span class="text-muted">Physical tree pointers for accelerated disk seek operations.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-2 bg-light text-center">
+                            <strong class="text-danger d-block">Data Compression</strong>
+                            <span class="text-muted">InnoDB zlib page compression and encryption at rest.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="small bg-white p-3 border rounded">
+                    <strong>Difference between Logical & Physical Representation:</strong> Logically, a student record is seen as a clean row: <code>(101, 'Aarav', 9.45)</code>. Physically, it is a binary sequence of raw bytes, preceded by a 5-byte record header, stored at byte offset <code>0x00A4F0</code> inside an InnoDB tablespace file (<code>students.ibd</code>) on an NVMe SSD.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.5 Mapping Between the Three Levels -->
+    <section class="mb-5" id="ts-mappings">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Mappings Between the Three Levels</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    The superpower of the Three-Schema architecture lies in its <strong>Schema Mappings</strong>. A mapping is a translation protocol maintained by the DBMS that connects a representation at one level to a representation at another level:
+                </p>
+
+                <!-- Mapping Definitions -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h6 class="fw-bold text-primary mb-1">1. External-to-Conceptual Mapping</h6>
+                            <p class="small text-secondary mb-2">
+                                Translates a query written against an end-user's external view into an equivalent query on the overall conceptual schema tables.
+                            </p>
+                            <div class="small bg-white p-2 border rounded font-monospace text-dark">
+                                View Attribute <code>full_name</code> &harr; <code>CONCAT(first_name, ' ', last_name)</code> in <code>students</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h6 class="fw-bold text-success mb-1">2. Conceptual-to-Internal Mapping</h6>
+                            <p class="small text-secondary mb-2">
+                                Translates conceptual relational operations into physical disk block reads, index seeks, and record byte offset lookups.
+                            </p>
+                            <div class="small bg-white p-2 border rounded font-monospace text-dark">
+                                Table <code>students</code> &harr; File <code>students.ibd</code>, Page 38, B+ Tree Index on Root <code>0x4B</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Three-Schema Full SVG Diagram with Mappings -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 3.1: The Three-Schema Architecture & Mappings (ANSI/SPARC)</h6>
+                    <svg viewBox="0 0 780 370" class="img-fluid" style="max-height: 380px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Level 1: External Level (Top) -->
+                        <rect x="30" y="20" width="720" height="75" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+                        <text x="50" y="42" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#15803d">1. EXTERNAL LEVEL (View Level &mdash; Individual User Slices)</text>
+
+                        <rect x="50" y="48" width="200" height="38" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+                        <text x="150" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">View 1: Student Portal</text>
+
+                        <rect x="290" y="48" width="200" height="38" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+                        <text x="390" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">View 2: Faculty Roster</text>
+
+                        <rect x="530" y="48" width="200" height="38" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+                        <text x="630" y="72" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">View 3: Finance Ledger</text>
+
+                        <!-- Mapping 1: External to Conceptual -->
+                        <path d="M 390 95 L 390 145" stroke="#0284c7" stroke-width="3" marker-end="url(#mapArrowDown)" marker-start="url(#mapArrowUp)"/>
+                        <rect x="250" y="108" width="280" height="24" rx="4" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
+                        <text x="390" y="124" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#0284c7">&updownarrow; External / Conceptual Mapping &updownarrow;</text>
+
+                        <!-- Level 2: Conceptual Level (Middle) -->
+                        <rect x="30" y="145" width="720" height="75" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+                        <text x="50" y="167" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#1d4ed8">2. CONCEPTUAL LEVEL (Logical Level &mdash; Community Global View)</text>
+                        
+                        <rect x="50" y="173" width="680" height="38" rx="6" fill="#ffffff" stroke="#93c5fd" stroke-width="1"/>
+                        <text x="390" y="196" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">
+                            Global Logical Schema: Entities (students, departments, courses) + Attributes + Constraints (PK/FK)
+                        </text>
+
+                        <!-- Mapping 2: Conceptual to Internal -->
+                        <path d="M 390 220 L 390 270" stroke="#d97706" stroke-width="3" marker-end="url(#mapArrowDownO)" marker-start="url(#mapArrowUpO)"/>
+                        <rect x="250" y="233" width="280" height="24" rx="4" fill="#ffffff" stroke="#d97706" stroke-width="1.5"/>
+                        <text x="390" y="249" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#b45309">&updownarrow; Conceptual / Internal Mapping &updownarrow;</text>
+
+                        <!-- Level 3: Internal Level (Bottom) -->
+                        <rect x="30" y="270" width="720" height="75" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+                        <text x="50" y="292" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#c2410c">3. INTERNAL LEVEL (Physical Level &mdash; Hardware Storage View)</text>
+
+                        <rect x="50" y="298" width="680" height="38" rx="6" fill="#ffffff" stroke="#fdba74" stroke-width="1"/>
+                        <text x="390" y="321" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">
+                            Physical Storage Structures: 16KB Pages, B+ Tree Clustered Indexes, File Blocks, Compression, Disk Sectors
+                        </text>
+
+                        <defs>
+                            <marker id="mapArrowDown" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7" />
+                            </marker>
+                            <marker id="mapArrowUp" viewBox="0 0 10 10" refX="4" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                                <path d="M 10 1 L 0 5 L 10 9 z" fill="#0284c7" />
+                            </marker>
+                            <marker id="mapArrowDownO" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
+                            </marker>
+                            <marker id="mapArrowUpO" viewBox="0 0 10 10" refX="4" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                                <path d="M 10 1 L 0 5 L 10 9 z" fill="#d97706" />
+                            </marker>
+                        </defs>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 3.1:</em> Information flow during a user query. The DBMS navigates down through the mappings to locate physical bytes on disk, then transforms the retrieved data back up through the mappings to format the user's specific external view.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.6 Advantages of Three-Schema Architecture -->
+    <section class="mb-5" id="ts-advantages">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.6</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Advantages of Three-Schema Architecture</h3>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card h-100 border shadow-sm bg-white p-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-eye-slash-fill text-primary fs-4"></i>
+                        <h6 class="fw-bold text-dark mb-0">1. Data Abstraction</h6>
+                    </div>
+                    <p class="small text-secondary mb-0">
+                        Users and application developers are freed from knowing storage details like disk block offsets or B+ tree leaf sizes. They query pure logical concepts.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border shadow-sm bg-white p-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-person-lines-fill text-success fs-4"></i>
+                        <h6 class="fw-bold text-dark mb-0">2. Tailored User Views</h6>
+                    </div>
+                    <p class="small text-secondary mb-0">
+                        Different departments see customized views of the exact same database. A student never sees faculty salary columns, enhancing confidentiality.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border shadow-sm bg-white p-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-shield-check text-danger fs-4"></i>
+                        <h6 class="fw-bold text-dark mb-0">3. Data Independence</h6>
+                    </div>
+                    <p class="small text-secondary mb-0">
+                        Modifying storage hardware or adding an index does not disrupt application code, because intermediate mappings absorb the change.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.7 Critical Misconception: Three-Schema vs Three-Tier -->
+    <section class="mb-5" id="ts-misconceptions">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-danger rounded-circle p-2 text-white" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.7</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Critical Distinction: Three-Schema vs. Three-Tier</h3>
+        </div>
+
+        <div class="card border border-2 border-danger-subtle shadow-sm mb-4 bg-white overflow-hidden">
+            <div class="card-header bg-danger-subtle text-danger-emphasis py-3">
+                <h6 class="fw-bold mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>The #1 Most Common Exam Misconception Clarified!
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-secondary small">
+                    Students frequently confuse <strong>Three-Schema Architecture</strong> with <strong>Three-Tier Architecture</strong> because both share the number "three". However, they answer two fundamentally different architectural questions:
+                </p>
+
+                <!-- Comparison Cards -->
+                <div class="row g-3 my-2">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-light h-100 border-start border-4 border-primary">
+                            <span class="badge bg-primary mb-2">Data Modeling Concept</span>
+                            <h6 class="fw-bold text-dark mb-1">Three-Schema Architecture (ANSI/SPARC)</h6>
+                            <p class="small text-muted mb-2">Answers: <em>"What data is seen and how is it abstracted inside the DBMS?"</em></p>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li>Pertains strictly to <strong>data abstraction</strong> inside the database system.</li>
+                                <li>Components: <strong>External Schema</strong>, <strong>Conceptual Schema</strong>, <strong>Internal Schema</strong>.</li>
+                                <li>Can exist even on a single standalone computer!</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-light h-100 border-start border-4 border-success">
+                            <span class="badge bg-success mb-2">Software Deployment Concept</span>
+                            <h6 class="fw-bold text-dark mb-1">Three-Tier Architecture (Client-Server)</h6>
+                            <p class="small text-muted mb-2">Answers: <em>"Where does the software physically run across computers and networks?"</em></p>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li>Pertains to <strong>physical software and hardware distribution</strong>.</li>
+                                <li>Components: <strong>Presentation Tier</strong> (Browser), <strong>Application Tier</strong> (Server), <strong>Database Tier</strong> (DBMS).</li>
+                                <li>Spans multiple physical machines connected over networks.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contrast Table -->
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm table-bordered mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Comparison Dimension</th>
+                                <th>Three-Schema Architecture</th>
+                                <th>Three-Tier Architecture</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Primary Domain</td>
+                                <td>Database Design & Data Abstraction</td>
+                                <td>Software Engineering & Network Deployment</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">The Three Elements</td>
+                                <td>External Level, Conceptual Level, Internal Level</td>
+                                <td>Presentation Layer, Application Layer, Database Layer</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Role of Network</td>
+                                <td>Not required; schemas describe data layout</td>
+                                <td>Essential; tiers communicate over LAN/Internet</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Main Goal</td>
+                                <td>Achieve Data Independence and custom views</td>
+                                <td>Achieve Scalability, Security, and Thin Clients</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Exam Preparation: Topic 3 -->
+    <section class="mb-5" id="ts-examprep">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-success-subtle py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-success-emphasis mb-0">
+                    <i class="bi bi-patch-question-fill me-2"></i>Exam Preparation: Three-Schema Architecture
+                </h5>
+                <span class="badge bg-success text-white">NEPC42 Exam Essentials</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="accordion" id="examAccordionTS">
+                    <div class="accordion-item border mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="headingTSQ1">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTSQ1">
+                                <span class="badge bg-primary-subtle text-primary me-2">2 Marks</span>
+                                <strong>What is External-to-Conceptual mapping?</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseTSQ1" class="accordion-collapse collapse" data-bs-parent="#examAccordionTS">
+                            <div class="accordion-body small bg-light text-secondary">
+                                <strong>Model Answer:</strong> External-to-Conceptual mapping is the correspondence maintained by the DBMS that maps attributes and records in a specific user's external view to the corresponding tables and columns in the global conceptual schema. It ensures that queries written against a customized view can be correctly translated to the underlying logical tables.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="headingTSQ2">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTSQ2">
+                                <span class="badge bg-primary-subtle text-primary me-2">5 Marks</span>
+                                <strong>Explain the three levels of data abstraction with a university database example.</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseTSQ2" class="accordion-collapse collapse" data-bs-parent="#examAccordionTS">
+                            <div class="accordion-body small bg-light text-secondary">
+                                <strong>Model Answer:</strong>
+                                <ol class="ps-3 mb-0">
+                                    <li><strong>External Level:</strong> A student viewing their individual grade card on the mobile app. They see only their own roll number, name, and GPA.</li>
+                                    <li><strong>Conceptual Level:</strong> The university's global relational schema: <code>students(student_id, roll_no, first_name, dept_id, gpa)</code>, <code>departments(dept_id, dept_name)</code>, with primary/foreign keys and integrity constraints.</li>
+                                    <li><strong>Internal Level:</strong> The physical files (<code>students.ibd</code>) on an NVMe SSD, stored in 16KB disk pages, with a B+ tree index structure on <code>student_id</code>.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 3 Interactive Knowledge Check Quiz -->
+    <section class="mb-4" id="ts-quiz">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary me-2">Knowledge Check</span>
+                    <h5 class="fw-bold d-inline mb-0">Topic 3 Quiz: Three-Schema Architecture</h5>
+                </div>
+                <div id="quiz3-score-badge" class="badge bg-light text-dark border">Not Attempted</div>
+            </div>
+            <div class="card-body p-4" id="quiz-container-3">
+                <p class="small text-muted mb-4">
+                    Test your understanding with 5 questions on Three-Schema Architecture and Mappings.
+                </p>
+
+                <!-- Question 1 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="ts-q1">
+                    <p class="fw-semibold text-dark mb-2">1. Which level of the Three-Schema architecture describes the entire logical structure of the database for the community of users without dealing with physical disk storage?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> External Level
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> Conceptual Level (Logical Schema)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Internal Level
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Physical Device Layer
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="ts-q2">
+                    <p class="fw-semibold text-dark mb-2">2. Is an External Schema a separate physical duplicate copy of the database?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> Yes, every user gets their own dedicated physical database file on the server disk.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> No, it is a virtual view (projection) derived from the single central database.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Yes, created by duplicating disk sectors whenever someone logs in.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> No, external schemas exist only on paper and are not supported by DBMS software.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="ts-q3">
+                    <p class="fw-semibold text-dark mb-2">3. What is the role of Conceptual-to-Internal mapping?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> It renders HTML buttons and text inputs for web browsers.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> It translates logical entities and attributes to physical disk block locations, record layouts, and B+ tree indexes.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> It maps student passwords to faculty emails.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> It compiles C++ code into machine assembly.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="ts-q4">
+                    <p class="fw-semibold text-dark mb-2">4. What is the fundamental difference between Three-Schema Architecture and Three-Tier Architecture?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="A">
+                            <strong>A.</strong> Three-Schema describes levels of data abstraction inside the DBMS; Three-Tier describes physical distribution of software/hardware across a network.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> They are identical concepts with different marketing names.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Three-Schema applies only to MySQL, while Three-Tier applies only to Oracle.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Three-Schema requires three physical computer servers, whereas Three-Tier runs on one PC.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="ts-q5">
+                    <p class="fw-semibold text-dark mb-2">5. Which of the following is defined at the Internal Schema level?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> The HTML color scheme of the student dashboard.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> Foreign key constraints between students and departments.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="C">
+                            <strong>C.</strong> 16KB disk block allocation, record byte offsets, and B+ tree index structures.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> The list of enrolled courses displayed to an accountant.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-secondary" id="btn-reset-quiz-3">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Quiz
+                    </button>
+                    <div id="quiz3-summary" class="small fw-semibold text-muted">Answer all 5 questions to complete Topic 3.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Footer -->
+    <div class="d-flex justify-content-between align-items-center my-4 p-3 bg-white rounded border shadow-sm">
+        <button class="btn btn-outline-secondary btn-sm btn-nav-topic" data-target="data-models">
+            <i class="bi bi-arrow-left me-1"></i> Previous: Topic 2 &mdash; Data Models
+        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm btn-mark-completed" data-topic="three-schema">
+                <i class="bi bi-check-circle me-1"></i> Mark Topic 3 Completed
+            </button>
+            <button class="btn btn-gfg btn-sm btn-nav-topic" data-target="data-independence">
+                Next: Topic 4 &mdash; Data Independence <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+</div>

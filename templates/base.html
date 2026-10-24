@@ -39,6 +39,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'phase2' %}active fw-semibold text-success{% endif %}" href="/phase-2">
+                            <i class="bi bi-journal-richtext me-1"></i> Phase 2: Intro to DBMS
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if active_page == 'schema' %}active fw-semibold text-success{% endif %}" href="/schema">
                             <i class="bi bi-diagram-3-fill me-1"></i> Schema Inspector
                         </a>
@@ -74,11 +79,17 @@
             </a>
 
             <div class="sidebar-header">Module 1: Foundations</div>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 2">
-                <i class="bi bi-journal-text"></i> Introduction to DBMS
+            <a href="/phase-2?topic=architecture" class="sidebar-nav-link {% if active_page == 'phase2' and current_topic == 'architecture' %}active{% endif %}">
+                <i class="bi bi-hdd-network"></i> 1. Database Architecture
             </a>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 2">
-                <i class="bi bi-hdd-network"></i> Database Architecture
+            <a href="/phase-2?topic=data-models" class="sidebar-nav-link {% if active_page == 'phase2' and current_topic == 'data-models' %}active{% endif %}">
+                <i class="bi bi-layers"></i> 2. Data Models
+            </a>
+            <a href="/phase-2?topic=three-schema" class="sidebar-nav-link {% if active_page == 'phase2' and current_topic == 'three-schema' %}active{% endif %}">
+                <i class="bi bi-diagram-3"></i> 3. Three-Schema Architecture
+            </a>
+            <a href="/phase-2?topic=data-independence" class="sidebar-nav-link {% if active_page == 'phase2' and current_topic == 'data-independence' %}active{% endif %}">
+                <i class="bi bi-shield-check"></i> 4. Data Independence
             </a>
 
             <div class="sidebar-header">Module 2: Modeling & Algebra</div>

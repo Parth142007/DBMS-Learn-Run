@@ -1,0 +1,894 @@
+<!-- ====================================================================
+     Topic 1: Database System Architecture
+     NEPC42 Syllabus — Module 1: Foundations
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-architecture">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 1 of 4</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">1. Database System Architecture</h2>
+            <p class="text-secondary mb-0">
+                Understand the structural tiers, component relationships, request-response lifecycles, and core internal engines that power modern enterprise database management systems.
+            </p>
+        </div>
+    </div>
+
+    <!-- 1.1 Introduction to Database Architecture -->
+    <section class="mb-5" id="arch-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Introduction to Database Architecture</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle text-primary me-2"></i>What is Database Architecture?</h5>
+                <p>
+                    <strong>Database System Architecture</strong> represents the high-level structural design and organization of a database management system. It dictates how the database engine is partitioned into logical components, where data is physically housed, how application programs interface with the DBMS, and how client requests are communicated across network boundaries.
+                </p>
+                <p>
+                    Rather than being a single monolithic block of software, an enterprise database system is an orchestrated ecosystem consisting of <strong>hardware</strong> (storage disks, RAM, processors), <strong>software</strong> (DBMS engine, query compiler, storage manager), <strong>networks</strong>, and <strong>application clients</strong>.
+                </p>
+
+                <div class="row g-3 my-2">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-success mb-2"><i class="bi bi-bullseye me-2"></i>Why Database Architecture Matters</h6>
+                            <ul class="small text-secondary mb-0 ps-3">
+                                <li class="mb-1"><strong>Scalability:</strong> Enables the system to handle escalating concurrent users and data volumes by distributing workloads across tiers.</li>
+                                <li class="mb-1"><strong>Data Security & Isolation:</strong> Isolates the underlying database server in secure internal subnets, keeping it unreachable from the public internet.</li>
+                                <li class="mb-1"><strong>Fault Tolerance & High Availability:</strong> Allows individual application servers or storage units to be maintained, upgraded, or restarted without bringing down the entire enterprise.</li>
+                                <li><strong>Maintainability:</strong> Decouples the user interface from business rules and storage schemas, reducing system-wide regressions during updates.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-primary mb-2"><i class="bi bi-diagram-3 me-2"></i>The Core Relationship Chain</h6>
+                            <p class="small text-secondary mb-2">
+                                In modern computing, data retrieval follows a well-defined hierarchical relationship:
+                            </p>
+                            <div class="text-center py-2 px-3 bg-white rounded border font-monospace small text-dark">
+                                <span class="fw-bold text-primary">User</span> &rarr; 
+                                <span class="fw-bold text-success">Application Client</span> &rarr; 
+                                <span class="fw-bold text-warning-emphasis">DBMS Software Engine</span> &rarr; 
+                                <span class="fw-bold text-danger">Database (Storage Files)</span>
+                            </div>
+                            <p class="small text-muted mt-2 mb-0">
+                                The end-user never touches raw disk blocks directly; all read and write requests must be vetted, translated, and executed by the DBMS engine.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-world walkthrough: Student checking exam results -->
+                <div class="mt-4 p-3 border rounded-3 bg-success-subtle border-success-subtle">
+                    <h6 class="fw-bold text-success-emphasis mb-2">
+                        <i class="bi bi-mortarboard-fill me-2"></i>Real-World Walkthrough: Student Checking Exam Results
+                    </h6>
+                    <p class="small text-dark mb-3">
+                        Consider a college student visiting the university examination portal to check their semester grade sheet. Here is the step-by-step lifecycle of their request:
+                    </p>
+                    <ol class="small text-dark mb-0 ps-3">
+                        <li class="mb-2"><strong>Client Initiation (Presentation Tier):</strong> The student enters their Roll Number (e.g., <code>2026CS101</code>) on their smartphone browser and clicks <em>"Submit"</em>.</li>
+                        <li class="mb-2"><strong>Network Dispatch:</strong> The browser packages this input into an encrypted HTTPS <code>POST</code> request and dispatches it over the internet to the college web server.</li>
+                        <li class="mb-2"><strong>Business Logic Processing (Application Tier):</strong> The Application Server receives the request. It verifies that the student is active, confirms fee clearance, sanitizes the roll number to prevent SQL injection, and generates a structured query.</li>
+                        <li class="mb-2"><strong>DBMS Execution (Database Tier):</strong> The application server connects via a secure connection pool to the MySQL database server. The DBMS query processor parses the query, checks table permissions, uses an index on <code>students.roll_no</code>, and reads the matching record from disk.</li>
+                        <li class="mb-2"><strong>Result Packaging & Delivery:</strong> The DBMS delivers the raw tuple (Roll No, Name, GPA, Marks) back to the Application Server. The application server renders the data into an attractive HTML grade card and transmits the response back to the student's phone.</li>
+                        <li><strong>Rendering:</strong> The student views their verified semester results in under 50 milliseconds!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.2 One-Tier Architecture -->
+    <section class="mb-5" id="arch-1tier">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">One-Tier (Single-Tier) Architecture</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    In a <strong>One-Tier Architecture</strong>, all functional components &mdash; the User Interface (UI), the application logic, the DBMS software, and the physical database files &mdash; reside on the <strong>exact same local computer</strong>.
+                </p>
+
+                <!-- 1-Tier Architecture SVG Diagram -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 1.1: One-Tier Architecture Architecture</h6>
+                    <svg viewBox="0 0 760 220" class="img-fluid" style="max-height: 240px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Machine Boundary -->
+                        <rect x="20" y="20" width="720" height="180" rx="12" fill="#ffffff" stroke="#2f8d46" stroke-width="2" stroke-dasharray="6,4"/>
+                        <text x="40" y="45" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#2f8d46">Local Machine (Single Workstation / Laptop / Phone)</text>
+                        
+                        <!-- User -->
+                        <rect x="50" y="70" width="120" height="90" rx="8" fill="#e8f5e9" stroke="#2f8d46" stroke-width="1.5"/>
+                        <text x="110" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1f2937">User Interface</text>
+                        <text x="110" y="125" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#4b5563">(Forms / CLI)</text>
+                        
+                        <!-- Internal Bus Arrow -->
+                        <path d="M170 115 L210 115" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow1)"/>
+                        
+                        <!-- Application Logic -->
+                        <rect x="220" y="70" width="130" height="90" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+                        <text x="285" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1f2937">Application Logic</text>
+                        <text x="285" y="125" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#4b5563">(Local Code / Tools)</text>
+                        
+                        <!-- Internal Bus Arrow -->
+                        <path d="M350 115 L390 115" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow1)"/>
+                        
+                        <!-- DBMS Engine -->
+                        <rect x="400" y="70" width="130" height="90" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+                        <text x="465" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1f2937">DBMS Engine</text>
+                        <text x="465" y="125" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#4b5563">(SQLite / MS Access)</text>
+                        
+                        <!-- Internal Bus Arrow -->
+                        <path d="M530 115 L570 115" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow1)"/>
+                        
+                        <!-- Database Storage -->
+                        <rect x="580" y="70" width="130" height="90" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+                        <text x="645" y="105" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1f2937">Database Files</text>
+                        <text x="645" y="125" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#4b5563">(.db / .sqlite files)</text>
+
+                        <!-- Marker definition -->
+                        <defs>
+                            <marker id="arrow1" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#1f2937" />
+                            </marker>
+                        </defs>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 1.1:</em> In one-tier architecture, no network requests take place. Direct in-process calls or file system I/O connect the user to data.
+                    </p>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-success-subtle bg-white">
+                            <div class="card-header bg-success-subtle text-success-emphasis fw-bold py-2 small">
+                                <i class="bi bi-check-circle me-1"></i> Key Advantages
+                            </div>
+                            <div class="card-body p-3">
+                                <ul class="small text-secondary mb-0 ps-3">
+                                    <li class="mb-2"><strong>Zero Network Latency:</strong> Since all communication is local through inter-process memory or direct file pointers, query response is near instantaneous.</li>
+                                    <li class="mb-2"><strong>Simple Deployment:</strong> No remote servers, firewalls, ports, or complex network security configurations required.</li>
+                                    <li class="mb-2"><strong>Zero Hosting Cost:</strong> Can run entirely offline on standard client hardware without recurring cloud infrastructure bills.</li>
+                                    <li><strong>Great for Learning:</strong> Ideal for beginners practicing basic SQL syntax or prototyping single-user desktop utilities.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-danger-subtle bg-white">
+                            <div class="card-header bg-danger-subtle text-danger-emphasis fw-bold py-2 small">
+                                <i class="bi bi-x-circle me-1"></i> Disadvantages & Limitations
+                            </div>
+                            <div class="card-body p-3">
+                                <ul class="small text-secondary mb-0 ps-3">
+                                    <li class="mb-2"><strong>Single User Only:</strong> Does not support concurrent multi-user transactions across multiple client computers.</li>
+                                    <li class="mb-2"><strong>Security Vulnerability:</strong> The database file sits directly on the user's hard drive. Any user with OS file system access can copy, tamper with, or accidentally delete the database file.</li>
+                                    <li class="mb-2"><strong>Zero Scalability:</strong> If the data expands beyond the local computer's disk and RAM capacity, the application crashes.</li>
+                                    <li><strong>No Centralized Backup:</strong> If the local hard drive experiences a hardware failure, all enterprise data is permanently lost.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 p-3 bg-light rounded border">
+                    <span class="badge bg-secondary me-2">Typical Use Cases:</span>
+                    <span class="small text-secondary">
+                        Embedded SQLite databases in mobile apps (e.g., WhatsApp local chat history), standalone Microsoft Access catalogs for small personal libraries, single-user desktop inventory loggers.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.3 Two-Tier Architecture -->
+    <section class="mb-5" id="arch-2tier">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Two-Tier (Client-Server) Architecture</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A <strong>Two-Tier Architecture</strong> splits the system into two distinct entities communicating over a local area network (LAN):
+                </p>
+                <ul>
+                    <li><strong>Tier 1 — Client Machine ("Fat Client"):</strong> Runs the User Interface and the entire Application Business Logic. It communicates directly with the database using database drivers such as ODBC (Open Database Connectivity) or JDBC (Java Database Connectivity).</li>
+                    <li><strong>Tier 2 — Database Server:</strong> A dedicated, high-performance central server hosting the DBMS (e.g., MySQL Server, Oracle) and the physical database files. It handles query compilation, execution, transaction logging, and disk I/O.</li>
+                </ul>
+
+                <!-- 2-Tier Architecture SVG Diagram -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 1.2: Two-Tier Client-Server Architecture</h6>
+                    <svg viewBox="0 0 760 260" class="img-fluid" style="max-height: 270px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Client 1 -->
+                        <rect x="30" y="30" width="220" height="90" rx="8" fill="#e8f5e9" stroke="#2f8d46" stroke-width="1.5"/>
+                        <text x="140" y="55" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1f2937">Client Terminal A (Fat Client)</text>
+                        <text x="140" y="75" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#4b5563">User Interface + Business Logic</text>
+                        <text x="140" y="95" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#2f8d46">ODBC / JDBC Driver</text>
+
+                        <!-- Client 2 -->
+                        <rect x="30" y="145" width="220" height="90" rx="8" fill="#e8f5e9" stroke="#2f8d46" stroke-width="1.5"/>
+                        <text x="140" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1f2937">Client Terminal B (Fat Client)</text>
+                        <text x="140" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" fill="#4b5563">User Interface + Business Logic</text>
+                        <text x="140" y="210" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#2f8d46">ODBC / JDBC Driver</text>
+
+                        <!-- Network Cloud / Highway -->
+                        <path d="M250 75 C 330 75, 360 110, 470 110" stroke="#0284c7" stroke-width="2.5" fill="none" marker-end="url(#arrow2)"/>
+                        <path d="M470 120 C 360 120, 330 85, 250 85" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,3" fill="none" marker-end="url(#arrow2g)"/>
+                        
+                        <path d="M250 190 C 330 190, 360 140, 470 140" stroke="#0284c7" stroke-width="2.5" fill="none" marker-end="url(#arrow2)"/>
+                        <path d="M470 150 C 360 150, 330 200, 250 200" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,3" fill="none" marker-end="url(#arrow2g)"/>
+
+                        <rect x="300" y="115" width="120" height="30" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+                        <text x="360" y="135" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#0369a1">LAN / Intranet</text>
+
+                        <!-- Database Server Tier -->
+                        <rect x="490" y="40" width="240" height="180" rx="12" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+                        <text x="610" y="70" text-anchor="middle" font-family="Inter, sans-serif" font-size="14" font-weight="bold" fill="#b45309">Tier 2: Database Server</text>
+                        
+                        <rect x="515" y="90" width="190" height="45" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1"/>
+                        <text x="610" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#1f2937">DBMS Software (MySQL)</text>
+                        
+                        <rect x="515" y="150" width="190" height="50" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1"/>
+                        <text x="610" y="175" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#1f2937">Central Database Files</text>
+                        <text x="610" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#6b7280">(Tables, Indexes, Logs)</text>
+
+                        <defs>
+                            <marker id="arrow2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7" />
+                            </marker>
+                            <marker id="arrow2g" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#16a34a" />
+                            </marker>
+                        </defs>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 1.2:</em> The client directly sends raw SQL queries (blue) and receives raw query result sets (green) over the local network.
+                    </p>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-success mb-2"><i class="bi bi-shield-check me-2"></i>Advantages of 2-Tier</h6>
+                            <ul class="small text-secondary mb-0 ps-3">
+                                <li class="mb-1"><strong>Centralized Data Control:</strong> All transactions update one central database server, eliminating data synchronization discrepancies.</li>
+                                <li class="mb-1"><strong>Multi-user Support:</strong> The DBMS coordinates concurrency, locking, and multi-user ACID transactions.</li>
+                                <li><strong>High Speed on LAN:</strong> Direct client-to-database connections can deliver high performance in office intranets.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-shield-exclamation me-2"></i>Security & Maintenance Pitfalls</h6>
+                            <ul class="small text-secondary mb-0 ps-3">
+                                <li class="mb-1"><strong>"Fat Client" Maintenance Nightmare:</strong> If a business rule changes (e.g., student pass mark changes from 40 to 45), IT staff must manually update the software executable on hundreds of client machines!</li>
+                                <li class="mb-1"><strong>Severe Security Risk:</strong> Each client terminal holds direct database credentials and direct open network ports to the database server.</li>
+                                <li><strong>Network Choke Point:</strong> The database returns all raw records to the client over the network, overwhelming bandwidth when queries return thousands of rows.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 p-3 border rounded bg-white">
+                    <strong class="small text-dark d-block mb-1"><i class="bi bi-bank2 me-1"></i>College Registrar Office Example:</strong>
+                    <span class="small text-muted">
+                        In a college registrar office, five desktop computers run a custom Java Swing application. When the registrar enters a student ID, the desktop app sends a direct SQL statement: <code>SELECT * FROM students WHERE student_id = 45;</code> over the campus LAN directly to the server room MySQL database.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.4 Three-Tier Architecture -->
+    <section class="mb-5" id="arch-3tier">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Three-Tier Architecture (Industry Standard)</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    <strong>Three-Tier Architecture</strong> is the gold standard for modern web, cloud, and enterprise applications. It completely isolates the user interface from the database engine by inserting an intermediate <strong>Application / Business Logic Layer</strong>.
+                </p>
+
+                <!-- Detailed Breakdown of the Three Layers -->
+                <div class="row g-3 mb-4">
+                    <div class="col-lg-4">
+                        <div class="p-3 border rounded-3 bg-light h-100 border-top border-4 border-primary">
+                            <span class="badge bg-primary mb-2">Layer 1</span>
+                            <h6 class="fw-bold text-dark mb-1">Presentation Layer</h6>
+                            <p class="small text-muted mb-2">Client / Browser / Mobile App</p>
+                            <p class="small text-secondary mb-2">
+                                <strong>Responsibilities:</strong> Renders HTML/CSS/JavaScript, captures user input, displays error banners, and initiates HTTPS requests.
+                            </p>
+                            <div class="small text-primary fw-semibold">
+                                <i class="bi bi-shield-lock me-1"></i> Has ZERO knowledge of SQL syntax or database credentials.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="p-3 border rounded-3 bg-light h-100 border-top border-4 border-success">
+                            <span class="badge bg-success mb-2">Layer 2</span>
+                            <h6 class="fw-bold text-dark mb-1">Application Layer</h6>
+                            <p class="small text-muted mb-2">Web / App Server (Flask, Spring, Node)</p>
+                            <p class="small text-secondary mb-2">
+                                <strong>Responsibilities:</strong> Enforces business logic, authenticates user tokens, validates input, manages connection pooling, and constructs safe parameterized queries.
+                            </p>
+                            <div class="small text-success fw-semibold">
+                                <i class="bi bi-cpu me-1"></i> Acts as the intelligent intermediary protecting the database.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="p-3 border rounded-3 bg-light h-100 border-top border-4 border-danger">
+                            <span class="badge bg-danger mb-2">Layer 3</span>
+                            <h6 class="fw-bold text-dark mb-1">Database Layer</h6>
+                            <p class="small text-muted mb-2">DBMS Server (MySQL, PostgreSQL)</p>
+                            <p class="small text-secondary mb-2">
+                                <strong>Responsibilities:</strong> Storage management, query optimization, constraint verification, transaction ACID guarantees, and disk access.
+                            </p>
+                            <div class="small text-danger fw-semibold">
+                                <i class="bi bi-database-lock me-1"></i> Accessible ONLY from the application server's private IP.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3-Tier SVG Diagram -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 1.3: Three-Tier Enterprise Architecture</h6>
+                    <svg viewBox="0 0 820 280" class="img-fluid" style="max-height: 290px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Layer 1: Presentation -->
+                        <rect x="20" y="30" width="200" height="220" rx="10" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+                        <text x="120" y="58" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#15803d">1. Presentation Tier</text>
+                        <text x="120" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4b5563">(Client / Thin Client)</text>
+
+                        <!-- Devices inside Presentation -->
+                        <rect x="40" y="95" width="160" height="50" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+                        <text x="120" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">Web Browser (Chrome)</text>
+                        <text x="120" y="133" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#6b7280">HTML5 / CSS3 / JS</text>
+
+                        <rect x="40" y="160" width="160" height="50" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+                        <text x="120" y="183" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">Mobile App (Android/iOS)</text>
+                        <text x="120" y="198" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#6b7280">Native UI Widgets</text>
+
+                        <!-- Arrows Layer 1 to Layer 2 -->
+                        <path d="M220 120 L290 120" stroke="#0284c7" stroke-width="2" marker-end="url(#arrow3b)"/>
+                        <text x="255" y="112" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="bold" fill="#0284c7">HTTPS Req</text>
+
+                        <path d="M290 150 L220 150" stroke="#16a34a" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrow3g)"/>
+                        <text x="255" y="166" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="bold" fill="#16a34a">JSON/HTML</text>
+
+                        <!-- Layer 2: Application / Business Logic -->
+                        <rect x="295" y="30" width="220" height="220" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+                        <text x="405" y="58" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#1d4ed8">2. Application Tier</text>
+                        <text x="405" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4b5563">(Business Logic Layer)</text>
+
+                        <rect x="315" y="95" width="180" height="42" rx="6" fill="#ffffff" stroke="#bfdbfe" stroke-width="1"/>
+                        <text x="405" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">Web Server / Flask App</text>
+                        <text x="405" y="128" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#6b7280">REST API & Endpoints</text>
+
+                        <rect x="315" y="148" width="180" height="82" rx="6" fill="#ffffff" stroke="#bfdbfe" stroke-width="1"/>
+                        <text x="405" y="168" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">Business Rules Engine</text>
+                        <text x="405" y="183" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#6b7280">&bull; Auth & Validation</text>
+                        <text x="405" y="198" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#6b7280">&bull; Connection Pooling</text>
+                        <text x="405" y="213" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#6b7280">&bull; SQL Injection Shield</text>
+
+                        <!-- Arrows Layer 2 to Layer 3 -->
+                        <path d="M515 120 L585 120" stroke="#b45309" stroke-width="2" marker-end="url(#arrow3o)"/>
+                        <text x="550" y="112" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="bold" fill="#b45309">SQL Query</text>
+
+                        <path d="M585 150 L515 150" stroke="#16a34a" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrow3g)"/>
+                        <text x="550" y="166" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="bold" fill="#16a34a">Result Tuples</text>
+
+                        <!-- Layer 3: Database Tier -->
+                        <rect x="590" y="30" width="210" height="220" rx="10" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+                        <text x="695" y="58" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#c2410c">3. Database Tier</text>
+                        <text x="695" y="76" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#4b5563">(Data Storage Layer)</text>
+
+                        <rect x="610" y="95" width="170" height="50" rx="6" fill="#ffffff" stroke="#fed7aa" stroke-width="1"/>
+                        <text x="695" y="118" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">MySQL 8.0 Engine</text>
+                        <text x="695" y="133" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#6b7280">Query Parser & Optimizer</text>
+
+                        <rect x="610" y="160" width="170" height="68" rx="6" fill="#ffffff" stroke="#fed7aa" stroke-width="1"/>
+                        <text x="695" y="180" text-anchor="middle" font-family="Inter, sans-serif" font-size="11" font-weight="bold" fill="#1f2937">Relational Storage</text>
+                        <text x="695" y="196" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#6b7280">&bull; Tables & B-Tree Indexes</text>
+                        <text x="695" y="211" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" fill="#6b7280">&bull; WAL Logs & Undo Tables</text>
+
+                        <defs>
+                            <marker id="arrow3b" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7" />
+                            </marker>
+                            <marker id="arrow3g" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#16a34a" />
+                            </marker>
+                            <marker id="arrow3o" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 1 L 10 5 L 0 9 z" fill="#b45309" />
+                            </marker>
+                        </defs>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 1.3:</em> Request and response flow in 3-Tier architecture. The user never communicates directly with the database; the application tier mediates every single interaction.
+                    </p>
+                </div>
+
+                <div class="p-3 bg-light rounded border mb-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-question-diamond text-primary me-2"></i>Why Separate Business Logic from the UI and Database?</h6>
+                    <div class="row g-2 small text-secondary">
+                        <div class="col-md-4">
+                            <strong>1. Code Reusability:</strong> The same Flask or Spring backend API can serve web users, mobile Android apps, and third-party partners without rewriting business logic.
+                        </div>
+                        <div class="col-md-4">
+                            <strong>2. Independent Scalability:</strong> If web traffic surges during exam results release, you can spin up 10 extra application servers behind a load balancer without touching the database cluster.
+                        </div>
+                        <div class="col-md-4">
+                            <strong>3. Ironclad Security:</strong> The database server lives in a private subnet (VPC). Hackers cannot connect to port 3306 because only authorized application servers are allowed through the firewall.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Practical Examples -->
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <div class="border rounded p-2 bg-white small">
+                            <strong class="text-success d-block mb-1"><i class="bi bi-credit-card me-1"></i>Banking System</strong>
+                            Customer uses phone app (Tier 1) &rarr; Banking server verifies daily withdrawal limits & 2FA (Tier 2) &rarr; Core ledger database commits debit transaction (Tier 3).
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-2 bg-white small">
+                            <strong class="text-primary d-block mb-1"><i class="bi bi-cart3 me-1"></i>E-Commerce (Amazon)</strong>
+                            Shopper browses product catalog (Tier 1) &rarr; App server applies discount coupons and checks inventory (Tier 2) &rarr; Order database reserves warehouse stock (Tier 3).
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded p-2 bg-white small">
+                            <strong class="text-warning-emphasis d-block mb-1"><i class="bi bi-building me-1"></i>College Management</strong>
+                            Student pays semester fees (Tier 1) &rarr; Accounts server generates receipt & validates dues (Tier 2) &rarr; Student registration table marks fees paid (Tier 3).
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.5 Comprehensive Comparison Table -->
+    <section class="mb-5" id="arch-comparison">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Comparison: One-Tier, Two-Tier, and Three-Tier</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white overflow-hidden">
+            <div class="card-header bg-light py-3">
+                <h6 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-table text-success me-2"></i>Multi-Dimensional Architectural Comparison
+                </h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 18%;">Feature / Dimension</th>
+                            <th style="width: 26%;">One-Tier Architecture</th>
+                            <th style="width: 28%;">Two-Tier Architecture</th>
+                            <th style="width: 28%;">Three-Tier Architecture</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-dark">Number of Layers</td>
+                            <td>1 Single Layer (All-in-one)</td>
+                            <td>2 Layers (Client + Database Server)</td>
+                            <td>3 Layers (Presentation + App + Database)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Component Placement</td>
+                            <td>UI, Logic, DBMS & Data all reside on the user's local PC</td>
+                            <td>Fat client has UI & Logic; Database Server has DBMS & Data</td>
+                            <td>Thin client has UI; App server has Logic; DB server has Data</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Communication Flow</td>
+                            <td>Direct memory / local OS file I/O (no network)</td>
+                            <td>Client sends SQL queries directly over LAN via ODBC/JDBC</td>
+                            <td>Client sends HTTPS &rarr; App Server sends SQL &rarr; DB Server</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Scalability</td>
+                            <td><span class="badge bg-danger-subtle text-danger border">None</span> (Limited to single computer)</td>
+                            <td><span class="badge bg-warning-subtle text-warning-emphasis border">Low to Moderate</span> (Max ~100 concurrent LAN users)</td>
+                            <td><span class="badge bg-success-subtle text-success border">Extremely High</span> (Millions of concurrent web users)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Security Level</td>
+                            <td><span class="badge bg-danger-subtle text-danger border">Extremely Poor</span> (Raw data files exposed locally)</td>
+                            <td><span class="badge bg-warning-subtle text-warning-emphasis border">Moderate</span> (Clients store DB credentials; DB port exposed)</td>
+                            <td><span class="badge bg-success-subtle text-success border">Maximum Security</span> (DB isolated in private subnet; credentials hidden)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Maintenance</td>
+                            <td>Trivial for 1 PC, but impossible to sync across devices</td>
+                            <td>Hard: Updating business logic requires updating every client PC</td>
+                            <td>Easy: Update business rules once on the central application server</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Performance Factors</td>
+                            <td>Blazing fast locally; zero network latency</td>
+                            <td>Fast on high-speed LAN, but bogs down over wide-area networks</td>
+                            <td>Slight network overhead (two hops), but optimized by caching & pooling</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">System Complexity</td>
+                            <td>Simplest to set up</td>
+                            <td>Moderate complexity</td>
+                            <td>High architectural complexity (multi-server configuration)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Typical Applications</td>
+                            <td>SQLite in mobile apps, MS Access personal notebooks</td>
+                            <td>Legacy university registrar LAN terminals, offline POS cash registers</td>
+                            <td>Internet banking, Amazon, Netflix, College ERP portals</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light p-3 small text-muted">
+                <strong>Decision Rule of Thumb:</strong> Choose <strong>One-Tier</strong> for local prototypes and single-user apps. Choose <strong>Two-Tier</strong> for internal LAN apps with fixed, trusted workstations. Choose <strong>Three-Tier</strong> for public web/mobile applications requiring scalability, security, and multiple client interfaces.
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.6 Database System Components -->
+    <section class="mb-5" id="arch-components">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.6</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Database System Components</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Behind the scenes, a Relational Database Management System (such as MySQL or PostgreSQL) is composed of specialized software modules working in harmony. Below are the primary internal components:
+                </p>
+
+                <div class="row g-3">
+                    <!-- Query Processor -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-cpu-fill text-primary fs-4"></i>
+                                <h6 class="fw-bold text-dark mb-0">1. Query Processor</h6>
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                Translates high-level declarative SQL requests into low-level execution instructions that the machine can execute.
+                            </p>
+                            <ul class="small text-muted ps-3 mb-2">
+                                <li><strong>DDL Interpreter:</strong> Processes schema creation/alteration commands and writes definitions to the data dictionary.</li>
+                                <li><strong>DML Compiler & Optimizer:</strong> Evaluates thousands of possible execution strategies (e.g., table scan vs index scan) and selects the least costly plan.</li>
+                                <li><strong>Query Execution Engine:</strong> Executes the optimized plan by requesting data pages from the storage manager.</li>
+                            </ul>
+                            <div class="small bg-white p-2 border rounded text-dark">
+                                <em>Analogy:</em> Like a restaurant chef reading a customer's order ticket and coordinating the kitchen line to prepare the dish efficiently.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Storage Manager -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-hdd-fill text-success fs-4"></i>
+                                <h6 class="fw-bold text-dark mb-0">2. Storage Manager</h6>
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                Provides the interface between the low-level data stored on persistent physical media (disks) and application queries.
+                            </p>
+                            <ul class="small text-muted ps-3 mb-2">
+                                <li><strong>Buffer Manager:</strong> Caches frequently accessed data blocks in fast RAM to minimize sluggish disk reads.</li>
+                                <li><strong>File Manager:</strong> Allocates disk space and manages record structures on magnetic or SSD storage.</li>
+                                <li><strong>Authorization & Integrity Manager:</strong> Ensures users have permission to view rows and enforces database constraints (e.g., foreign keys).</li>
+                            </ul>
+                            <div class="small bg-white p-2 border rounded text-dark">
+                                <em>Analogy:</em> Like the head warehouse manager who knows exactly which shelf holds every box and keeps popular items near the front door.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Manager -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-arrow-repeat text-warning-emphasis fs-4"></i>
+                                <h6 class="fw-bold text-dark mb-0">3. Transaction Manager (Introductory)</h6>
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                Ensures that the database remains in a consistent state even when multiple users execute simultaneous operations or when unexpected power failures occur.
+                            </p>
+                            <ul class="small text-muted ps-3 mb-2">
+                                <li>Maintains the fundamental <strong>ACID</strong> guarantees (Atomicity, Consistency, Isolation, Durability).</li>
+                                <li>Maintains the transaction log (Write-Ahead Logging / WAL) to roll back failed transactions or recover committed data after a crash.</li>
+                            </ul>
+                            <div class="small bg-white p-2 border rounded text-dark">
+                                <em>Analogy:</em> Like an escrow officer ensuring that money transfers only if ownership title is successfully signed; if either step fails, everything reverts.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Dictionary & Indexes -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-journal-bookmark-fill text-info fs-4"></i>
+                                <h6 class="fw-bold text-dark mb-0">4. Data Dictionary & Storage Indexes</h6>
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                Critical metadata repositories and auxiliary structures that enable high-performance retrieval.
+                            </p>
+                            <ul class="small text-muted ps-3 mb-2">
+                                <li><strong>Data Dictionary (System Catalog):</strong> Contains "metadata" (data about data) &mdash; schemas, table structures, column types, integrity constraints, and user privileges.</li>
+                                <li><strong>Indexes:</strong> Auxiliary search trees (typically B+ Trees) that map column values to physical disk block addresses, reducing lookup times from minutes to milliseconds.</li>
+                            </ul>
+                            <div class="small bg-white p-2 border rounded text-dark">
+                                <em>Analogy:</em> The index at the back of a 1,000-page textbook allowing you to jump straight to a topic without flipping every page.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Database Administrator Role -->
+                <div class="mt-4 p-3 bg-white border rounded">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-person-badge-fill text-danger fs-5"></i>
+                        <h6 class="fw-bold text-dark mb-0">The Role of the Database Administrator (DBA)</h6>
+                    </div>
+                    <p class="small text-secondary mb-0">
+                        The <strong>Database Administrator (DBA)</strong> is the chief custodian responsible for the operational health, security, and efficiency of the database system. Key responsibilities include: 
+                        <strong>Schema definition and modification</strong>, <strong>user authentication and access privilege granting</strong>, <strong>routine automated backups and disaster recovery planning</strong>, and <strong>performance monitoring and index tuning</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Exam Preparation: Short & Long Questions -->
+    <section class="mb-5" id="arch-examprep">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-success-subtle py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-success-emphasis mb-0">
+                    <i class="bi bi-patch-question-fill me-2"></i>Exam Preparation: Database Architecture
+                </h5>
+                <span class="badge bg-success text-white">NEPC42 Exam Essentials</span>
+            </div>
+            <div class="card-body p-4">
+                
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-pencil-square text-primary me-2"></i>Frequently Asked University Exam Questions</h6>
+                
+                <div class="accordion" id="examAccordionArch">
+                    <!-- Q1 -->
+                    <div class="accordion-item border mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="headingArchQ1">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseArchQ1">
+                                <span class="badge bg-primary-subtle text-primary me-2">2 Marks</span>
+                                <strong>What is a "Fat Client" in two-tier architecture?</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseArchQ1" class="accordion-collapse collapse" data-bs-parent="#examAccordionArch">
+                            <div class="accordion-body small bg-light text-secondary">
+                                <strong>Model Answer:</strong> In a two-tier database architecture, a <em>Fat Client</em> (or Heavy Client) refers to a client workstation that executes both the user interface presentation and the entire business logic processing. It connects directly to the database server using ODBC or JDBC drivers. Its primary drawback is high maintenance overhead, because any modification to business rules requires manually updating software on all client machines.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q2 -->
+                    <div class="accordion-item border mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="headingArchQ2">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseArchQ2">
+                                <span class="badge bg-primary-subtle text-primary me-2">5 Marks</span>
+                                <strong>Explain the role of the intermediate application layer in three-tier architecture. Why can't the client talk directly to the database?</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseArchQ2" class="accordion-collapse collapse" data-bs-parent="#examAccordionArch">
+                            <div class="accordion-body small bg-light text-secondary">
+                                <strong>Model Answer:</strong> The application layer (Tier 2) serves as an essential intermediary for three reasons:
+                                <ol class="mt-2 mb-1 ps-3">
+                                    <li><strong>Security:</strong> Direct client-to-database connections expose database credentials, IP addresses, and open ports to public networks. The application layer isolates the database inside a secure private network.</li>
+                                    <li><strong>Centralized Business Logic:</strong> Rules (such as credit limits or grade calculations) are coded once on the application server rather than duplicated across thousands of client phones or browsers.</li>
+                                    <li><strong>Resource Management & Scalability:</strong> The application server maintains connection pools, manages session states, caches frequent queries, and performs input sanitization against SQL injection attacks.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q3 -->
+                    <div class="accordion-item border mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="headingArchQ3">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseArchQ3">
+                                <span class="badge bg-primary-subtle text-primary me-2">10 Marks</span>
+                                <strong>Compare 1-tier, 2-tier, and 3-tier database architectures with neat labeled diagrams and real-world examples.</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseArchQ3" class="accordion-collapse collapse" data-bs-parent="#examAccordionArch">
+                            <div class="accordion-body small bg-light text-secondary">
+                                <strong>Structure for Full Marks:</strong>
+                                <ul class="mt-2 mb-1 ps-3">
+                                    <li>Draw Diagram 1.1 (One-Tier), Diagram 1.2 (Two-Tier), and Diagram 1.3 (Three-Tier).</li>
+                                    <li>Define each architecture clearly specifying where UI, Business Logic, and Database reside.</li>
+                                    <li>Provide the 9-point comparison table (Scalability, Security, Maintenance, Flow, etc.).</li>
+                                    <li>Give distinct real-world examples: SQLite for 1-tier, bank desktop LAN for 2-tier, Amazon/University ERP for 3-tier.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Common Misunderstandings -->
+                <div class="mt-4 p-3 border rounded bg-warning-subtle border-warning-subtle">
+                    <h6 class="fw-bold text-dark mb-1"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Common Student Mistakes in Exams:</h6>
+                    <ul class="small text-dark mb-0 ps-3">
+                        <li class="mb-1"><strong>Mistake:</strong> Confusing <em>Three-Tier Application Architecture</em> with <em>Three-Schema Architecture</em>. (Remember: Tiers refer to physical software/hardware distribution across networks; Schemas refer to levels of data abstraction inside the DBMS).</li>
+                        <li><strong>Mistake:</strong> Claiming that One-Tier architecture has no DBMS. (It *does* have a DBMS, such as embedded SQLite or MS Access, but it runs locally on the user's machine).</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 1 Interactive Knowledge Check Quiz -->
+    <section class="mb-4" id="arch-quiz">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary me-2">Knowledge Check</span>
+                    <h5 class="fw-bold d-inline mb-0">Topic 1 Quiz: Database Architecture</h5>
+                </div>
+                <div id="quiz1-score-badge" class="badge bg-light text-dark border">Not Attempted</div>
+            </div>
+            <div class="card-body p-4" id="quiz-container-1">
+                <p class="small text-muted mb-4">
+                    Test your understanding with 5 scenario-based questions. Select an option to receive immediate feedback and technical explanations.
+                </p>
+
+                <!-- Question 1 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="arch-q1">
+                    <p class="fw-semibold text-dark mb-2">1. In which database architecture does the client workstation execute both the user interface and the business logic while communicating directly with the database engine via ODBC/JDBC?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> One-Tier Architecture
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> Two-Tier Architecture ("Fat Client")
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Three-Tier Architecture
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Cloud Microservices Architecture
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="arch-q2">
+                    <p class="fw-semibold text-dark mb-2">2. Why is Three-Tier architecture preferred for public web applications like Amazon or university student portals?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> It eliminates the need for a database management system.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> It executes faster than one-tier architecture because there are zero network hops.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="C">
+                            <strong>C.</strong> It shields the database in a private subnet, isolates business logic, and allows independent scaling.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> It requires every client phone to store database credentials locally.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="arch-q3">
+                    <p class="fw-semibold text-dark mb-2">3. Which internal DBMS component is responsible for choosing the most efficient physical access path (e.g., deciding between an index scan or full table scan) for a SQL query?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> Buffer Manager
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> Query Optimizer (inside Query Processor)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Transaction Log Manager
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> File System Manager
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="arch-q4">
+                    <p class="fw-semibold text-dark mb-2">4. What is the primary operational purpose of the DBMS Data Dictionary (System Catalog)?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> Storing end-user multimedia files such as MP4 videos and PDFs.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> Storing metadata describing schemas, tables, constraints, data types, and security privileges.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Holding active database transactions that are waiting for user confirmation.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Compiling Python and JavaScript code for the frontend presentation layer.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="arch-q5">
+                    <p class="fw-semibold text-dark mb-2">5. An embedded SQLite database storing local contact numbers inside a smartphone application is an example of which architecture?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="A">
+                            <strong>A.</strong> One-Tier Architecture
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> Two-Tier Architecture
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Three-Tier Architecture
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Peer-to-Peer Distributed Architecture
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-secondary" id="btn-reset-quiz-1">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Quiz
+                    </button>
+                    <div id="quiz1-summary" class="small fw-semibold text-muted">Answer all 5 questions to complete Topic 1.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic Navigation Footer -->
+    <div class="d-flex justify-content-between align-items-center my-4 p-3 bg-white rounded border shadow-sm">
+        <a href="/" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-house-door me-1"></i> Back to Dashboard
+        </a>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm btn-mark-completed" data-topic="architecture">
+                <i class="bi bi-check-circle me-1"></i> Mark Topic 1 Completed
+            </button>
+            <button class="btn btn-gfg btn-sm btn-nav-topic" data-target="data-models">
+                Next: Topic 2 &mdash; Data Models <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+</div>

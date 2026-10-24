@@ -1,0 +1,540 @@
+<!-- ====================================================================
+     Topic 4: Data Independence & Interactive Simulation
+     NEPC42 Syllabus — Module 1: Foundations
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-data-independence">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Topic 4 of 4</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 30 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">4. Data Independence & Interactive Demonstration</h2>
+            <p class="text-secondary mb-0">
+                Understand the critical concept of schema insulation &mdash; how Physical and Logical Data Independence protect application programs from breaking when databases evolve over time.
+            </p>
+        </div>
+    </div>
+
+    <!-- 4.1 Meaning of Data Independence -->
+    <section class="mb-5" id="di-meaning">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Meaning and Significance of Data Independence</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="p-3 bg-light rounded border-start border-4 border-success my-2">
+                    <strong class="text-success d-block mb-1 fs-6">Formal Definition:</strong>
+                    <span class="text-dark">
+                        <strong>Data Independence</strong> is the capacity to modify the schema definition at one level of a database system <strong>without requiring alteration</strong> to the schema definition or application programs at the next higher level.
+                    </span>
+                </div>
+
+                <p class="text-secondary small mt-3">
+                    In early pre-database file systems, application programs were tightly bound to the exact physical layout of files on tape or magnetic drums. If an engineer added a 2-byte field to a record or converted an index, every single program in the entire enterprise had to be manually rewritten, recompiled, and redeployed.
+                </p>
+                <p class="text-secondary small mb-0">
+                    The <strong>Three-Schema Architecture</strong> solves this fragility. By inserting intermediate mappings between levels, changes made at lower levels are absorbed by the DBMS, leaving higher levels completely undisturbed.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.2 Physical Data Independence -->
+    <section class="mb-5" id="di-physical">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Physical Data Independence</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    <strong>Physical Data Independence</strong> is the ability to modify the <strong>Internal Schema</strong> (physical storage structures, indexing methods, disk block sizes, hardware drives) without forcing any modification to the <strong>Conceptual Schema</strong> or the <strong>External Schemas / Application Programs</strong>.
+                </p>
+
+                <!-- Common Physical Adjustments -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-gear-wide-connected text-primary me-2"></i>Typical Real-World Physical Schema Changes:</h6>
+                <div class="row g-2 mb-4 small">
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light">
+                            <strong class="d-block text-primary">Adding an Index</strong>
+                            <span class="text-muted">Building a B+ tree on <code>students.gpa</code> to accelerate sorting.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light">
+                            <strong class="d-block text-success">Hardware Migration</strong>
+                            <span class="text-muted">Moving table files from mechanical HDDs to lightning-fast NVMe SSDs.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light">
+                            <strong class="d-block text-warning-emphasis">Storage Reorganization</strong>
+                            <span class="text-muted">Switching from sequential file records to hashing or partitioning.</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 border rounded bg-light">
+                            <strong class="d-block text-danger">Compression & Encryption</strong>
+                            <span class="text-muted">Enabling transparent AES-256 encryption at rest on tablespaces.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Before & After SVG for Physical Data Independence -->
+                <div class="diagram-wrapper text-center my-4 p-3 bg-light rounded border">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-diagram-2 me-1"></i>Diagram 4.1: Physical Data Independence &mdash; Before & After Adding an Index</h6>
+                    <svg viewBox="0 0 760 260" class="img-fluid" style="max-height: 270px; width: 100%;" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Higher Levels (Unaffected) -->
+                        <rect x="50" y="20" width="660" height="90" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+                        <text x="380" y="45" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="bold" fill="#15803d">
+                            EXTERNAL & CONCEPTUAL LEVELS &mdash; ZERO CODE CHANGES REQUIRED!
+                        </text>
+                        <rect x="80" y="55" width="600" height="40" rx="6" fill="#ffffff" stroke="#86efac" stroke-width="1"/>
+                        <text x="380" y="80" text-anchor="middle" font-family="Courier New, monospace" font-size="12" font-weight="bold" fill="#1f2937">
+                            Application Query: SELECT * FROM students WHERE gpa &gt; 9.0;
+                        </text>
+
+                        <!-- Mapping Boundary -->
+                        <line x1="50" y1="130" x2="710" y2="130" stroke="#0284c7" stroke-width="2" stroke-dasharray="6,4"/>
+                        <text x="380" y="125" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#0284c7">
+                            &uarr;&darr; Conceptual / Internal Mapping absorbs the physical change &uarr;&darr;
+                        </text>
+
+                        <!-- Internal Level Before -->
+                        <rect x="50" y="145" width="310" height="95" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+                        <text x="205" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#991b1b">BEFORE: Unindexed Linear Scan</text>
+                        <text x="205" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#7f1d1d">Storage Engine reads all 10,000 blocks</text>
+                        <text x="205" y="210" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#b91c1c">Execution Time: 450 ms</text>
+
+                        <!-- Internal Level After -->
+                        <rect x="400" y="145" width="310" height="95" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+                        <text x="555" y="170" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" font-weight="bold" fill="#0369a1">AFTER: B+ Tree Index Created</text>
+                        <text x="555" y="190" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" fill="#0c4a6e">DBMS uses B+ Tree Root &rarr; 3 block seeks</text>
+                        <text x="555" y="210" text-anchor="middle" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#0284c7">Execution Time: 2 ms (No App Changes!)</text>
+                    </svg>
+                    <p class="small text-muted mt-2 mb-0">
+                        <em>Figure 4.1:</em> Adding an index alters the physical internal schema and updates the conceptual-internal mapping. The application query text and results remain 100% identical &mdash; it just executes 200x faster!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.3 Logical Data Independence -->
+    <section class="mb-5" id="di-logical">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Logical Data Independence</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    <strong>Logical Data Independence</strong> is the ability to modify the <strong>Conceptual Schema</strong> (adding an attribute, creating a new table, or modifying relationships) without forcing alterations in the <strong>External Schemas</strong> or requiring existing application programs that do not need the new data to be rewritten.
+                </p>
+
+                <!-- Typical Logical Changes -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-diagram-3-fill text-success me-2"></i>Examples of Logical Schema Evolution:</h6>
+                <div class="row g-2 mb-3 small">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <strong class="text-success d-block mb-1">1. Adding a New Column</strong>
+                            <p class="text-secondary mb-0">
+                                Adding <code>emergency_contact_no VARCHAR(15)</code> to the <code>students</code> table. Existing external views (like the professor's attendance roster) ignore this extra column and continue operating without errors.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <strong class="text-primary d-block mb-1">2. Adding a New Table</strong>
+                            <p class="text-secondary mb-0">
+                                Creating a new table <code>scholarships(scholarship_id, student_id, amount)</code>. Existing applications (like student course enrollment) remain completely unaware and unaffected.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hard Truth Callout -->
+                <div class="p-3 bg-warning-subtle border border-warning-subtle rounded text-dark small mb-3">
+                    <strong class="d-block mb-1"><i class="bi bi-exclamation-circle-fill text-warning me-1"></i>Why Logical Data Independence is Harder to Achieve than Physical:</strong>
+                    Physical changes are easy to hide because applications never reference disk blocks directly. However, applications *do* reference logical entity names and attribute columns directly! If a database administrator renames or deletes an existing column (e.g., dropping <code>students.gpa</code>), any external program querying that column will inevitably break unless an external view alias is specifically constructed.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.4 Physical vs Logical Data Independence Comparison -->
+    <section class="mb-5" id="di-comparison">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Comparison: Physical vs. Logical Data Independence</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white overflow-hidden">
+            <div class="card-header bg-light py-3">
+                <h6 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-table text-success me-2"></i>Head-to-Head Comparison Table
+                </h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 20%;">Dimension</th>
+                            <th style="width: 40%;">Physical Data Independence</th>
+                            <th style="width: 40%;">Logical Data Independence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-dark">Definition</td>
+                            <td>Capacity to modify the internal schema without altering conceptual schema or applications.</td>
+                            <td>Capacity to modify the conceptual schema without altering external views or unaffected programs.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Schema Level Modified</td>
+                            <td><span class="badge bg-danger-subtle text-danger border">Internal Schema (Physical Level)</span></td>
+                            <td><span class="badge bg-primary-subtle text-primary border">Conceptual Schema (Logical Level)</span></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Level Remaining Intact</td>
+                            <td>Conceptual Schema, External Views, Applications</td>
+                            <td>External Views, Unaffected Application Programs</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Example Operations</td>
+                            <td>Adding B+ tree index, moving to SSD, altering block sizes, data compression</td>
+                            <td>Adding a new column, creating a new table, splitting tables with views</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Implementation Difficulty</td>
+                            <td><span class="badge bg-success-subtle text-success border">Relatively Easy</span> (DBMS handles internally)</td>
+                            <td><span class="badge bg-warning-subtle text-warning-emphasis border">Difficult</span> (Requires careful view planning)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Frequency of Occurrence</td>
+                            <td>Frequent (DBAs tune performance constantly)</td>
+                            <td>Occasional (Requires enterprise requirements evolution)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light p-3 small text-muted">
+                <strong>Examination Memory Aid:</strong> <em>"Physical is Lower, Logical is Middle."</em> Physical independence protects the middle from the bottom; Logical independence protects the top from the middle!
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.5 Interactive Data Independence Simulator -->
+    <section class="mb-5" id="di-interactive-demo">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-success rounded-circle p-2 text-white" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Interactive Data Independence Demonstration</h3>
+        </div>
+
+        <div class="card border border-2 border-success shadow-sm mb-4 bg-white overflow-hidden">
+            <div class="card-header bg-success text-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-0"><i class="bi bi-play-circle-fill me-2"></i>Live Conceptual Schema Evolution Simulator</h5>
+                    <small class="text-white-50">Select a real-world scenario to observe how the three levels react in real time.</small>
+                </div>
+                <span class="badge bg-white text-success fw-bold">Interactive Sandbox</span>
+            </div>
+            <div class="card-body p-4">
+                
+                <!-- Scenario Selector Buttons -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark small mb-2"><i class="bi bi-sliders me-1"></i>Select a Database Evolution Scenario:</label>
+                    <div class="d-flex flex-wrap gap-2" id="sim-scenario-pills">
+                        <button class="btn btn-sm btn-outline-success active sim-scenario-btn" data-scenario="1">
+                            1. Add B+ Tree Index (Physical)
+                        </button>
+                        <button class="btn btn-sm btn-outline-success sim-scenario-btn" data-scenario="2">
+                            2. Migrate Storage to NVMe SSD (Physical)
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary sim-scenario-btn" data-scenario="3">
+                            3. Add <code>blood_group</code> Column (Logical)
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary sim-scenario-btn" data-scenario="4">
+                            4. Introduce New <code>hostels</code> Table (Logical)
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning text-dark sim-scenario-btn" data-scenario="5">
+                            5. Split Student Table with View (Logical)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Simulation Visual Canvas -->
+                <div class="sim-canvas p-3 bg-light rounded border mb-4">
+                    <div class="row g-3">
+                        <!-- External Level Node -->
+                        <div class="col-md-4">
+                            <div class="sim-node p-3 rounded border text-center transition-all bg-white" id="sim-node-external">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle mb-1">Level 1: External</span>
+                                <h6 class="fw-bold text-dark mb-1">User Application View</h6>
+                                <div class="sim-node-status small text-success fw-semibold" id="sim-status-external">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Unaffected (100% Operational)
+                                </div>
+                                <div class="sim-node-detail small text-muted mt-2 font-monospace" id="sim-detail-external">
+                                    SELECT roll_no, gpa FROM students;
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conceptual Level Node -->
+                        <div class="col-md-4">
+                            <div class="sim-node p-3 rounded border text-center transition-all bg-white" id="sim-node-conceptual">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle mb-1">Level 2: Conceptual</span>
+                                <h6 class="fw-bold text-dark mb-1">Global Logical Schema</h6>
+                                <div class="sim-node-status small text-success fw-semibold" id="sim-status-conceptual">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Intact
+                                </div>
+                                <div class="sim-node-detail small text-muted mt-2 font-monospace" id="sim-detail-conceptual">
+                                    TABLE students(student_id, roll_no, gpa)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Internal Level Node -->
+                        <div class="col-md-4">
+                            <div class="sim-node p-3 rounded border text-center transition-all bg-white" id="sim-node-internal">
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle mb-1">Level 3: Internal</span>
+                                <h6 class="fw-bold text-dark mb-1">Physical Disk Storage</h6>
+                                <div class="sim-node-status small text-danger fw-semibold" id="sim-status-internal">
+                                    <i class="bi bi-pencil-fill me-1"></i> Modified (Index Added)
+                                </div>
+                                <div class="sim-node-detail small text-muted mt-2 font-monospace" id="sim-detail-internal">
+                                    CREATE INDEX idx_gpa ON students(gpa);
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Explanatory Feedback Card -->
+                <div class="card border bg-white shadow-sm" id="sim-feedback-card">
+                    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-dark small" id="sim-feedback-title">
+                            Scenario 1 Analysis: Adding a B+ Tree Index on students.gpa
+                        </span>
+                        <span class="badge bg-success" id="sim-feedback-badge">Physical Data Independence</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-2 small">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>What is changing?</strong> <span id="sim-change-desc">A new auxiliary B+ Tree search index is constructed on the storage disk.</span></p>
+                                <p class="mb-1"><strong>Schema level affected:</strong> <span class="badge bg-danger-subtle text-danger" id="sim-level-affected">Internal Schema</span></p>
+                                <p class="mb-0"><strong>Higher levels unaffected:</strong> <span class="text-success fw-semibold" id="sim-levels-unaffected">Conceptual Schema & External Application</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Why the application continues to run:</strong></p>
+                                <p class="text-secondary mb-0" id="sim-explanation">
+                                    The DBMS Query Optimizer automatically utilizes the new index to speed up GPA lookups. The SQL query syntax and student results remain 100% unchanged.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="small text-muted mt-3">
+                    <i class="bi bi-info-circle me-1"></i> <em>Educational note:</em> This is a live conceptual simulation illustrating schema insulation without altering the underlying practice database.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Exam Preparation: Topic 4 -->
+    <section class="mb-5" id="di-examprep">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-success-subtle py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-success-emphasis mb-0">
+                    <i class="bi bi-patch-question-fill me-2"></i>Exam Preparation: Data Independence
+                </h5>
+                <span class="badge bg-success text-white">NEPC42 Exam Essentials</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="accordion" id="examAccordionDI">
+                    <div class="accordion-item border mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="headingDIQ1">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDIQ1">
+                                <span class="badge bg-primary-subtle text-primary me-2">2 Marks</span>
+                                <strong>Why is Logical Data Independence harder to achieve than Physical Data Independence?</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseDIQ1" class="accordion-collapse collapse" data-bs-parent="#examAccordionDI">
+                            <div class="accordion-body small bg-light text-secondary">
+                                <strong>Model Answer:</strong> Applications are heavily dependent on the logical structure of data (table and attribute names) rather than physical disk addresses. When the physical internal schema changes (e.g. index or storage format), the conceptual-to-internal mapping easily absorbs it without impacting the user's query syntax. But when the logical schema changes (e.g. attributes are deleted or restructured), any application directly referencing those attributes must be updated unless complex view translations are constructed.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border mb-2 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="headingDIQ2">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDIQ2">
+                                <span class="badge bg-primary-subtle text-primary me-2">5 Marks</span>
+                                <strong>Distinguish between Physical and Logical Data Independence with suitable examples.</strong>
+                            </button>
+                        </h2>
+                        <div id="collapseDIQ2" class="accordion-collapse collapse" data-bs-parent="#examAccordionDI">
+                            <div class="accordion-body small bg-light text-secondary">
+                                <strong>Model Answer:</strong>
+                                <ul class="ps-3 mb-0">
+                                    <li><strong>Physical Data Independence:</strong> The ability to modify the internal schema without changing the conceptual schema. <em>Example:</em> Moving table storage from magnetic hard disk to solid-state drive (SSD), or adding an index on <code>roll_no</code>. The application continues issuing the exact same SQL queries.</li>
+                                    <li><strong>Logical Data Independence:</strong> The ability to modify the conceptual schema without altering existing external schemas. <em>Example:</em> Adding a new column <code>email_id</code> to the <code>students</code> table. Existing applications querying <code>(student_id, roll_no, gpa)</code> continue working without modification.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Topic 4 Interactive Knowledge Check Quiz -->
+    <section class="mb-4" id="di-quiz">
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-primary me-2">Knowledge Check</span>
+                    <h5 class="fw-bold d-inline mb-0">Topic 4 Quiz: Data Independence</h5>
+                </div>
+                <div id="quiz4-score-badge" class="badge bg-light text-dark border">Not Attempted</div>
+            </div>
+            <div class="card-body p-4" id="quiz-container-4">
+                <p class="small text-muted mb-4">
+                    Test your understanding with 5 questions on Data Independence.
+                </p>
+
+                <!-- Question 1 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="di-q1">
+                    <p class="fw-semibold text-dark mb-2">1. If a Database Administrator moves the database files from a traditional hard disk to an NVMe SSD and creates a B+ Tree index, which type of data independence guarantees that user applications do not need to be rewritten?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="A">
+                            <strong>A.</strong> Physical Data Independence
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> Logical Data Independence
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Network Tier Independence
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Procedural Code Independence
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="di-q2">
+                    <p class="fw-semibold text-dark mb-2">2. Adding a new attribute named <code>aadhar_number</code> to the <code>students</code> table without breaking existing applications that query only <code>name</code> and <code>gpa</code> is an example of:</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> Physical Data Independence
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> Logical Data Independence
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Operating System Portability
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Client-Server Decoupling
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="di-q3">
+                    <p class="fw-semibold text-dark mb-2">3. What architectural component enables the DBMS to maintain data independence when schemas change?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> Web browser cookies
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="B">
+                            <strong>B.</strong> Schema Mappings (External-to-Conceptual and Conceptual-to-Internal)
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Operating system device drivers
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Hardware network routers
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="di-q4">
+                    <p class="fw-semibold text-dark mb-2">4. Why is Logical Data Independence considered more difficult to achieve than Physical Data Independence?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="A">
+                            <strong>A.</strong> Because application programs are directly dependent on the logical entity names and attribute definitions in SQL statements.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> Because solid state drives cannot store tables.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="C">
+                            <strong>C.</strong> Because SQL prohibits adding columns to existing tables.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Because logical schemas are physically printed on paper.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="quiz-question-card mb-4 p-3 border rounded" data-qid="di-q5">
+                    <p class="fw-semibold text-dark mb-2">5. Which of the following changes would be categorized under PHYSICAL data independence?</p>
+                    <div class="quiz-options d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="A">
+                            <strong>A.</strong> Renaming the <code>students</code> table to <code>pupils</code>.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="B">
+                            <strong>B.</strong> Adding a foreign key constraint between two tables.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="true" data-opt="C">
+                            <strong>C.</strong> Changing the disk storage allocation block size from 8KB to 16KB.
+                        </button>
+                        <button class="btn btn-outline-secondary text-start btn-sm py-2 px-3 quiz-option" data-correct="false" data-opt="D">
+                            <strong>D.</strong> Splitting the <code>students</code> table into two separate relational tables.
+                        </button>
+                    </div>
+                    <div class="quiz-feedback mt-2 d-none"></div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                    <button class="btn btn-sm btn-outline-secondary" id="btn-reset-quiz-4">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Quiz
+                    </button>
+                    <div id="quiz4-summary" class="small fw-semibold text-muted">Answer all 5 questions to complete Topic 4.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Footer -->
+    <div class="d-flex justify-content-between align-items-center my-4 p-3 bg-white rounded border shadow-sm">
+        <button class="btn btn-outline-secondary btn-sm btn-nav-topic" data-target="three-schema">
+            <i class="bi bi-arrow-left me-1"></i> Previous: Topic 3 &mdash; Three-Schema Architecture
+        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success btn-sm btn-mark-completed" data-topic="data-independence">
+                <i class="bi bi-check-circle me-1"></i> Mark Topic 4 Completed
+            </button>
+            <a href="/" class="btn btn-gfg btn-sm">
+                <i class="bi bi-check2-all me-1"></i> Complete Module & Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+</div>

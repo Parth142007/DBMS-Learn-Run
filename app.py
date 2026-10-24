@@ -41,6 +41,20 @@ def schema():
 
     return render_template("schema.html", active_page="schema", schema_info=schema_info)
 
+@app.route("/phase-2")
+@app.route("/module-1")
+def phase_2():
+    """
+    Phase 2: Introduction to DBMS
+    Interactive module covering Architecture, Data Models, 
+    Three-Schema Architecture, and Data Independence.
+    """
+    topic = request.args.get("topic", "architecture")
+    valid_topics = ["architecture", "data-models", "three-schema", "data-independence"]
+    if topic not in valid_topics:
+        topic = "architecture"
+    return render_template("phase2.html", active_page="phase2", current_topic=topic)
+
 # ====================================================================
 # REST API ENDPOINTS
 # ====================================================================

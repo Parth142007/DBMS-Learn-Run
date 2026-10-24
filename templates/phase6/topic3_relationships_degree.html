@@ -1,0 +1,299 @@
+<!-- Lesson 3: Relationships and Degree -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 3</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Relationships, Degree &amp; Recursive Roles</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: Concept of Relationship and Degree -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-bezier2 me-2"></i>1. Definition of Relationship and Degree
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                In relational data modeling, an entity rarely exists in isolation. A <strong>relationship</strong> is an association among two or more entities. The <strong>degree of a relationship</strong> is defined as the <em>number of participating entity types</em> in that relationship set.
+            </p>
+
+            <div class="row g-4 my-2">
+                <!-- Unary / Recursive -->
+                <div class="col-md-4">
+                    <div class="card h-100 border-primary-subtle bg-primary-subtle bg-opacity-10">
+                        <div class="card-body">
+                            <span class="badge bg-primary mb-2">Degree 1</span>
+                            <h6 class="fw-bold text-dark">Unary (Recursive) Relationship</h6>
+                            <p class="small text-secondary mb-2">
+                                Occurs when an entity type participates in a relationship with <strong>itself</strong>. Different instances of the same entity set assume distinct roles.
+                            </p>
+                            <div class="p-2 border rounded bg-white small">
+                                <strong>Real-World Example:</strong> A senior <code>STUDENT</code> (Role: <em>Mentor</em>) mentors a junior <code>STUDENT</code> (Role: <em>Mentee</em>); or an <code>EMPLOYEE</code> (Role: <em>Manager</em>) manages another <code>EMPLOYEE</code> (Role: <em>Subordinate</em>).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Binary -->
+                <div class="col-md-4">
+                    <div class="card h-100 border-success-subtle bg-success-subtle bg-opacity-10">
+                        <div class="card-body">
+                            <span class="badge bg-success mb-2">Degree 2</span>
+                            <h6 class="fw-bold text-dark">Binary Relationship</h6>
+                            <p class="small text-secondary mb-2">
+                                The most common relationship type in database engineering, connecting <strong>two distinct</strong> entity types.
+                            </p>
+                            <div class="p-2 border rounded bg-white small">
+                                <strong>Real-World Example:</strong> <code>STUDENT</code> <em>Enrolls In</em> <code>COURSE</code>; or <code>INSTRUCTOR</code> <em>Heads</em> <code>DEPARTMENT</code>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ternary / N-ary -->
+                <div class="col-md-4">
+                    <div class="card h-100 border-warning-subtle bg-warning-subtle bg-opacity-10">
+                        <div class="card-body">
+                            <span class="badge bg-warning text-dark mb-2">Degree 3+</span>
+                            <h6 class="fw-bold text-dark">Ternary (N-ary) Relationship</h6>
+                            <p class="small text-secondary mb-2">
+                                Involves <strong>three (or N) distinct</strong> entity types simultaneously binding a complex multi-way business fact.
+                            </p>
+                            <div class="p-2 border rounded bg-white small">
+                                <strong>Real-World Example:</strong> <code>SUPPLIER</code> supplies a <code>PART</code> for a specific <code>PROJECT</code>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Role Names in Recursive Relationships -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-arrow-repeat me-2"></i>2. Role Names in Unary (Recursive) Relationships
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                When an entity relates to itself, the meaning of each connection becomes ambiguous unless explicit <strong>role names</strong> are labeled on the diagram lines. Role names explain the specific function an entity instance performs in each direction:
+            </p>
+
+            <div class="card border mb-4">
+                <div class="card-body text-center p-3">
+                    <div class="border rounded bg-light p-3 overflow-auto">
+                        <svg viewBox="0 0 500 160" width="100%" height="160" xmlns="http://www.w3.org/2000/svg" style="max-width: 500px; font-family: sans-serif;">
+                            <!-- STUDENT Entity Box -->
+                            <rect x="50" y="55" width="120" height="50" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="4"/>
+                            <text x="110" y="85" font-size="14" font-weight="bold" fill="#1b5e20" text-anchor="middle">STUDENT</text>
+
+                            <!-- Mentorship Relationship Diamond -->
+                            <polygon points="320,55 365,80 320,105 275,80" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>
+                            <text x="320" y="85" font-size="12" font-weight="bold" fill="#0d47a1" text-anchor="middle">Mentors</text>
+
+                            <!-- Line 1: Role Mentor (Upper loop) -->
+                            <path d="M 170 65 C 220 30, 260 30, 320 55" fill="none" stroke="#333" stroke-width="2"/>
+                            <text x="235" y="32" font-size="11" font-weight="bold" fill="#d32f2f">Role: Mentor (1)</text>
+
+                            <!-- Line 2: Role Mentee (Lower loop) -->
+                            <path d="M 170 95 C 220 130, 260 130, 320 105" fill="none" stroke="#333" stroke-width="2"/>
+                            <text x="235" y="140" font-size="11" font-weight="bold" fill="#1565c0">Role: Mentee (N)</text>
+                        </svg>
+                    </div>
+                    <span class="small text-muted mt-2 d-block">
+                        <strong>Unary / Recursive ER Diagram:</strong> One Student serves in the <em>Mentor</em> role, while multiple junior students serve in the <em>Mentee</em> role. In MySQL 8, this maps to a Self-Referencing Foreign Key: <code>mentor_id INT REFERENCES students(student_id)</code>.
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Why Ternary Cannot Always Be Decomposed -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-triangle me-2"></i>3. Why a Ternary Relationship Cannot Always Be Replaced by Three Binary Relationships
+            </h5>
+            <div class="alert alert-warning border d-flex gap-3 align-items-start mb-3">
+                <i class="bi bi-exclamation-octagon-fill text-warning fs-3 flex-shrink-0 mt-1"></i>
+                <div class="small text-secondary">
+                    <strong class="text-dark">Crucial Exam &amp; Interview Concept (Semantic Loss):</strong><br>
+                    Students often mistakenly ask: <em>"Why do we need ternary relationships? Can't we just create three binary relationships (Supplier-Part, Part-Project, Supplier-Project)?"</em><br>
+                    <strong>Answer: NO!</strong> Decomposing a ternary relationship into three binary relationships frequently causes <strong>severe loss of semantic meaning</strong> (false inference / spurious associations).
+                </div>
+            </div>
+
+            <div class="card border mb-3">
+                <div class="card-header bg-light py-2 fw-semibold">
+                    <i class="bi bi-eye text-primary me-1"></i> Proof by Counterexample: The Supplier-Part-Project Problem
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6 border-end">
+                            <h6 class="fw-bold text-danger">Three Separate Binary Relationships:</h6>
+                            <p class="small text-muted">Suppose we only record three independent binary facts:</p>
+                            <ul class="small text-secondary ps-3 mb-2">
+                                <li><code>Supplier S1</code> supplies <code>Part P1</code>.</li>
+                                <li><code>Part P1</code> is used in <code>Project J1</code>.</li>
+                                <li><code>Supplier S1</code> works on <code>Project J1</code>.</li>
+                            </ul>
+                            <div class="p-2 border rounded bg-danger-subtle text-danger small">
+                                <strong>The Fatal Flaw:</strong> These three binary facts DO NOT prove that <em>Supplier S1 supplied Part P1 FOR Project J1!</em> Supplier S1 might only supply Part P2 to Project J1, while Supplier S2 supplied Part P1.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-success">Single Ternary Relationship:</h6>
+                            <p class="small text-muted">A single 3-way atomic association <code>SUPPLIES(SupplierID, PartID, ProjectID, Quantity)</code>:</p>
+                            <ul class="small text-secondary ps-3 mb-2">
+                                <li>The tuple <code>(S1, P1, J1, 500)</code> explicitly records that Supplier S1 delivered 500 units of Part P1 specifically for Project J1.</li>
+                            </ul>
+                            <div class="p-2 border rounded bg-success-subtle text-success small">
+                                <strong>Semantic Guarantee:</strong> Simultaneous three-way binding preserves true business reality without spurious connections.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Quiz (5 Questions) -->
+        <section class="mt-5 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-patch-question-fill text-success me-2"></i>Lesson 3 Assessment &amp; Concept Check
+                </h5>
+                <span class="badge bg-light text-secondary border">5 Questions &bull; Pass Mark: 3/5</span>
+            </div>
+            <p class="small text-muted mb-4">
+                Test your mastery of relationship degrees, recursive role names, and ternary semantic preservation.
+            </p>
+
+            <div id="quiz-container-topic3" class="lesson-quiz-block" data-lesson="topic3">
+                <!-- Question 1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. What is the 'Degree' of a relationship in an Entity-Relationship model?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic3" id="q1_t3_opt1" value="A">
+                            <label class="form-check-label" for="q1_t3_opt1">A) The total number of rows stored in the relationship table.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic3" id="q1_t3_opt2" value="B">
+                            <label class="form-check-label" for="q1_t3_opt2">B) The number of participating entity types in the relationship.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic3" id="q1_t3_opt3" value="C">
+                            <label class="form-check-label" for="q1_t3_opt3">C) The number of primary keys defined on the entity.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic3" id="q1_t3_opt4" value="D">
+                            <label class="form-check-label" for="q1_t3_opt4">D) The geometric angle of lines connecting to the diamond.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. In an educational database, an EMPLOYEE entity has a relationship 'Manages' that connects Employee back to Employee. What type of relationship is this?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic3" id="q2_t3_opt1" value="A">
+                            <label class="form-check-label" for="q2_t3_opt1">A) Binary Relationship</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic3" id="q2_t3_opt2" value="B">
+                            <label class="form-check-label" for="q2_t3_opt2">B) Unary (Recursive) Relationship</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic3" id="q2_t3_opt3" value="C">
+                            <label class="form-check-label" for="q2_t3_opt3">C) Ternary Relationship</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic3" id="q2_t3_opt4" value="D">
+                            <label class="form-check-label" for="q2_t3_opt4">D) Redundant Relationship</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. Why are 'Role Names' indispensable when diagramming a recursive relationship?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic3" id="q3_t3_opt1" value="A">
+                            <label class="form-check-label" for="q3_t3_opt1">A) Because MySQL requires role names in table creation syntax.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic3" id="q3_t3_opt2" value="B">
+                            <label class="form-check-label" for="q3_t3_opt2">B) Because both ends connect to the same entity set, making it impossible to distinguish the functional roles (e.g. Mentor vs Mentee) without labels.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic3" id="q3_t3_opt3" value="C">
+                            <label class="form-check-label" for="q3_t3_opt3">C) Role names are only used for security user permissions.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic3" id="q3_t3_opt4" value="D">
+                            <label class="form-check-label" for="q3_t3_opt4">D) To convert the relationship from degree 1 to degree 2.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. Why can a Ternary relationship (Supplier, Part, Project) NOT always be decomposed into three separate binary relationships?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic3" id="q4_t3_opt1" value="A">
+                            <label class="form-check-label" for="q4_t3_opt1">A) Because binary relationships cannot have foreign keys.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic3" id="q4_t3_opt2" value="B">
+                            <label class="form-check-label" for="q4_t3_opt2">B) Decomposition can cause loss of semantic meaning, allowing false inference that a supplier provided a part for a project when they did not.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic3" id="q4_t3_opt3" value="C">
+                            <label class="form-check-label" for="q4_t3_opt3">C) MySQL 8 does not support binary foreign key tables.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic3" id="q4_t3_opt4" value="D">
+                            <label class="form-check-label" for="q4_t3_opt4">D) The number of tables in the database would be too small.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic3">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. When a recursive 1:N relationship (e.g. Employee manages Employee) is mapped into a relational table in MySQL, how is it represented?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic3" id="q5_t3_opt1" value="A">
+                            <label class="form-check-label" for="q5_t3_opt1">A) By creating two separate identical employee tables.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic3" id="q5_t3_opt2" value="B">
+                            <label class="form-check-label" for="q5_t3_opt2">B) As a self-referencing foreign key column (e.g. manager_id REFERENCES employees(employee_id)) inside the same table.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic3" id="q5_t3_opt3" value="C">
+                            <label class="form-check-label" for="q5_t3_opt3">C) Recursive relationships cannot be implemented in relational databases.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic3" id="q5_t3_opt4" value="D">
+                            <label class="form-check-label" for="q5_t3_opt4">D) By duplicating every employee row for every manager.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic3">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 3 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic3">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

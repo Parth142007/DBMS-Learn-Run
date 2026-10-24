@@ -1,0 +1,446 @@
+<!-- Lesson 1: Introduction to the ER Model -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 1</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Introduction to the Entity-Relationship (ER) Model</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: What is Data Modeling? -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-layers-half me-2"></i>1. What is Data Modeling?
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                <strong>Data Modeling</strong> is the process of creating an abstract, visual representation of either a whole information system or parts of it to communicate connections between data points and structures. It acts as the conceptual architectural blueprint before a single line of SQL or database table is constructed.
+            </p>
+            <div class="row g-3 my-3">
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-primary mb-2">1. Conceptual Model</span>
+                        <h6 class="fw-bold text-dark">High-Level Business View</h6>
+                        <p class="small text-muted mb-0">Captures real-world business entities, relationships, and business rules independent of database software. Example: The <strong>ER Model</strong>.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-info text-dark mb-2">2. Logical Model</span>
+                        <h6 class="fw-bold text-dark">Structure &amp; Constraints</h6>
+                        <p class="small text-muted mb-0">Translates entities into relational tables, foreign keys, normalization, and constraints. Independent of hardware. Example: <strong>Relational Schema</strong>.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <span class="badge bg-secondary mb-2">3. Physical Model</span>
+                        <h6 class="fw-bold text-dark">RDBMS Implementation</h6>
+                        <p class="small text-muted mb-0">Defines exact storage engines (InnoDB), indexes (B-Tree), partitioning, tablespaces, and data types (VARCHAR, INT) in MySQL 8.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info border d-flex gap-3 align-items-center mb-0">
+                <i class="bi bi-lightbulb-fill text-info fs-3 flex-shrink-0"></i>
+                <div class="small">
+                    <strong>Why Database Designers Use ER Models:</strong>
+                    Building a relational database without an ER model is like building a skyscraper without an architectural blueprint. An ER model prevents design anomalies early, bridges communication between non-technical stakeholders and developers, and ensures business rules (e.g. "a student can only register if approved") are accurately captured before schema freezing.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Core ER Primitives -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-boxes me-2"></i>2. Core Building Blocks of the ER Model
+            </h5>
+            <p class="text-secondary">
+                The Entity-Relationship model, originally proposed by <strong>Dr. Peter Chen (1976)</strong>, represents enterprise data using three core primitives:
+            </p>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 20%;">Concept</th>
+                            <th style="width: 35%;">Formal Definition</th>
+                            <th style="width: 45%;">College Management System Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-dark">Entity</td>
+                            <td>A "thing" or object in the real world that is distinguishable from other objects based on its properties.</td>
+                            <td>A specific student named <em>Amit Sharma</em> with ID <code>101</code>, or a specific department named <em>Computer Science</em>.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Entity Set</td>
+                            <td>A collection of all entities of the same entity type at a given point in time.</td>
+                            <td>The set of all currently enrolled students: <code>{Amit (101), Neha (102), Ravi (103), Sara (104)}</code>.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Entity Type</td>
+                            <td>The schema definition or category describing the common structure and attributes of an entity set.</td>
+                            <td>The schema <code>STUDENT(StudentID, StudentName, Email, DateOfBirth)</code>.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Attribute &amp; Domain</td>
+                            <td><strong>Attribute:</strong> A descriptive property or characteristic of an entity.<br><strong>Domain:</strong> The set of permitted values for an attribute.</td>
+                            <td>Attribute: <code>GPA</code>.<br>Domain: Floating point numbers between <code>0.00</code> and <code>10.00</code>.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Relationship</td>
+                            <td>An association among two or more entities.</td>
+                            <td>Student <em>Amit (101)</em> <strong>Enrolls In</strong> Course <em>DBMS (C101)</em>.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Relationship Set</td>
+                            <td>A set of relationships of the same type.</td>
+                            <td>All active course enrollments occurring during the Autumn 2026 semester.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Entity Instance vs Entity Type</td>
+                            <td><strong>Entity Type:</strong> Blueprint/class.<br><strong>Entity Instance:</strong> Individual data record/object.</td>
+                            <td><code>STUDENT</code> is the entity type; the tuple <code>(101, 'Amit', 8.5)</code> is an entity instance.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Strong vs Weak Entities Card -->
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card h-100 border-success-subtle bg-success-subtle bg-opacity-10">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-success"><i class="bi bi-shield-check me-2"></i>Strong Entity (Regular Entity)</h6>
+                            <p class="small text-secondary mb-2">An entity type that possesses a <strong>Primary Key</strong> composed entirely of its own attributes, allowing its instances to be identified independently.</p>
+                            <span class="badge bg-success">Example: INSTRUCTOR</span>
+                            <span class="small text-muted d-block mt-1">InstructorID uniquely identifies Dr. Sharma without needing data from any other table.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-warning-subtle bg-warning-subtle bg-opacity-10">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-warning-emphasis"><i class="bi bi-link-45deg me-2"></i>Weak Entity</h6>
+                            <p class="small text-secondary mb-2">An entity type that <strong>does not have sufficient attributes</strong> to form its own primary key. It depends on a parent (owner) entity via an identifying relationship.</p>
+                            <span class="badge bg-warning text-dark">Example: DEPENDENT of Employee</span>
+                            <span class="small text-muted d-block mt-1">A child named "Aryan" is identified only when paired with his parent's <code>EmployeeID</code>.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Standard ER Notation Reference -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-palette me-2"></i>3. Standard ER Diagram Notation: Chen vs. Crow's Foot
+            </h5>
+            <p class="text-secondary">
+                Two primary graphical notations are used globally in database engineering: <strong>Chen's Classical Notation</strong> (academic standard in NEPC42) and <strong>Crow's Foot Notation</strong> (industry standard in IDE tools like MySQL Workbench and ERwin).
+            </p>
+
+            <div class="row g-3 mb-4">
+                <div class="col-lg-6">
+                    <div class="card border h-100">
+                        <div class="card-header bg-light py-2 fw-semibold">
+                            <i class="bi bi-bounding-box me-1 text-primary"></i> Chen's Classical ER Symbols (NEPC42 Syllabus)
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-striped mb-0 small">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol Shape</th>
+                                        <th>Meaning</th>
+                                        <th>College Example</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="badge border border-dark bg-white text-dark px-2 py-1">Rectangle</span></td>
+                                        <td><strong>Entity Type</strong> (Strong)</td>
+                                        <td><code>STUDENT</code>, <code>COURSE</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge border border-dark border-3 bg-white text-dark px-2 py-1">Double Rectangle</span></td>
+                                        <td><strong>Weak Entity Type</strong></td>
+                                        <td><code>DEPENDENT</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge rounded-pill border border-dark bg-white text-dark px-2 py-1">Oval</span></td>
+                                        <td><strong>Attribute</strong></td>
+                                        <td><code>StudentName</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge rounded-pill border border-dark bg-white text-dark px-2 py-1 text-decoration-underline"><u>Underlined Oval</u></span></td>
+                                        <td><strong>Key Attribute</strong> (PK)</td>
+                                        <td><u><code>StudentID</code></u></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge rounded-pill border border-dark border-3 bg-white text-dark px-2 py-1">Double Oval</span></td>
+                                        <td><strong>Multivalued Attribute</strong></td>
+                                        <td><code>{PhoneNumbers}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge rounded-pill border border-dashed border-dark bg-white text-dark px-2 py-1" style="border-style: dashed !important;">Dashed Oval</span></td>
+                                        <td><strong>Derived Attribute</strong></td>
+                                        <td><code>Age</code> (from DOB)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-secondary text-white px-2 py-1">&diams; Diamond</span></td>
+                                        <td><strong>Relationship Type</strong></td>
+                                        <td><code>Enrolls_In</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-dark text-white px-2 py-1">&diams;&diams; Double Diamond</span></td>
+                                        <td><strong>Identifying Relationship</strong></td>
+                                        <td><code>Has_Dependent</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="fw-bold text-dark">==== Double Line</span></td>
+                                        <td><strong>Total Participation</strong></td>
+                                        <td>Course must have Dept</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card border h-100">
+                        <div class="card-header bg-light py-2 fw-semibold">
+                            <i class="bi bi-diagram-3 me-1 text-success"></i> Visual Chen ER Diagram: College Management System
+                        </div>
+                        <div class="card-body text-center p-3">
+                            <!-- Responsive SVG Diagram of Chen Notation -->
+                            <div class="border rounded bg-light p-2 overflow-auto" style="min-height: 250px;">
+                                <svg viewBox="0 0 520 230" width="100%" height="230" xmlns="http://www.w3.org/2000/svg" style="max-width: 520px; font-family: sans-serif;">
+                                    <!-- STUDENT Entity -->
+                                    <rect x="20" y="85" width="110" height="45" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="4"/>
+                                    <text x="75" y="112" font-size="13" font-weight="bold" fill="#1b5e20" text-anchor="middle">STUDENT</text>
+
+                                    <!-- Attributes of Student -->
+                                    <ellipse cx="40" cy="30" rx="36" ry="18" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+                                    <text x="40" y="34" font-size="10" font-weight="bold" fill="#000" text-anchor="middle" text-decoration="underline">StudentID</text>
+                                    <line x1="40" y1="48" x2="60" y2="85" stroke="#666" stroke-width="1.5"/>
+
+                                    <ellipse cx="120" cy="30" rx="36" ry="18" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+                                    <text x="120" y="34" font-size="10" fill="#000" text-anchor="middle">Name</text>
+                                    <line x1="105" y1="48" x2="85" y2="85" stroke="#666" stroke-width="1.5"/>
+
+                                    <!-- Relationship Diamond -->
+                                    <polygon points="230,85 275,107 230,130 185,107" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>
+                                    <text x="230" y="112" font-size="11" font-weight="bold" fill="#0d47a1" text-anchor="middle">Enrolls</text>
+                                    
+                                    <!-- Connecting Lines with Cardinality -->
+                                    <line x1="130" y1="107" x2="185" y2="107" stroke="#333" stroke-width="2"/>
+                                    <text x="150" y="100" font-size="12" font-weight="bold" fill="#d32f2f">M</text>
+
+                                    <line x1="275" y1="107" x2="350" y2="107" stroke="#333" stroke-width="2"/>
+                                    <text x="310" y="100" font-size="12" font-weight="bold" fill="#d32f2f">N</text>
+
+                                    <!-- Relationship Attribute: Grade -->
+                                    <ellipse cx="230" cy="180" rx="32" ry="16" fill="#fff9c4" stroke="#fbc02d" stroke-width="1.5"/>
+                                    <text x="230" y="184" font-size="10" fill="#f57f17" text-anchor="middle">Grade</text>
+                                    <line x1="230" y1="130" x2="230" y2="164" stroke="#666" stroke-width="1.5"/>
+
+                                    <!-- COURSE Entity -->
+                                    <rect x="350" y="85" width="110" height="45" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="4"/>
+                                    <text x="405" y="112" font-size="13" font-weight="bold" fill="#1b5e20" text-anchor="middle">COURSE</text>
+
+                                    <!-- Attributes of Course -->
+                                    <ellipse cx="370" cy="30" rx="36" ry="18" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+                                    <text x="370" y="34" font-size="10" font-weight="bold" fill="#000" text-anchor="middle" text-decoration="underline">CourseID</text>
+                                    <line x1="370" y1="48" x2="390" y2="85" stroke="#666" stroke-width="1.5"/>
+
+                                    <ellipse cx="450" cy="30" rx="36" ry="18" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+                                    <text x="450" y="34" font-size="10" fill="#000" text-anchor="middle">Title</text>
+                                    <line x1="435" y1="48" x2="415" y2="85" stroke="#666" stroke-width="1.5"/>
+                                </svg>
+                            </div>
+                            <span class="small text-muted mt-2 d-block">
+                                <i class="bi bi-info-circle me-1"></i> Chen Style: Rectangles = Entities, Ovals = Attributes, Diamonds = Relationships. Cardinality <strong>M:N</strong> labeled on connecting lines.
+                            </span>
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-open-er-builder">
+                                    <i class="bi bi-bounding-box-circles me-1"></i> Open Interactive ER Diagram Builder
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advantages and Limitations of ER Diagrams -->
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-white">
+                        <h6 class="fw-bold text-success"><i class="bi bi-hand-thumbs-up me-1"></i>Advantages of ER Modeling</h6>
+                        <ul class="small text-secondary mb-0 ps-3">
+                            <li><strong>Intuitive Visual Communication:</strong> Easy for both developers and business users to understand.</li>
+                            <li><strong>DBMS Independent:</strong> The same conceptual diagram maps cleanly to MySQL, PostgreSQL, or Oracle.</li>
+                            <li><strong>Prevents Schema Redundancy:</strong> Explicit modeling of M:N relationships reveals required junction tables.</li>
+                            <li><strong>Formal Translation:</strong> Direct mathematical transformation rules exist to produce 3NF relational tables.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-white">
+                        <h6 class="fw-bold text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Limitations of ER Modeling</h6>
+                        <ul class="small text-secondary mb-0 ps-3">
+                            <li><strong>Lack of Standard Physical Details:</strong> Does not specify indexes, storage data types, or physical partition strategies.</li>
+                            <li><strong>Complex Large Diagrams:</strong> An enterprise schema with 100+ entities becomes visually overwhelming ("spaghetti diagram").</li>
+                            <li><strong>Loss of Temporal Semantics:</strong> Standard ER diagrams capture static snapshots, not how state transitions across time.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Interactive Quiz (5 Questions) -->
+        <section class="mt-5 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-patch-question-fill text-success me-2"></i>Lesson 1 Assessment &amp; Concept Check
+                </h5>
+                <span class="badge bg-light text-secondary border">5 Questions &bull; Pass Mark: 3/5</span>
+            </div>
+            <p class="small text-muted mb-4">
+                Test your understanding of ER primitives, entity classifications, and Chen notation. Instant feedback is provided.
+            </p>
+
+            <div id="quiz-container-topic1" class="lesson-quiz-block" data-lesson="topic1">
+                <!-- Question 1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic1">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. In Chen's ER diagram notation, what graphical symbol represents an entity type?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic1" id="q1_t1_opt1" value="A">
+                            <label class="form-check-label" for="q1_t1_opt1">A) Diamond</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic1" id="q1_t1_opt2" value="B">
+                            <label class="form-check-label" for="q1_t1_opt2">B) Rectangle</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic1" id="q1_t1_opt3" value="C">
+                            <label class="form-check-label" for="q1_t1_opt3">C) Oval</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic1" id="q1_t1_opt4" value="D">
+                            <label class="form-check-label" for="q1_t1_opt4">D) Double Oval</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic1">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. What distinguishes an 'Entity Type' from an 'Entity Instance'?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic1" id="q2_t1_opt1" value="A">
+                            <label class="form-check-label" for="q2_t1_opt1">A) Entity type is a single data row; entity instance is the table schema.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic1" id="q2_t1_opt2" value="B">
+                            <label class="form-check-label" for="q2_t1_opt2">B) Entity type represents the definition/blueprint; entity instance is a specific real-world occurrence (tuple).</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic1" id="q2_t1_opt3" value="C">
+                            <label class="form-check-label" for="q2_t1_opt3">C) Entity types only exist in physical SQL schemas, not conceptual diagrams.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic1" id="q2_t1_opt4" value="D">
+                            <label class="form-check-label" for="q2_t1_opt4">D) There is no difference; the terms are synonymous in database theory.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic1">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. How is a 'Weak Entity' depicted in Chen's ER notation?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic1" id="q3_t1_opt1" value="A">
+                            <label class="form-check-label" for="q3_t1_opt1">A) Double Rectangle</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic1" id="q3_t1_opt2" value="B">
+                            <label class="form-check-label" for="q3_t1_opt2">B) Dashed Rectangle</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic1" id="q3_t1_opt3" value="C">
+                            <label class="form-check-label" for="q3_t1_opt3">C) Double Diamond</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic1" id="q3_t1_opt4" value="D">
+                            <label class="form-check-label" for="q3_t1_opt4">D) Shaded Circle</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic1">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. Which of the following attributes is correctly identified as a 'Derived Attribute' in our college database?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic1" id="q4_t1_opt1" value="A">
+                            <label class="form-check-label" for="q4_t1_opt1">A) StudentID</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic1" id="q4_t1_opt2" value="B">
+                            <label class="form-check-label" for="q4_t1_opt2">B) DateOfBirth</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic1" id="q4_t1_opt3" value="C">
+                            <label class="form-check-label" for="q4_t1_opt3">C) Age (computed dynamically from DateOfBirth and CURRENT_DATE)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic1" id="q4_t1_opt4" value="D">
+                            <label class="form-check-label" for="q4_t1_opt4">D) DepartmentName</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic1">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. Why are relationship attributes (e.g. 'Grade' in an enrollment relationship) placed on the diamond rather than on the STUDENT entity?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic1" id="q5_t1_opt1" value="A">
+                            <label class="form-check-label" for="q5_t1_opt1">A) Grade is a property of the student independent of which course they take.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic1" id="q5_t1_opt2" value="B">
+                            <label class="form-check-label" for="q5_t1_opt2">B) Grade only exists when a specific student associates with a specific course; placing it on student would violate 1NF.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic1" id="q5_t1_opt3" value="C">
+                            <label class="form-check-label" for="q5_t1_opt3">C) Chen notation forbids entities from having more than two attributes.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic1" id="q5_t1_opt4" value="D">
+                            <label class="form-check-label" for="q5_t1_opt4">D) Diamonds only store numerical data.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic1">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 1 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic1">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

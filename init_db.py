@@ -117,7 +117,8 @@ def main():
         "05_triggers.sql",
         "07_practice_table.sql",
         "08_stored_procedures.sql",
-        "09_phase5_progress.sql"
+        "09_phase5_progress.sql",
+        "10_phase6_progress.sql"
     ]
 
     with conn.cursor() as cursor:

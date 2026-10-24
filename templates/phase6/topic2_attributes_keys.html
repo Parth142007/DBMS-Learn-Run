@@ -1,0 +1,349 @@
+<!-- Lesson 2: Attributes and Keys -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 2</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Attributes &amp; Keys in the Conceptual &amp; Relational Model</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: Detailed Classification of Attributes -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-tag-fill me-2"></i>1. Classification of Attributes
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                An <strong>attribute</strong> is a named property or characteristic that describes an entity. Attributes define what information is collected about each real-world object. In modern database design, attributes are categorized across several orthogonal dimensions:
+            </p>
+
+            <div class="row g-4 my-2">
+                <!-- Simple vs Composite -->
+                <div class="col-md-6">
+                    <div class="card h-100 border shadow-none bg-light">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-dark"><i class="bi bi-diagram-2 text-primary me-2"></i>Simple vs. Composite Attributes</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Simple (Atomic):</strong> Cannot be divided into smaller sub-components. Examples: <code>StudentID</code>, <code>Salary</code>, <code>GPA</code>.<br>
+                                <strong>Composite:</strong> Can be divided into smaller sub-parts with independent meanings. Example: <code>StudentName</code> subdivided into <code>FirstName</code>, <code>MiddleName</code>, and <code>LastName</code>; or <code>Address</code> subdivided into <code>Street</code>, <code>City</code>, <code>State</code>, and <code>Pincode</code>.
+                            </p>
+                            <div class="p-2 border rounded bg-white small text-muted">
+                                <strong>Chen Notation:</strong> Connected hierarchy of sub-ovals stemming from the composite attribute oval.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Single-Valued vs Multivalued -->
+                <div class="col-md-6">
+                    <div class="card h-100 border shadow-none bg-light">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-dark"><i class="bi bi-collection text-info me-2"></i>Single-Valued vs. Multivalued Attributes</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Single-Valued:</strong> Holds at most one value for a specific entity instance. Example: A student has exactly one <code>DateOfBirth</code> and one <code>RollNumber</code>.<br>
+                                <strong>Multivalued:</strong> May hold a set or list of multiple values for the same entity instance. Example: A student may have multiple <code>PhoneNumbers</code> (mobile, residence, emergency) or multiple <code>CollegeDegrees</code>.
+                            </p>
+                            <div class="p-2 border rounded bg-white small text-muted">
+                                <strong>Chen Notation:</strong> Represented as a <strong>Double Oval</strong> (concentrical ellipses).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stored vs Derived -->
+                <div class="col-md-6">
+                    <div class="card h-100 border shadow-none bg-light">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-dark"><i class="bi bi-calculator text-warning me-2"></i>Stored vs. Derived Attributes</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Stored:</strong> Directly saved in physical storage because it is an immutable or fundamental fact. Example: <code>DateOfBirth</code>.<br>
+                                <strong>Derived:</strong> Calculated on-the-fly dynamically from other stored attributes or system variables. Example: <code>Age</code> calculated as <code>YEAR(CURRENT_DATE) - YEAR(DateOfBirth)</code>. Storing derived attributes causes update anomalies as time passes.
+                            </p>
+                            <div class="p-2 border rounded bg-white small text-muted">
+                                <strong>Chen Notation:</strong> Represented as a <strong>Dashed Oval</strong>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key vs Non-Key -->
+                <div class="col-md-6">
+                    <div class="card h-100 border shadow-none bg-light">
+                        <div class="card-body">
+                            <h6 class="fw-bold text-dark"><i class="bi bi-key-fill text-success me-2"></i>Key vs. Non-Key (Descriptive) Attributes</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Key Attribute:</strong> An attribute whose values are distinctly unique for every entity in an entity set, guaranteeing uniqueness. Example: <code>StudentID</code> or <code>Email</code>.<br>
+                                <strong>Non-Key Attribute:</strong> Describes general characteristics where duplicates can naturally occur. Example: <code>City</code>, <code>Gender</code>, <code>Grade</code>.
+                            </p>
+                            <div class="p-2 border rounded bg-white small text-muted">
+                                <strong>Chen Notation:</strong> Key attributes have their names <strong><u>Underlined</u></strong> inside the oval.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Keys in Relational Modeling -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-key me-2"></i>2. The Hierarchy of Keys in Relational Theory
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                In relational theory, keys enforce entity integrity and enable efficient tuple lookup. Understanding the mathematical nesting of keys is essential:
+            </p>
+
+            <div class="card border mb-4">
+                <div class="card-body p-3">
+                    <div class="text-center my-3">
+                        <span class="badge bg-secondary px-3 py-2 fs-6">Superkey Set (All unique identifiers)</span>
+                        <div class="text-muted fs-4">&darr; <small class="text-dark fw-bold">Remove redundant attributes (Minimality)</small></div>
+                        <span class="badge bg-info text-dark px-3 py-2 fs-6">Candidate Keys (Minimal Superkeys)</span>
+                        <div class="text-muted fs-4">&darr; <small class="text-dark fw-bold">DBA selects the primary identifier</small></div>
+                        <div class="d-flex justify-content-center gap-3">
+                            <span class="badge bg-success px-3 py-2 fs-6">Primary Key (Chosen CK)</span>
+                            <span class="badge bg-warning text-dark px-3 py-2 fs-6">Alternate Keys (Remaining CKs)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 22%;">Key Type</th>
+                            <th style="width: 40%;">Mathematical / Relational Definition</th>
+                            <th style="width: 38%;">College Database Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-dark"><i class="bi bi-circle-fill text-secondary me-1"></i>Superkey (SK)</td>
+                            <td>Any set of one or more attributes that collectively allows a tuple to be uniquely identified. May contain redundant attributes.</td>
+                            <td><code>{StudentID}</code>, <code>{StudentID, StudentName}</code>, <code>{StudentID, Email}</code>, <code>{Email, Phone}</code>.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark"><i class="bi bi-circle-fill text-info me-1"></i>Candidate Key (CK)</td>
+                            <td>A <strong>minimal superkey</strong>: a superkey such that no proper subset is itself a superkey. No attribute can be discarded without losing uniqueness.</td>
+                            <td>In student registry: <code>{StudentID}</code> is a CK; <code>{Email}</code> is another CK. (Both are minimal).</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark"><i class="bi bi-circle-fill text-success me-1"></i>Primary Key (PK)</td>
+                            <td>The candidate key chosen by the database designer as the principal mechanism of identifying tuples within the relation. Strictly <code>NOT NULL</code> and immutable.</td>
+                            <td><code>StudentID</code> is selected as PK because it is compact, integer-based, and guaranteed permanent.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark"><i class="bi bi-circle-fill text-warning me-1"></i>Alternate Key (AK)</td>
+                            <td>Any candidate key that was <strong>not chosen</strong> as the primary key. Still guaranteed to be unique.</td>
+                            <td><code>Email</code> is an alternate key. (In SQL, implemented via <code>UNIQUE NOT NULL</code>).</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark"><i class="bi bi-circle-fill text-primary me-1"></i>Composite Key</td>
+                            <td>A primary or candidate key composed of <strong>two or more attributes</strong> combined.</td>
+                            <td>In <code>ENROLLMENT(StudentID, CourseID, Grade)</code>: neither StudentID nor CourseID is unique alone; the composite key is <code>{StudentID, CourseID}</code>.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark"><i class="bi bi-circle-fill text-danger me-1"></i>Foreign Key (FK)</td>
+                            <td>An attribute in a child relation that references the primary key of a parent relation, enforcing <strong>Referential Integrity</strong>.</td>
+                            <td><code>DepartmentID</code> in <code>STUDENT</code> references <code>DepartmentID</code> in <code>DEPARTMENT</code>.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Conceptual Keys vs SQL Constraints -->
+            <div class="alert alert-secondary border d-flex gap-3 align-items-center">
+                <i class="bi bi-shield-shaded text-dark fs-3 flex-shrink-0"></i>
+                <div class="small">
+                    <strong>Conceptual ER Keys vs. SQL Constraints:</strong><br>
+                    In an ER diagram, a key is a purely logical, conceptual construct denoting unique real-world entities. When mapped to MySQL 8:
+                    <ul class="mb-0 ps-3 mt-1">
+                        <li>A <strong>Primary Key</strong> becomes <code>PRIMARY KEY (col)</code> (automatically builds a Clustered Index and rejects NULLs).</li>
+                        <li>An <strong>Alternate Key</strong> becomes <code>UNIQUE NOT NULL</code> (builds a secondary unique B-Tree index).</li>
+                        <li>A <strong>Foreign Key</strong> becomes <code>FOREIGN KEY (col) REFERENCES Parent(col) ON DELETE RESTRICT/CASCADE</code>.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Interactive Classification Exercise -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-ui-checks me-2"></i>3. Interactive Exercise: Classify the Attributes
+            </h5>
+            <p class="small text-muted mb-3">
+                Match each college entity attribute to its correct attribute classification category:
+            </p>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card border p-3 bg-light">
+                        <h6 class="fw-bold text-dark mb-2">Attributes to Classify:</h6>
+                        <ol class="small text-secondary mb-0">
+                            <li class="mb-1"><strong>Address:</strong> (FlatNo, Street, Locality, Pincode)</li>
+                            <li class="mb-1"><strong>Certifications:</strong> (AWS, Oracle, CISCO) held by instructor</li>
+                            <li class="mb-1"><strong>SemesterGPA:</strong> Calculated from course grades</li>
+                            <li class="mb-1"><strong>AadhaarNumber / NationalID:</strong> National unique ID</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border p-3 bg-white">
+                        <h6 class="fw-bold text-success mb-2">Classification Breakdown:</h6>
+                        <ul class="small text-secondary mb-0 ps-3">
+                            <li class="mb-1"><strong>Address</strong> &rarr; <span class="badge bg-primary">Composite Attribute</span> (Subdivisible into atomic parts).</li>
+                            <li class="mb-1"><strong>Certifications</strong> &rarr; <span class="badge bg-info text-dark">Multivalued Attribute</span> (An instructor can hold 0, 1, or 5 certifications).</li>
+                            <li class="mb-1"><strong>SemesterGPA</strong> &rarr; <span class="badge bg-warning text-dark">Derived Attribute</span> (Computed dynamically via formula).</li>
+                            <li class="mb-1"><strong>NationalID</strong> &rarr; <span class="badge bg-success">Candidate Key / Key Attribute</span> (Strictly unique per citizen).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Quiz (5 Questions) -->
+        <section class="mt-5 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-patch-question-fill text-success me-2"></i>Lesson 2 Assessment &amp; Concept Check
+                </h5>
+                <span class="badge bg-light text-secondary border">5 Questions &bull; Pass Mark: 3/5</span>
+            </div>
+            <p class="small text-muted mb-4">
+                Test your mastery of attribute classifications, superkeys, candidate keys, and relational constraints.
+            </p>
+
+            <div id="quiz-container-topic2" class="lesson-quiz-block" data-lesson="topic2">
+                <!-- Question 1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic2">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. What is the fundamental difference between a 'Superkey' and a 'Candidate Key'?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic2" id="q1_t2_opt1" value="A">
+                            <label class="form-check-label" for="q1_t2_opt1">A) A superkey cannot uniquely identify a row, whereas a candidate key can.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic2" id="q1_t2_opt2" value="B">
+                            <label class="form-check-label" for="q1_t2_opt2">B) A candidate key is a minimal superkey; no proper subset of a candidate key is also a superkey.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic2" id="q1_t2_opt3" value="C">
+                            <label class="form-check-label" for="q1_t2_opt3">C) Superkeys are defined in MySQL, whereas candidate keys only exist in NoSQL.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic2" id="q1_t2_opt4" value="D">
+                            <label class="form-check-label" for="q1_t2_opt4">D) Candidate keys are always composed of exactly one attribute.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic2">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. In a Student relation with attributes (StudentID, Email, FullName, Phone), both StudentID and Email are unique. The designer selects StudentID as Primary Key. What is 'Email' formally classified as?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic2" id="q2_t2_opt1" value="A">
+                            <label class="form-check-label" for="q2_t2_opt1">A) Foreign Key</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic2" id="q2_t2_opt2" value="B">
+                            <label class="form-check-label" for="q2_t2_opt2">B) Alternate Key</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic2" id="q2_t2_opt3" value="C">
+                            <label class="form-check-label" for="q2_t2_opt3">C) Derived Key</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic2" id="q2_t2_opt4" value="D">
+                            <label class="form-check-label" for="q2_t2_opt4">D) Partial Key</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic2">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. How is a 'Multivalued Attribute' (such as an instructor having multiple telephone numbers) represented in Chen's ER diagram notation?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic2" id="q3_t2_opt1" value="A">
+                            <label class="form-check-label" for="q3_t2_opt1">A) Dashed Oval</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic2" id="q3_t2_opt2" value="B">
+                            <label class="form-check-label" for="q3_t2_opt2">B) Double Oval</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic2" id="q3_t2_opt3" value="C">
+                            <label class="form-check-label" for="q3_t2_opt3">C) Underlined Oval</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic2" id="q3_t2_opt4" value="D">
+                            <label class="form-check-label" for="q3_t2_opt4">D) Rectangle with double border</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic2">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. Which of the following is the primary risk of physically storing a 'Derived Attribute' (like Age computed from DateOfBirth) in a relational table?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic2" id="q4_t2_opt1" value="A">
+                            <label class="form-check-label" for="q4_t2_opt1">A) The table size will exceed MySQL limits.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic2" id="q4_t2_opt2" value="B">
+                            <label class="form-check-label" for="q4_t2_opt2">B) Data inconsistency and update anomalies occur because stored age becomes obsolete as birthdays pass.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic2" id="q4_t2_opt3" value="C">
+                            <label class="form-check-label" for="q4_t2_opt3">C) MySQL cannot index columns with derived data.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic2" id="q4_t2_opt4" value="D">
+                            <label class="form-check-label" for="q4_t2_opt4">D) Foreign keys cannot reference stored numbers.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic2">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. In the table ENROLLMENT(StudentID, CourseID, Semester, Grade), multiple students take multiple courses. Which statement regarding the Primary Key is TRUE?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic2" id="q5_t2_opt1" value="A">
+                            <label class="form-check-label" for="q5_t2_opt1">A) StudentID alone is a valid primary key because students are unique.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic2" id="q5_t2_opt2" value="B">
+                            <label class="form-check-label" for="q5_t2_opt2">B) CourseID alone is a valid primary key because courses have unique codes.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic2" id="q5_t2_opt3" value="C">
+                            <label class="form-check-label" for="q5_t2_opt3">C) A Composite Primary Key composed of (StudentID, CourseID) is required to uniquely identify each enrollment.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic2" id="q5_t2_opt4" value="D">
+                            <label class="form-check-label" for="q5_t2_opt4">D) Relational tables cannot have composite primary keys.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic2">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 2 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic2">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

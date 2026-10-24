@@ -1,0 +1,309 @@
+<!-- Lesson 6: Weak Entities and Identifying Relationships -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 6</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Weak Entities &amp; Identifying Relationships</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: Concept of Weak Entities -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-shield-slash me-2"></i>1. What is a Weak Entity?
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                A <strong>Weak Entity</strong> is an entity type that <strong>does not possess sufficient attributes to form a Primary Key on its own</strong>. It is existence-dependent on another entity, termed the <strong>Owner Entity</strong> (or <em>identifying entity</em>).
+            </p>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 25%;">Characteristic</th>
+                            <th style="width: 35%;">Strong Entity (Regular)</th>
+                            <th style="width: 40%;">Weak Entity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-dark">Primary Key</td>
+                            <td>Has its own complete Primary Key.</td>
+                            <td>Does not have its own Primary Key. Uses a <strong>Partial Key</strong>.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Chen ER Symbol</td>
+                            <td>Single Rectangle <code>[EMPLOYEE]</code></td>
+                            <td><strong>Double Rectangle</strong> <code>[[DEPENDENT]]</code></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Relationship Symbol</td>
+                            <td>Single Diamond <code>&lt;Works_For&gt;</code></td>
+                            <td><strong>Double Diamond</strong> <code>&lt;&lt;Has_Dependent&gt;&gt;</code> (Identifying Relationship)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Participation</td>
+                            <td>Can be Total or Partial.</td>
+                            <td>Always <strong>Total Participation (====)</strong> in the identifying relationship!</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-dark">Key Identifier</td>
+                            <td>Primary Key (Solid Underline: <u>ID</u>)</td>
+                            <td><strong>Partial Key / Discriminator</strong> (Dashed Underline: <span style="border-bottom: 2px dashed #000;">Name</span>)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Conceptual Clarification Alert -->
+            <div class="alert alert-secondary border d-flex gap-3 align-items-center mb-0">
+                <i class="bi bi-info-square-fill text-dark fs-3 flex-shrink-0"></i>
+                <div class="small">
+                    <strong>Conceptual Modeling Construct &ne; Special SQL Table Type:</strong><br>
+                    A weak entity is a <em>conceptual abstraction</em> in the ER model to prevent creating artificial global IDs when not needed. In physical MySQL 8, there is no <code>CREATE WEAK TABLE</code> statement! It is implemented as a standard relational table whose <strong>Primary Key is Composite</strong>, formed by joining the owner's primary key (as a Foreign Key) with the partial key.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Worked Example: EMPLOYEE & DEPENDENT -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-people-fill me-2"></i>2. Comprehensive Worked Example: EMPLOYEE &amp; DEPENDENT
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                Consider an enterprise health insurance system. An employee has insurance coverage that extends to their family dependents (spouse, children):
+            </p>
+
+            <div class="card border mb-4">
+                <div class="card-body p-3 text-center">
+                    <!-- SVG Diagram of Weak Entity -->
+                    <div class="border rounded bg-light p-3 overflow-auto">
+                        <svg viewBox="0 0 540 180" width="100%" height="180" xmlns="http://www.w3.org/2000/svg" style="max-width: 540px; font-family: sans-serif;">
+                            <!-- Strong Entity: EMPLOYEE -->
+                            <rect x="20" y="65" width="120" height="50" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="4"/>
+                            <text x="80" y="95" font-size="13" font-weight="bold" fill="#1b5e20" text-anchor="middle">EMPLOYEE</text>
+
+                            <!-- Attribute: EmployeeID (PK) -->
+                            <ellipse cx="80" cy="25" rx="40" ry="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+                            <text x="80" y="29" font-size="10" font-weight="bold" fill="#000" text-anchor="middle" text-decoration="underline">EmployeeID</text>
+                            <line x1="80" y1="41" x2="80" y2="65" stroke="#666" stroke-width="1.5"/>
+
+                            <!-- Connecting Line to Identifying Relationship -->
+                            <line x1="140" y1="90" x2="210" y2="90" stroke="#333" stroke-width="2"/>
+                            <text x="175" y="82" font-size="11" font-weight="bold" fill="#333">1</text>
+
+                            <!-- Identifying Relationship: Double Diamond -->
+                            <polygon points="260,60 305,90 260,120 215,90" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>
+                            <polygon points="260,65 297,90 260,115 223,90" fill="none" stroke="#1565c0" stroke-width="1.5"/>
+                            <text x="260" y="94" font-size="10" font-weight="bold" fill="#0d47a1" text-anchor="middle">Has_Dep</text>
+
+                            <!-- Connecting Line to Weak Entity: Double Line (Total Participation) -->
+                            <line x1="305" y1="88" x2="380" y2="88" stroke="#333" stroke-width="2"/>
+                            <line x1="305" y1="92" x2="380" y2="92" stroke="#333" stroke-width="2"/>
+                            <text x="340" y="80" font-size="11" font-weight="bold" fill="#d32f2f">N</text>
+
+                            <!-- Weak Entity: Double Rectangle -->
+                            <rect x="380" y="65" width="130" height="50" fill="#fff3e0" stroke="#e65100" stroke-width="2" rx="4"/>
+                            <rect x="385" y="70" width="120" height="40" fill="none" stroke="#e65100" stroke-width="1.5" rx="3"/>
+                            <text x="445" y="95" font-size="13" font-weight="bold" fill="#e65100" text-anchor="middle">DEPENDENT</text>
+
+                            <!-- Partial Key: DependentName (Dashed Underline) -->
+                            <ellipse cx="400" cy="25" rx="46" ry="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+                            <text x="400" y="29" font-size="10" font-weight="bold" fill="#000" text-anchor="middle">DepName</text>
+                            <line x1="375" y1="32" x2="425" y2="32" stroke="#000" stroke-dasharray="3,2" stroke-width="1.5"/>
+                            <line x1="400" y1="41" x2="420" y2="65" stroke="#666" stroke-width="1.5"/>
+
+                            <!-- Attribute: Relationship -->
+                            <ellipse cx="490" cy="25" rx="30" ry="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+                            <text x="490" y="29" font-size="10" fill="#000" text-anchor="middle">Relation</text>
+                            <line x1="490" y1="41" x2="470" y2="65" stroke="#666" stroke-width="1.5"/>
+                        </svg>
+                    </div>
+                    <span class="small text-muted mt-2 d-block">
+                        <strong>Chen Weak Entity Notation:</strong> Double Rectangle = Weak Entity; Double Diamond = Identifying Relationship; Double Line = Mandatory Total Participation; Dashed Underline = Partial Key (Discriminator).
+                    </span>
+                </div>
+            </div>
+
+            <!-- Why Partial Key is Insufficient Alone -->
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <h6 class="fw-bold text-dark">Why DependentName is Only a Partial Key:</h6>
+                        <p class="small text-secondary mb-2">
+                            An employee (Employee 101) might have a son named <em>"Aarav"</em>. Another completely unrelated employee (Employee 205) might also have a son named <em>"Aarav"</em>.
+                        </p>
+                        <p class="small text-secondary mb-0">
+                            Within the family of Employee 101, <em>"Aarav"</em> is distinct. But across the entire company database, <em>"Aarav"</em> is NOT globally unique! Hence, <code>DependentName</code> is a <strong>partial key (discriminator)</strong>.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <h6 class="fw-bold text-success">Conversion to Relational Tables (MySQL 8 DDL):</h6>
+                        <pre class="bg-white p-2 border rounded font-monospace small mb-0 text-dark"><code>-- Parent Strong Table
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    employee_name VARCHAR(100) NOT NULL
+);
+
+-- Child Weak Table
+CREATE TABLE dependents (
+    employee_id INT NOT NULL,       -- Owner's PK as FK
+    dependent_name VARCHAR(50) NOT NULL, -- Partial Key
+    relationship VARCHAR(30) NOT NULL,
+    PRIMARY KEY (employee_id, dependent_name), -- Composite PK!
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
+        ON DELETE CASCADE -- Existence Dependency!
+);</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Quiz (5 Questions) -->
+        <section class="mt-5 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-patch-question-fill text-success me-2"></i>Lesson 6 Assessment &amp; Concept Check
+                </h5>
+                <span class="badge bg-light text-secondary border">5 Questions &bull; Pass Mark: 3/5</span>
+            </div>
+            <p class="small text-muted mb-4">
+                Test your mastery of weak entities, discriminators, identifying relationships, and cascading deletes.
+            </p>
+
+            <div id="quiz-container-topic6" class="lesson-quiz-block" data-lesson="topic6">
+                <!-- Question 1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic6">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. How is a 'Partial Key' (discriminator) of a weak entity represented in Chen's ER diagram notation?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic6" id="q1_t6_opt1" value="A">
+                            <label class="form-check-label" for="q1_t6_opt1">A) Solid underline inside the oval</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic6" id="q1_t6_opt2" value="B">
+                            <label class="form-check-label" for="q1_t6_opt2">B) Dashed underline inside the oval</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic6" id="q1_t6_opt3" value="C">
+                            <label class="form-check-label" for="q1_t6_opt3">C) Double oval</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic6" id="q1_t6_opt4" value="D">
+                            <label class="form-check-label" for="q1_t6_opt4">D) Asterisk prefix (*)</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic6">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. What forms the Primary Key when a weak entity type is mapped into a relational schema?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic6" id="q2_t6_opt1" value="A">
+                            <label class="form-check-label" for="q2_t6_opt1">A) The partial key alone.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic6" id="q2_t6_opt2" value="B">
+                            <label class="form-check-label" for="q2_t6_opt2">B) The primary key of the owner entity combined with the partial key of the weak entity.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic6" id="q2_t6_opt3" value="C">
+                            <label class="form-check-label" for="q2_t6_opt3">C) Weak entities never have primary keys in relational tables.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic6" id="q2_t6_opt4" value="D">
+                            <label class="form-check-label" for="q2_t6_opt4">D) The owner's primary key alone.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic6">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. What is the graphical symbol for an 'Identifying Relationship' in Chen's notation?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic6" id="q3_t6_opt1" value="A">
+                            <label class="form-check-label" for="q3_t6_opt1">A) Double Rectangle</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic6" id="q3_t6_opt2" value="B">
+                            <label class="form-check-label" for="q3_t6_opt2">B) Double Diamond</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic6" id="q3_t6_opt3" value="C">
+                            <label class="form-check-label" for="q3_t6_opt3">C) Dashed Diamond</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic6" id="q3_t6_opt4" value="D">
+                            <label class="form-check-label" for="q3_t6_opt4">D) Double Oval</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic6">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. If an employee resigns and their record is deleted from the EMPLOYEE table, what should happen to their associated records in the DEPENDENT table under existence dependency?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic6" id="q4_t6_opt1" value="A">
+                            <label class="form-check-label" for="q4_t6_opt1">A) The dependent records must remain forever with employee_id set to NULL.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic6" id="q4_t6_opt2" value="B">
+                            <label class="form-check-label" for="q4_t6_opt2">B) The dependent records should be automatically deleted via ON DELETE CASCADE because they cannot exist without their owner.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic6" id="q4_t6_opt3" value="C">
+                            <label class="form-check-label" for="q4_t6_opt3">C) The dependent records are promoted to strong entities automatically.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic6" id="q4_t6_opt4" value="D">
+                            <label class="form-check-label" for="q4_t6_opt4">D) MySQL crashes if a parent record is deleted.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic6">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. Why is a Weak Entity classified as a 'Conceptual Modeling Construct' rather than a physical SQL table type?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic6" id="q5_t6_opt1" value="A">
+                            <label class="form-check-label" for="q5_t6_opt1">A) Relational engines like MySQL 8 store weak entities in special temporary RAM tables.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic6" id="q5_t6_opt2" value="B">
+                            <label class="form-check-label" for="q5_t6_opt2">B) In physical SQL, weak entities are implemented as normal tables using composite keys and standard foreign key constraints.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic6" id="q5_t6_opt3" value="C">
+                            <label class="form-check-label" for="q5_t6_opt3">C) SQL does not support existence dependencies.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic6" id="q5_t6_opt4" value="D">
+                            <label class="form-check-label" for="q5_t6_opt4">D) Weak entities cannot be queried with SELECT statements.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic6">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 6 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic6">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

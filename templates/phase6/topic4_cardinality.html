@@ -1,0 +1,350 @@
+<!-- Lesson 4: Cardinality Constraints -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 4</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Cardinality Constraints (1:1, 1:N, N:1, M:N)</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: Concept of Mapping Cardinalities -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-shuffle me-2"></i>1. Mapping Cardinalities (Maximum Cardinality)
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                <strong>Mapping Cardinality</strong> (or <em>cardinality ratio</em>) expresses the maximum number of entities of one entity set to which another entity can be associated via a relationship set. It is a critical constraint that dictates how tables and foreign keys are created in SQL.
+            </p>
+
+            <div class="alert alert-info border d-flex gap-3 align-items-center mb-4">
+                <i class="bi bi-info-circle-fill text-info fs-3 flex-shrink-0"></i>
+                <div class="small">
+                    <strong>Critical Distinction: Maximum Cardinality vs. Minimum Participation:</strong><br>
+                    <strong>Maximum Cardinality</strong> (1 or Many) defines the <em>upper bound</em> of connections an entity can have.<br>
+                    <strong>Minimum Participation</strong> (0 or 1) defines whether participation is <em>mandatory (Total)</em> or <em>optional (Partial)</em>.<br>
+                    <em>Never confuse the two! A 1:N relationship can have optional participation on either or both sides.</em>
+                </div>
+            </div>
+
+            <!-- 4 Cardinality Ratios Grid -->
+            <div class="row g-4">
+                <!-- 1:1 -->
+                <div class="col-md-6">
+                    <div class="card h-100 border">
+                        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-dark">1. One-to-One (1:1)</span>
+                            <span class="badge bg-primary">Ratio 1:1</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-secondary mb-2">
+                                An entity in entity set $A$ is associated with <strong>at most one</strong> entity in $B$, and an entity in $B$ is associated with <strong>at most one</strong> entity in $A$.
+                            </p>
+                            <div class="p-2 border rounded bg-light small mb-3">
+                                <strong>College Example:</strong> <code>INSTRUCTOR</code> <em>Heads</em> <code>DEPARTMENT</code>.<br>
+                                Each Department has exactly one Head (Instructor), and an Instructor can head at most one Department.
+                            </div>
+                            <!-- Sample Mini Dataset -->
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-center mb-0 small">
+                                    <thead class="table-light">
+                                        <tr><th>Department (A)</th><th>Heads</th><th>Instructor (B)</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>D10 (Computer)</td><td>&harr;</td><td>I101 (Dr. Sharma)</td></tr>
+                                        <tr><td>D20 (Electronics)</td><td>&harr;</td><td>I102 (Dr. Verma)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <span class="small text-muted d-block mt-2">
+                                <strong>Schema Impact:</strong> Put Foreign Key in either table (typically on the table with total participation) with a <code>UNIQUE</code> constraint on the FK column.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1:N -->
+                <div class="col-md-6">
+                    <div class="card h-100 border">
+                        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-dark">2. One-to-Many (1:N)</span>
+                            <span class="badge bg-success">Ratio 1:N</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-secondary mb-2">
+                                An entity in $A$ can be associated with <strong>any number ($\ge 0$)</strong> of entities in $B$, but an entity in $B$ is associated with <strong>at most one</strong> entity in $A$.
+                            </p>
+                            <div class="p-2 border rounded bg-light small mb-3">
+                                <strong>College Example:</strong> <code>DEPARTMENT</code> <em>Employs</em> <code>INSTRUCTOR</code>.<br>
+                                One department employs many instructors, but each instructor is appointed to only one department.
+                            </div>
+                            <!-- Sample Mini Dataset -->
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-center mb-0 small">
+                                    <thead class="table-light">
+                                        <tr><th>Department (1)</th><th>Employs</th><th>Instructors (N)</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td rowspan="2">D10 (Computer)</td><td>&rarr;</td><td>I101 (Dr. Sharma)</td></tr>
+                                        <tr><td>&rarr;</td><td>I103 (Prof. Gupta)</td></tr>
+                                        <tr><td>D20 (Electronics)</td><td>&rarr;</td><td>I102 (Dr. Verma)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <span class="small text-muted d-block mt-2">
+                                <strong>Schema Impact:</strong> Always place the Foreign Key on the <strong>Many ($N$)</strong> side: <code>INSTRUCTOR(..., department_id FK)</code>!
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- N:1 -->
+                <div class="col-md-6">
+                    <div class="card h-100 border">
+                        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-dark">3. Many-to-One (N:1)</span>
+                            <span class="badge bg-info text-dark">Ratio N:1</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-secondary mb-2">
+                                The mirror of 1:N: Multiple entities in $A$ associate with at most one entity in $B$.
+                            </p>
+                            <div class="p-2 border rounded bg-light small mb-3">
+                                <strong>College Example:</strong> <code>STUDENT</code> <em>Belongs To</em> <code>DEPARTMENT</code>.<br>
+                                Many students belong to one department; each student has exactly one home department.
+                            </div>
+                            <!-- Sample Mini Dataset -->
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-center mb-0 small">
+                                    <thead class="table-light">
+                                        <tr><th>Students (N)</th><th>Belongs To</th><th>Department (1)</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>101 (Amit)</td><td>&rarr;</td><td rowspan="2">D10 (Computer)</td></tr>
+                                        <tr><td>103 (Ravi)</td><td>&rarr;</td></tr>
+                                        <tr><td>102 (Neha)</td><td>&rarr;</td><td>D20 (Electronics)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <span class="small text-muted d-block mt-2">
+                                <strong>Schema Impact:</strong> Foreign Key placed on <code>STUDENT(..., department_id FK)</code>.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- M:N -->
+                <div class="col-md-6">
+                    <div class="card h-100 border">
+                        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-dark">4. Many-to-Many (M:N)</span>
+                            <span class="badge bg-danger">Ratio M:N</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-secondary mb-2">
+                                An entity in $A$ is associated with <strong>any number</strong> of entities in $B$, and an entity in $B$ is associated with <strong>any number</strong> of entities in $A$.
+                            </p>
+                            <div class="p-2 border rounded bg-light small mb-3">
+                                <strong>College Example:</strong> <code>STUDENT</code> <em>Enrolls In</em> <code>COURSE</code>.<br>
+                                A student registers for multiple courses, and each course enrolls multiple students.
+                            </div>
+                            <!-- Sample Mini Dataset -->
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-center mb-0 small">
+                                    <thead class="table-light">
+                                        <tr><th>Student (M)</th><th>Enrolls In</th><th>Course (N)</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>101 (Amit)</td><td>&harr;</td><td>C101 (DBMS)</td></tr>
+                                        <tr><td>101 (Amit)</td><td>&harr;</td><td>C102 (Python)</td></tr>
+                                        <tr><td>102 (Neha)</td><td>&harr;</td><td>C101 (DBMS)</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <span class="small text-muted d-block mt-2">
+                                <strong>Schema Impact:</strong> CANNOT place a foreign key directly in either table! Requires a <strong>Separate Junction / Associative Table</strong> <code>ENROLLMENT(student_id PK/FK, course_id PK/FK)</code>!
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Visual Notation in Chen and Crow's Foot -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-diagram-3 me-2"></i>2. Graphical Notation: Chen vs. Crow's Foot
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <h6 class="fw-bold text-dark">Chen Style (NEPC42)</h6>
+                        <p class="small text-secondary mb-2">
+                            Numbers and letters (<code>1</code>, <code>N</code>, <code>M</code>) are written explicitly on the line segments connecting the entity rectangle to the relationship diamond.
+                        </p>
+                        <div class="p-2 border rounded bg-white text-center font-monospace small">
+                            [STUDENT] --- (1) --- &lt;Belongs_To&gt; --- (N) --- [DEPARTMENT]<br>
+                            [STUDENT] --- (M) --- &lt;Enrolls_In&gt; --- (N) --- [COURSE]
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <h6 class="fw-bold text-dark">Crow's Foot Style (Industry Standard)</h6>
+                        <p class="small text-secondary mb-2">
+                            Uses three prongs at the end of the connecting line to denote "Many", a straight tick mark for "One", and a circle for "Zero / Optional".
+                        </p>
+                        <div class="p-2 border rounded bg-white text-center font-monospace small">
+                            DEPARTMENT ||----------|&lt; INSTRUCTOR (1:N)<br>
+                            STUDENT &gt;|----------|&lt; COURSE (M:N)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Quiz (5 Questions) -->
+        <section class="mt-5 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-patch-question-fill text-success me-2"></i>Lesson 4 Assessment &amp; Concept Check
+                </h5>
+                <span class="badge bg-light text-secondary border">5 Questions &bull; Pass Mark: 3/5</span>
+            </div>
+            <p class="small text-muted mb-4">
+                Test your mastery of cardinality ratios and their direct impact on relational schema mapping.
+            </p>
+
+            <div id="quiz-container-topic4" class="lesson-quiz-block" data-lesson="topic4">
+                <!-- Question 1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic4">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. In a college system, one Department employs many Instructors, but each Instructor is employed by exactly one Department. What is the mapping cardinality from Department to Instructor?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic4" id="q1_t4_opt1" value="A">
+                            <label class="form-check-label" for="q1_t4_opt1">A) One-to-One (1:1)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic4" id="q1_t4_opt2" value="B">
+                            <label class="form-check-label" for="q1_t4_opt2">B) One-to-Many (1:N)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic4" id="q1_t4_opt3" value="C">
+                            <label class="form-check-label" for="q1_t4_opt3">C) Many-to-Many (M:N)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic4" id="q1_t4_opt4" value="D">
+                            <label class="form-check-label" for="q1_t4_opt4">D) Ternary (1:1:1)</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic4">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. When converting a binary 1:N relationship into relational tables, where should the Foreign Key be placed?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic4" id="q2_t4_opt1" value="A">
+                            <label class="form-check-label" for="q2_t4_opt1">A) In the table on the 'One' side.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic4" id="q2_t4_opt2" value="B">
+                            <label class="form-check-label" for="q2_t4_opt2">B) In the table on the 'Many' (N) side.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic4" id="q2_t4_opt3" value="C">
+                            <label class="form-check-label" for="q2_t4_opt3">C) In both tables simultaneously.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic4" id="q2_t4_opt4" value="D">
+                            <label class="form-check-label" for="q2_t4_opt4">D) In a dedicated third junction table only.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic4">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. Why CANNOT a Many-to-Many (M:N) relationship between STUDENT and COURSE be modeled by simply adding a course_id foreign key column to the STUDENT table?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic4" id="q3_t4_opt1" value="A">
+                            <label class="form-check-label" for="q3_t4_opt1">A) Because foreign keys cannot reference courses.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic4" id="q3_t4_opt2" value="B">
+                            <label class="form-check-label" for="q3_t4_opt2">B) Because a student taking 5 courses would require storing multivalued lists or duplicate student rows, violating 1NF.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic4" id="q3_t4_opt3" value="C">
+                            <label class="form-check-label" for="q3_t4_opt3">C) Because MySQL restricts primary keys from being numbers.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic4" id="q3_t4_opt4" value="D">
+                            <label class="form-check-label" for="q3_t4_opt4">D) Foreign keys are forbidden in M:N models.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic4">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. In a One-to-One (1:1) relationship between DEPARTMENT and INSTRUCTOR (Heads), what SQL constraint must be placed on the department_id foreign key in INSTRUCTOR to guarantee that no two instructors head the same department?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic4" id="q4_t4_opt1" value="A">
+                            <label class="form-check-label" for="q4_t4_opt1">A) CHECK (department_id > 0)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic4" id="q4_t4_opt2" value="B">
+                            <label class="form-check-label" for="q4_t4_opt2">B) UNIQUE constraint on the foreign key column</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic4" id="q4_t4_opt3" value="C">
+                            <label class="form-check-label" for="q4_t4_opt3">C) AUTO_INCREMENT</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic4" id="q4_t4_opt4" value="D">
+                            <label class="form-check-label" for="q4_t4_opt4">D) DEFAULT NULL</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic4">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. What does the term 'Maximum Cardinality' define?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic4" id="q5_t4_opt1" value="A">
+                            <label class="form-check-label" for="q5_t4_opt1">A) The minimum number of entity instances required to exist.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic4" id="q5_t4_opt2" value="B">
+                            <label class="form-check-label" for="q5_t4_opt2">B) The upper bound on the number of relationship instances in which an entity can participate.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic4" id="q5_t4_opt3" value="C">
+                            <label class="form-check-label" for="q5_t4_opt3">C) The physical RAM memory allocated to the database cache.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic4" id="q5_t4_opt4" value="D">
+                            <label class="form-check-label" for="q5_t4_opt4">D) The number of columns in the resulting table.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic4">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 4 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic4">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

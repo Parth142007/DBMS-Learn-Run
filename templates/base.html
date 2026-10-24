@@ -59,6 +59,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'phase6' %}active fw-semibold text-success{% endif %}" href="/phase-6">
+                            <i class="bi bi-bounding-box me-1"></i> Phase 6: ER &amp; Relational
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if active_page == 'schema' %}active fw-semibold text-success{% endif %}" href="/schema">
                             <i class="bi bi-diagram-3-fill me-1"></i> Schema Inspector
                         </a>
@@ -208,15 +213,39 @@
                 <i class="bi bi-tools"></i> 10. Normalization Practice Lab
             </a>
 
-            <div class="sidebar-header">Module 6: Transactions</div>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 6">
-                <i class="bi bi-arrow-repeat"></i> ACID & Transactions
+            <div class="sidebar-header">Module 6: ER &amp; Relational Model (Phase 6)</div>
+            <a href="/phase-6" class="sidebar-nav-link {% if active_page == 'phase6' and not current_topic %}active{% endif %}">
+                <i class="bi bi-award"></i> Phase 6 Dashboard
             </a>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 6">
-                <i class="bi bi-shield-lock"></i> Concurrency & Deadlocks
+            <a href="/phase-6?topic=topic1" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic1' %}active{% endif %}">
+                <i class="bi bi-bounding-box"></i> 1. ER Introduction
             </a>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 6">
-                <i class="bi bi-patch-question"></i> Practice Exercises
+            <a href="/phase-6?topic=topic2" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic2' %}active{% endif %}">
+                <i class="bi bi-key"></i> 2. Attributes &amp; Keys
+            </a>
+            <a href="/phase-6?topic=topic3" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic3' %}active{% endif %}">
+                <i class="bi bi-bezier2"></i> 3. Relationships &amp; Degree
+            </a>
+            <a href="/phase-6?topic=topic4" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic4' %}active{% endif %}">
+                <i class="bi bi-shuffle"></i> 4. Cardinality Constraints
+            </a>
+            <a href="/phase-6?topic=topic5" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic5' %}active{% endif %}">
+                <i class="bi bi-circle-square"></i> 5. Participation Constraints
+            </a>
+            <a href="/phase-6?topic=topic6" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic6' %}active{% endif %}">
+                <i class="bi bi-shield-slash"></i> 6. Weak Entities
+            </a>
+            <a href="/phase-6?topic=topic7" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic7' %}active{% endif %}">
+                <i class="bi bi-diagram-3-fill"></i> 7. Extended ER (EER)
+            </a>
+            <a href="/phase-6?topic=topic8" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic8' %}active{% endif %}">
+                <i class="bi bi-columns-gap"></i> 8. ER Mapping to Relational
+            </a>
+            <a href="/phase-6?topic=topic9" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic9' %}active{% endif %}">
+                <i class="bi bi-table"></i> 9. Relational Model
+            </a>
+            <a href="/phase-6?topic=topic10" class="sidebar-nav-link {% if active_page == 'phase6' and current_topic == 'topic10' %}active{% endif %}">
+                <i class="bi bi-calculator"></i> 10. Relational Algebra Lab
             </a>
         </aside>
 
@@ -283,5 +312,6 @@
     <!-- Custom Application JS -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

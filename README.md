@@ -441,4 +441,108 @@ Access the live module at: **`http://localhost:5000/phase-5`** (or alias **`/nor
   - 11 comprehensive automated tests in `tests/test_phase5.py`.
   - **100% test pass rate across all 50 unit tests in the project (`python -m unittest discover tests`).**
 
+---
+
+## Phase 6 &mdash; ER &amp; Relational Model (Completed & Verified)
+
+Implemented **Phase 6 &mdash; ER &amp; Relational Model** as a complete, interactive, full-stack educational module based on the NEPC42 syllabus. Accessible via `/phase-6` and alias `/er-model`.
+
+### Module Overview & Scope
+- **Estimated Study Time:** ~240 minutes across 10 structured lessons.
+- **50 Assessment Questions:** 5 multiple-choice questions per lesson with instant technical feedback, explanations of correct and incorrect choices, and retry capabilities.
+- **Dual Persistence:** Browser `localStorage` synced with MySQL table `phase6_learning_progress`.
+- **Interactive Tools:**
+  1. **Interactive Relational Algebra Lab:** A safe in-memory evaluator executing operations against isolated educational tables with zero arbitrary SQL execution.
+  2. **Interactive ER Diagram Builder:** A visual design tool supporting entities, weak entities, attributes (simple, key, composite, multivalued, derived), relationships, cardinalities, and participation constraints, with live relational schema (`CREATE TABLE`) generation.
+
+### Implemented Lessons Breakdown
+
+- [x] **Lesson 1 &mdash; Introduction to the ER Model:**
+  - Conceptual, logical, and physical data modeling levels.
+  - Entity, Entity Set, Entity Type, Attribute, Domain, Relationship, and Relationship Set.
+  - Strong vs. Weak entities; Entity Instances vs. Entity Types.
+  - Consistent college management example (`STUDENT`, `COURSE`, `DEPARTMENT`, `INSTRUCTOR`).
+  - Standard ER graphical notation: Chen classical notation (Rectangle, Double Rectangle, Oval, Underlined Key, Double Oval, Dashed Oval, Diamond, Double Diamond, Double Line) contrasted with Crow's Foot style.
+  - Advantages and limitations of ER diagrams.
+
+- [x] **Lesson 2 &mdash; Attributes and Keys:**
+  - Attribute classifications: Simple vs. Composite, Single-valued vs. Multivalued, Stored vs. Derived, Key vs. Descriptive.
+  - The Hierarchy of Keys in Relational Theory: Superkeys, Candidate Keys, Primary Keys, Alternate Keys, Composite Keys, Foreign Keys.
+  - Conceptual ER keys vs. Physical SQL constraints (`PRIMARY KEY`, `UNIQUE`, `NOT NULL`, `FOREIGN KEY REFERENCES`).
+  - Interactive attribute classification exercise.
+
+- [x] **Lesson 3 &mdash; Relationships, Degree &amp; Recursive Roles:**
+  - Relationships categorized by degree: Unary / Recursive (degree 1), Binary (degree 2), Ternary / N-ary (degree 3+).
+  - Explicit role names in recursive relationships (e.g. Student *Mentor* vs. *Mentee*, Employee *Manager* vs. *Subordinate*).
+  - The Ternary Decomposition Problem: Proof by counterexample demonstrating why a ternary relationship cannot always be replaced by three binary relationships without semantic loss.
+
+- [x] **Lesson 4 &mdash; Cardinality Constraints:**
+  - Maximum mapping cardinalities: One-to-One (1:1), One-to-Many (1:N), Many-to-One (N:1), Many-to-Many (M:N).
+  - Small sample datasets illustrating each ratio.
+  - Direct schema design impact: placing the Foreign Key on the "Many" ($N$) side in 1:N; creating a separate junction table in M:N.
+  - Clear technical distinction between Maximum Cardinality and Minimum Participation.
+
+- [x] **Lesson 5 &mdash; Participation Constraints:**
+  - Total Participation (Mandatory, double line $min = 1$) vs. Partial Participation (Optional, single line $min = 0$).
+  - Unified $(min, max)$ structural constraint notation: $(1, 1)$, $(1, N)$, $(0, 1)$, $(0, N)$.
+  - Translation to MySQL DDL: `NOT NULL` on foreign key columns for Total Participation vs. permitting `NULL` for Partial Participation.
+  - Enterprise business rule dependency context: why participation rules must be verified against actual organizational policy.
+
+- [x] **Lesson 6 &mdash; Weak Entities &amp; Identifying Relationships:**
+  - Weak entity definition, existence dependency, and owner entity.
+  - Partial keys / discriminators (dashed underline in Chen notation).
+  - Identifying relationships (double diamond in Chen notation).
+  - Canonical `EMPLOYEE` and `DEPENDENT` case study.
+  - Conversion into relational tables: owner's PK as FK, partial key, and composite primary key: `PRIMARY KEY (employee_id, dependent_name)`.
+  - Cascading deletes: `ON DELETE CASCADE`.
+  - Clarification: Weak entity is a conceptual modeling construct, not a special SQL table type.
+
+- [x] **Lesson 7 &mdash; Extended ER (EER) Concepts:**
+  - Specialization (top-down) and Generalization (bottom-up).
+  - Superclasses, subclasses, and attribute / relationship inheritance (IS-A relationships).
+  - Disjointness constraints: Disjoint (`d`) vs. Overlapping (`o`).
+  - Completeness constraints: Total specialization (double line) vs. Partial specialization (single line).
+  - Aggregation: Treating relationships as higher-level composite entities.
+  - Concrete example: `PERSON` superclass with `STUDENT` and `EMPLOYEE` subclasses.
+
+- [x] **Lesson 8 &mdash; Mapping ER Diagrams to Relational Schemas:**
+  - Formal 7-step engineering algorithm:
+    1. Strong entity types $\to$ relations with simple attributes and primary keys.
+    2. Composite attributes $\to$ flattened atomic columns.
+    3. Weak entity types $\to$ relations with owner PK as FK and composite PK.
+    4. 1:1 relationships $\to$ foreign key placement on total participation side with `UNIQUE` constraint.
+    5. 1:N relationships $\to$ foreign key placed on the "Many" ($N$) side.
+    6. M:N relationships $\to$ separate associative junction table with composite PK.
+    7. Multivalued attributes $\to$ dedicated relation with owner PK as FK and composite PK.
+  - Full worked college database side-by-side comparison (`DEPARTMENT`, `INSTRUCTOR`, `COURSE`, `STUDENT`, `ENROLLMENT`).
+
+- [x] **Lesson 9 &mdash; Relational Model Fundamentals &amp; Integrity Constraints:**
+  - Mathematical foundations: Relation, Tuple, Attribute, Domain ($R \subseteq D_1 \times D_2 \times \dots \times D_n$).
+  - Relation schema $R(A_1, A_2, \dots, A_n)$ vs. Relation instance $r(R)$.
+  - Degree (column count) vs. Cardinality (row count).
+  - Mathematical set semantics vs. SQL multiset/bag semantics.
+  - Foundational integrity constraints: Entity Integrity (`PRIMARY KEY NOT NULL`), Referential Integrity (`FOREIGN KEY REFERENCES`), Domain Integrity.
+  - Three-valued logic: `NULL` semantics and comparisons.
+
+- [x] **Lesson 10 &mdash; Relational Algebra &amp; Interactive Learning Labs:**
+  - Procedural query language fundamentals.
+  - Mathematical operators: Selection ($\sigma$), Projection ($\pi$ with set-based duplicate elimination), Union ($\cup$), Set Difference ($-$), Cartesian Product ($\times$), Rename ($\rho$), Equi-Join ($\bowtie_c$), Natural Join ($\bowtie$), Left Outer Join ($\leftouterjoin$), Relational Division ($\div$), and Set Intersection ($\cap$).
+  - **Interactive Relational Algebra Lab:**
+    - Live safe execution over in-memory educational tables (`STUDENT`, `DEPARTMENT`, `COURSE`, `ENROLLMENT`, `HONOR_STUDENT`, `STUDENT_COURSE`, `CS_COURSE`).
+    - Dynamic controls for operator selection, conditions, projection attributes, and relations.
+    - Tabular result rendering with cardinality and degree statistics.
+    - Detailed step-by-step mathematical reasoning for every executed operation.
+    - Robust error handling for union compatibility degree mismatches and invalid attribute names.
+  - **Interactive ER Diagram Builder:**
+    - Add, edit, and connect entities, weak entities, and attributes.
+    - Set relationship cardinalities (1:1, 1:N, M:N) and participation (Total/Partial).
+    - Responsive SVG rendering using standard Chen notation.
+    - Automated Relational Schema generator translating models into valid MySQL 8 DDL with primary and foreign keys.
+
+### Testing & Verification
+- **Automated Tests:** 16 tests in `tests/test_phase6.py`.
+- **Full Suite Run:** `python -m unittest discover tests` executed **66 tests in 6.546s with 100% pass rate and zero regressions**.
+- **All Previous Phases Preserved:** Phases 2, 3, 4, and 5 remain fully functional and tested.
+
+
 

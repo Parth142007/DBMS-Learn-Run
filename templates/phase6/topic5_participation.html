@@ -1,0 +1,331 @@
+<!-- Lesson 5: Participation Constraints -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 5</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Participation Constraints (Total vs. Partial)</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: Total vs Partial Participation -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-circle-square me-2"></i>1. Total vs. Partial Participation
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                While cardinality dictates the <em>maximum</em> number of associations, <strong>participation constraints</strong> (or <em>existence dependencies</em>) specify the <em>minimum</em> number of relationship instances in which each entity must participate. It determines whether participation is <strong>mandatory</strong> or <strong>optional</strong>.
+            </p>
+
+            <div class="row g-4 my-2">
+                <!-- Total Participation -->
+                <div class="col-md-6">
+                    <div class="card h-100 border-success-subtle bg-success-subtle bg-opacity-10">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold text-success mb-0"><i class="bi bi-check-all me-1"></i>Total Participation (Mandatory)</h6>
+                                <span class="badge bg-success">Minimum = 1</span>
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Definition:</strong> <em>Every entity</em> in the entity set must participate in at least one instance of the relationship set. An entity cannot exist without being connected.
+                            </p>
+                            <div class="p-2 border rounded bg-white small mb-2">
+                                <strong>College Example:</strong> Every <code>COURSE</code> must belong to a <code>DEPARTMENT</code>. An orphaned course without a governing academic department is prohibited by university policy.
+                            </div>
+                            <div class="small text-muted">
+                                <strong>Notation:</strong> Represented as a <strong>Double Line (====)</strong> connecting the entity box to the diamond in Chen notation.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Partial Participation -->
+                <div class="col-md-6">
+                    <div class="card h-100 border-secondary-subtle bg-light">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold text-dark mb-0"><i class="bi bi-dash-circle me-1"></i>Partial Participation (Optional)</h6>
+                                <span class="badge bg-secondary">Minimum = 0</span>
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Definition:</strong> <em>Some, but not necessarily all</em>, entities in the entity set participate in the relationship. An entity can exist independently without any relationship link.
+                            </p>
+                            <div class="p-2 border rounded bg-white small mb-2">
+                                <strong>College Example:</strong> A newly admitted <code>STUDENT</code> may exist in the system during orientation week <em>before enrolling in any course</em> ($min = 0$).
+                            </div>
+                            <div class="small text-muted">
+                                <strong>Notation:</strong> Represented as a standard <strong>Single Line (&mdash;&mdash;)</strong> in Chen notation.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Caution Note: Business Rules Context -->
+            <div class="alert alert-warning border d-flex gap-3 align-items-center mt-3">
+                <i class="bi bi-briefcase-fill text-warning fs-3 flex-shrink-0"></i>
+                <div class="small">
+                    <strong>Critical Principle: Participation Depends on Business Rules:</strong><br>
+                    Participation constraints are <em>never universal mathematical truths</em>; they are determined entirely by enterprise policy. For example, in a university where newly admitted students are auto-enrolled immediately, student participation is Total; in a university with delayed registration, it is Partial. <strong>Always read the stated business requirements carefully before assuming constraints!</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: (min, max) Structural Constraint Notation -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-braces me-2"></i>2. The (min, max) Structural Constraint Notation
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                Advanced ER modeling (e.g. Elmasri &amp; Navathe) replaces separate cardinality numbers and double lines with a unified structural constraint notation: <strong>$(min, max)$</strong> placed directly next to each participating entity:
+            </p>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 25%;">(min, max) Values</th>
+                            <th style="width: 35%;">Structural Meaning</th>
+                            <th style="width: 40%;">College Database Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="font-monospace fw-bold text-success">(1, 1)</td>
+                            <td>Mandatory Participation &amp; at most one (Total 1:1)</td>
+                            <td>Each <code>COURSE</code> must belong to exactly <strong>1</strong> <code>DEPARTMENT</code>.</td>
+                        </tr>
+                        <tr>
+                            <td class="font-monospace fw-bold text-primary">(1, N)</td>
+                            <td>Mandatory Participation &amp; multiple (Total 1:N)</td>
+                            <td>Each active <code>DEPARTMENT</code> must employ at least <strong>1</strong> instructor.</td>
+                        </tr>
+                        <tr>
+                            <td class="font-monospace fw-bold text-secondary">(0, 1)</td>
+                            <td>Optional Participation &amp; at most one (Partial 1:1)</td>
+                            <td>An <code>INSTRUCTOR</code> may head <strong>0 or 1</strong> department.</td>
+                        </tr>
+                        <tr>
+                            <td class="font-monospace fw-bold text-info">(0, N)</td>
+                            <td>Optional Participation &amp; multiple (Partial M:N)</td>
+                            <td>A newly enrolled <code>STUDENT</code> may take between <strong>0 and N</strong> courses.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SQL Mapping Impact of Participation -->
+            <div class="card border p-3 bg-light">
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-code-slash text-primary me-2"></i>How Participation Translates to MySQL 8 DDL</h6>
+                <div class="row g-3 small text-secondary">
+                    <div class="col-md-6">
+                        <strong>Total Participation (Mandatory):</strong><br>
+                        Enforced in MySQL by specifying <code>NOT NULL</code> on the foreign key column:
+                        <pre class="bg-white p-2 border rounded mt-1 font-monospace text-dark mb-0"><code>CREATE TABLE courses (
+    course_id VARCHAR(10) PRIMARY KEY,
+    course_title VARCHAR(100) NOT NULL,
+    department_id INT NOT NULL, -- Total Participation!
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Partial Participation (Optional):</strong><br>
+                        Permits <code>NULL</code> on the foreign key column:
+                        <pre class="bg-white p-2 border rounded mt-1 font-monospace text-dark mb-0"><code>CREATE TABLE departments (
+    department_id INT PRIMARY KEY,
+    department_name VARCHAR(100) NOT NULL,
+    head_instructor_id INT NULL, -- Partial: Department can exist before head is named
+    FOREIGN KEY (head_instructor_id) REFERENCES instructors(instructor_id)
+);</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Interactive Scenario Identification -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-question-circle me-2"></i>3. Interactive Scenario: Identify Participation Constraint
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card border p-3 h-100 bg-light">
+                        <span class="badge bg-secondary mb-2">Scenario A</span>
+                        <h6 class="fw-bold text-dark">Library Book Loans</h6>
+                        <p class="small text-muted mb-2">"A Student can register at the university without borrowing any library books. However, a Loan record cannot exist without a valid borrowing Student."</p>
+                        <div class="p-2 border rounded bg-white small">
+                            <strong>STUDENT:</strong> <span class="badge bg-secondary">Partial (0, N)</span><br>
+                            <strong>LOAN:</strong> <span class="badge bg-success">Total (1, 1)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border p-3 h-100 bg-light">
+                        <span class="badge bg-secondary mb-2">Scenario B</span>
+                        <h6 class="fw-bold text-dark">Hospital Patients &amp; Beds</h6>
+                        <p class="small text-muted mb-2">"Every admitted Patient must be assigned to an empty bed. A hospital bed can remain vacant."</p>
+                        <div class="p-2 border rounded bg-white small">
+                            <strong>PATIENT:</strong> <span class="badge bg-success">Total (1, 1)</span><br>
+                            <strong>BED:</strong> <span class="badge bg-secondary">Partial (0, 1)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border p-3 h-100 bg-light">
+                        <span class="badge bg-secondary mb-2">Scenario C</span>
+                        <h6 class="fw-bold text-dark">Course Syllabi</h6>
+                        <p class="small text-muted mb-2">"Every Course must have an official Syllabus. A Syllabus document belongs to exactly one Course."</p>
+                        <div class="p-2 border rounded bg-white small">
+                            <strong>COURSE:</strong> <span class="badge bg-success">Total (1, 1)</span><br>
+                            <strong>SYLLABUS:</strong> <span class="badge bg-success">Total (1, 1)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Quiz (5 Questions) -->
+        <section class="mt-5 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-patch-question-fill text-success me-2"></i>Lesson 5 Assessment &amp; Concept Check
+                </h5>
+                <span class="badge bg-light text-secondary border">5 Questions &bull; Pass Mark: 3/5</span>
+            </div>
+            <p class="small text-muted mb-4">
+                Test your understanding of participation constraints, total vs partial existence, and (min, max) notation.
+            </p>
+
+            <div id="quiz-container-topic5" class="lesson-quiz-block" data-lesson="topic5">
+                <!-- Question 1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic5">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. In Chen's ER diagram notation, how is 'Total Participation' of an entity in a relationship represented?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic5" id="q1_t5_opt1" value="A">
+                            <label class="form-check-label" for="q1_t5_opt1">A) Double Rectangle</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic5" id="q1_t5_opt2" value="B">
+                            <label class="form-check-label" for="q1_t5_opt2">B) Double Line connecting the entity to the relationship</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic5" id="q1_t5_opt3" value="C">
+                            <label class="form-check-label" for="q1_t5_opt3">C) Dashed Oval</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic5" id="q1_t5_opt4" value="D">
+                            <label class="form-check-label" for="q1_t5_opt4">D) Double Diamond</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic5">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. If every Course must belong to a Department, what is the minimum participation value ($min$) for Course in that relationship?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic5" id="q2_t5_opt1" value="A">
+                            <label class="form-check-label" for="q2_t5_opt1">A) min = 0</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic5" id="q2_t5_opt2" value="B">
+                            <label class="form-check-label" for="q2_t5_opt2">B) min = 1</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic5" id="q2_t5_opt3" value="C">
+                            <label class="form-check-label" for="q2_t5_opt3">C) min = N</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic5" id="q2_t5_opt4" value="D">
+                            <label class="form-check-label" for="q2_t5_opt4">D) min = -1</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic5">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. How is Total Participation enforced in a relational SQL table?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic5" id="q3_t5_opt1" value="A">
+                            <label class="form-check-label" for="q3_t5_opt1">A) By declaring the foreign key column as NOT NULL.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic5" id="q3_t5_opt2" value="B">
+                            <label class="form-check-label" for="q3_t5_opt2">B) By declaring the foreign key column as DEFAULT NULL.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic5" id="q3_t5_opt3" value="C">
+                            <label class="form-check-label" for="q3_t5_opt3">C) Total participation cannot be enforced in SQL.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic5" id="q3_t5_opt4" value="D">
+                            <label class="form-check-label" for="q3_t5_opt4">D) By omitting foreign keys entirely.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic5">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. A university states: "Students can register for courses, but freshmen can be admitted without registering for any course." What is the participation of STUDENT in the Enrolls relationship?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic5" id="q4_t5_opt1" value="A">
+                            <label class="form-check-label" for="q4_t5_opt1">A) Total Participation</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic5" id="q4_t5_opt2" value="B">
+                            <label class="form-check-label" for="q4_t5_opt2">B) Partial Participation (Optional)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic5" id="q4_t5_opt3" value="C">
+                            <label class="form-check-label" for="q4_t5_opt3">C) Identifying Participation</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic5" id="q4_t5_opt4" value="D">
+                            <label class="form-check-label" for="q4_t5_opt4">D) Disjoint Participation</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic5">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. Why is it incorrect to state that 'Participation of Employee in Department is ALWAYS total' without consulting business rules?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic5" id="q5_t5_opt1" value="A">
+                            <label class="form-check-label" for="q5_t5_opt1">A) Because participation constraints depend strictly on the organization's business policies and hiring workflow.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic5" id="q5_t5_opt2" value="B">
+                            <label class="form-check-label" for="q5_t5_opt2">B) Because ER models do not permit total participation on employee entities.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic5" id="q5_t5_opt3" value="C">
+                            <label class="form-check-label" for="q5_t5_opt3">C) Because employees are always weak entities.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic5" id="q5_t5_opt4" value="D">
+                            <label class="form-check-label" for="q5_t5_opt4">D) Because SQL requires all tables to be independent.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic5">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 5 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic5">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

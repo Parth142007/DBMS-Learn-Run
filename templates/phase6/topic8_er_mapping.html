@@ -1,0 +1,310 @@
+<!-- Lesson 8: Mapping ER Diagrams to Relational Schemas -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 8</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Systematic Mapping: ER Diagrams to Relational Schemas</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: The 7-Step Mapping Algorithm -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-diagram-3 me-2"></i>1. The Standard 7-Step ER-to-Relational Mapping Algorithm
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                Transforming a conceptual ER diagram into a normalized relational database schema follows a strict, deterministic 7-step engineering algorithm. Every ER construct maps directly to relational tables, foreign keys, or integrity constraints:
+            </p>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 15%;">Step #</th>
+                            <th style="width: 25%;">ER Construct</th>
+                            <th style="width: 35%;">Relational Mapping Rule</th>
+                            <th style="width: 25%;">College Schema Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-primary">Step 1</td>
+                            <td>Strong Entity Types</td>
+                            <td>Create a relation $R$ containing all simple attributes. Choose the key attribute as <strong>PRIMARY KEY</strong>.</td>
+                            <td><code>DEPARTMENT(<u>dept_id</u>, dept_name)</code></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Step 2</td>
+                            <td>Composite Attributes</td>
+                            <td>Flatten composite attributes into their atomic components. Do not create a separate column for the composite parent name.</td>
+                            <td><code>Address</code> &rarr; <code>street, city, state, zip</code></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Step 3</td>
+                            <td>Weak Entity Types</td>
+                            <td>Create a relation $W$. Include all simple attributes + the Primary Key of the owner entity as a <strong>FOREIGN KEY</strong>. The Primary Key of $W$ is the combination: <code>PRIMARY KEY (owner_pk, partial_key)</code>.</td>
+                            <td><code>DEPENDENT(<u>emp_id</u>, <u>dep_name</u>, relation)</code></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Step 4</td>
+                            <td>1:1 Binary Relationships</td>
+                            <td>
+                                <strong>Foreign Key Approach:</strong> Place the PK of one entity as an FK in the other relation. Place it on the side with <strong>Total Participation</strong> to avoid NULLs. Add a <code>UNIQUE</code> constraint on the FK column.
+                            </td>
+                            <td><code>DEPARTMENT(<u>dept_id</u>, dept_name, head_id UNIQUE FK)</code></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Step 5</td>
+                            <td>1:N Binary Relationships</td>
+                            <td>
+                                <strong>Foreign Key on the N-Side:</strong> Identify the relation representing the "Many" ($N$) side. Add the Primary Key of the "One" side as a <strong>FOREIGN KEY</strong> in the $N$-side relation.
+                            </td>
+                            <td><code>STUDENT(<u>student_id</u>, name, dept_id FK)</code></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Step 6</td>
+                            <td>M:N Binary Relationships</td>
+                            <td>
+                                <strong>Create Junction Relation:</strong> Create a new associative table $J$. Include the Primary Keys of both participating entities as <strong>FOREIGN KEYS</strong>. Combine both FKs to form the composite <strong>PRIMARY KEY</strong>. Include any relationship attributes.
+                            </td>
+                            <td><code>ENROLLMENT(<u>student_id</u> FK, <u>course_id</u> FK, grade)</code></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Step 7</td>
+                            <td>Multivalued Attributes</td>
+                            <td>
+                                Create a dedicated new relation $M$. Include the multivalued attribute + the owner's Primary Key as a <strong>FOREIGN KEY</strong>. The composite Primary Key is <code>PRIMARY KEY (owner_pk, attribute_val)</code>.
+                            </td>
+                            <td><code>STUDENT_PHONE(<u>student_id</u> FK, <u>phone_num</u>)</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Section 2: Full Worked Example (College Database Side-by-Side) -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-columns-gap me-2"></i>2. Full Worked Example: Side-by-Side ER &amp; Relational Schema
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                Observe how the complete college management system ER diagram is translated into clean, normalized MySQL 8 tables without data redundancy:
+            </p>
+
+            <div class="row g-4">
+                <!-- Left: ER Model Description -->
+                <div class="col-lg-5">
+                    <div class="card h-100 border">
+                        <div class="card-header bg-light py-2 fw-semibold text-dark">
+                            <i class="bi bi-diagram-2 text-primary me-1"></i> Conceptual ER Model Business Rules
+                        </div>
+                        <div class="card-body">
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li class="mb-2"><strong>DEPARTMENT:</strong> Strong entity with Key <code>DepartmentID</code> and attribute <code>DepartmentName</code>.</li>
+                                <li class="mb-2"><strong>INSTRUCTOR:</strong> Strong entity with Key <code>InstructorID</code> and <code>InstructorName</code>. Employs is 1:N (Dept to Instructor). Heads is 1:1.</li>
+                                <li class="mb-2"><strong>COURSE:</strong> Strong entity with Key <code>CourseID</code> and <code>CourseName</code>. Belongs To Dept is 1:N.</li>
+                                <li class="mb-2"><strong>STUDENT:</strong> Strong entity with Key <code>StudentID</code> and <code>StudentName</code>. Majors in Dept is 1:N.</li>
+                                <li class="mb-0"><strong>ENROLLS:</strong> M:N relationship between Student and Course with relationship attribute <code>Grade</code>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Resulting Relational Schema -->
+                <div class="col-lg-7">
+                    <div class="card h-100 border">
+                        <div class="card-header bg-light py-2 fw-semibold text-dark">
+                            <i class="bi bi-table text-success me-1"></i> Resulting Relational Schema &amp; DDL
+                        </div>
+                        <div class="card-body p-3">
+                            <pre class="bg-light p-3 border rounded font-monospace small mb-0 text-dark"><code>-- 1. DEPARTMENT
+CREATE TABLE departments (
+    department_id INT PRIMARY KEY,
+    department_name VARCHAR(100) NOT NULL
+);
+
+-- 2. INSTRUCTOR (FK to department)
+CREATE TABLE instructors (
+    instructor_id INT PRIMARY KEY,
+    instructor_name VARCHAR(100) NOT NULL,
+    department_id INT NOT NULL,
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);
+
+-- 3. COURSE (FK to department)
+CREATE TABLE courses (
+    course_id VARCHAR(10) PRIMARY KEY,
+    course_name VARCHAR(100) NOT NULL,
+    department_id INT NOT NULL,
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);
+
+-- 4. STUDENT (FK to department)
+CREATE TABLE students (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(100) NOT NULL,
+    department_id INT NOT NULL,
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);
+
+-- 5. ENROLLMENT (M:N Associative Junction Table)
+CREATE TABLE enrollments (
+    student_id INT NOT NULL,
+    course_id VARCHAR(10) NOT NULL,
+    grade VARCHAR(2) NULL,
+    PRIMARY KEY (student_id, course_id), -- Composite PK!
+    FOREIGN KEY (student_id) REFERENCES students(student_id),
+    FOREIGN KEY (course_id) REFERENCES courses(course_id)
+);</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Quiz (5 Questions) -->
+        <section class="mt-5 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-patch-question-fill text-success me-2"></i>Lesson 8 Assessment &amp; Concept Check
+                </h5>
+                <span class="badge bg-light text-secondary border">5 Questions &bull; Pass Mark: 3/5</span>
+            </div>
+            <p class="small text-muted mb-4">
+                Test your mastery of ER-to-Relational mapping rules, foreign key assignments, and junction table construction.
+            </p>
+
+            <div id="quiz-container-topic8" class="lesson-quiz-block" data-lesson="topic8">
+                <!-- Question 1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic8">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. How is a 'Multivalued Attribute' (e.g. an employee with multiple degrees) mapped into relational tables?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic8" id="q1_t8_opt1" value="A">
+                            <label class="form-check-label" for="q1_t8_opt1">A) Stored as a comma-separated string in the primary table.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic8" id="q1_t8_opt2" value="B">
+                            <label class="form-check-label" for="q1_t8_opt2">B) Mapped into a separate table containing the attribute value and the owner's primary key as a foreign key.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic8" id="q1_t8_opt3" value="C">
+                            <label class="form-check-label" for="q1_t8_opt3">C) Ignored because relational databases do not support multiple values.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic8" id="q1_t8_opt4" value="D">
+                            <label class="form-check-label" for="q1_t8_opt4">D) Converted into a weak entity with no foreign key.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic8">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. In a 1:1 relationship between DEPARTMENT and INSTRUCTOR (Heads), where DEPARTMENT has total participation and INSTRUCTOR has partial participation, what is the best foreign key placement to eliminate NULLs?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic8" id="q2_t8_opt1" value="A">
+                            <label class="form-check-label" for="q2_t8_opt1">A) Place department_id in INSTRUCTOR.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic8" id="q2_t8_opt2" value="B">
+                            <label class="form-check-label" for="q2_t8_opt2">B) Place head_instructor_id in DEPARTMENT as NOT NULL.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic8" id="q2_t8_opt3" value="C">
+                            <label class="form-check-label" for="q2_t8_opt3">C) Merge both entities into one table with 100 columns.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic8" id="q2_t8_opt4" value="D">
+                            <label class="form-check-label" for="q2_t8_opt4">D) 1:1 relationships cannot use foreign keys.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic8">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. When an M:N relationship between STUDENT and COURSE has an attribute 'Grade', where does the 'Grade' column reside in the relational schema?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic8" id="q3_t8_opt1" value="A">
+                            <label class="form-check-label" for="q3_t8_opt1">A) In the STUDENT table.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic8" id="q3_t8_opt2" value="B">
+                            <label class="form-check-label" for="q3_t8_opt2">B) In the COURSE table.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic8" id="q3_t8_opt3" value="C">
+                            <label class="form-check-label" for="q3_t8_opt3">C) In the ENROLLMENT junction table alongside student_id and course_id.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic8" id="q3_t8_opt4" value="D">
+                            <label class="form-check-label" for="q3_t8_opt4">D) In a dedicated Grade-only table with no foreign keys.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic8">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. How are composite attributes (e.g. StudentName consisting of FirstName, MiddleName, LastName) handled during mapping?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic8" id="q4_t8_opt1" value="A">
+                            <label class="form-check-label" for="q4_t8_opt1">A) Each atomic sub-component becomes a separate column in the relation.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic8" id="q4_t8_opt2" value="B">
+                            <label class="form-check-label" for="q4_t8_opt2">B) A new table is created for every composite attribute.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic8" id="q4_t8_opt3" value="C">
+                            <label class="form-check-label" for="q4_t8_opt3">C) Composite attributes are discarded.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic8" id="q4_t8_opt4" value="D">
+                            <label class="form-check-label" for="q4_t8_opt4">D) Mapped as BLOB binary data.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic8">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. In mapping a Ternary relationship (Supplier, Part, Project), what does the Primary Key of the resulting relation consist of?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic8" id="q5_t8_opt1" value="A">
+                            <label class="form-check-label" for="q5_t8_opt1">A) Only SupplierID.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic8" id="q5_t8_opt2" value="B">
+                            <label class="form-check-label" for="q5_t8_opt2">B) The combination of primary keys from all three participating entities: (SupplierID, PartID, ProjectID).</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic8" id="q5_t8_opt3" value="C">
+                            <label class="form-check-label" for="q5_t8_opt3">C) An auto-increment ID with no foreign keys.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic8" id="q5_t8_opt4" value="D">
+                            <label class="form-check-label" for="q5_t8_opt4">D) Ternary relationships cannot be mapped to SQL.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic8">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 8 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic8">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

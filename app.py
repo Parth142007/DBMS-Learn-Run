@@ -105,6 +105,44 @@ def phase_5():
         topic = "intro"
     return render_template("phase5.html", active_page="phase5", current_topic=topic)
 
+@app.route("/phase-6")
+@app.route("/er-model")
+@app.route("/er-builder")
+def phase_6():
+    """
+    Phase 6: ER & Relational Model
+    Interactive comprehensive module covering ER Modeling, Attributes & Keys,
+    Relationships & Degree, Cardinality, Participation Constraints, Weak Entities,
+    Extended ER (EER), ER-to-Relational Mapping, Relational Model Fundamentals,
+    and Relational Algebra (with Interactive ER Diagram Builder and Safe Relational Algebra Lab).
+    """
+    default_topic = "topic10" if request.path == "/er-builder" else "topic1"
+    topic = request.args.get("topic", default_topic).strip().lower()
+    valid_topics = [
+        "topic1", "topic2", "topic3", "topic4", "topic5",
+        "topic6", "topic7", "topic8", "topic9", "topic10",
+        "er-intro", "attributes-keys", "relationships", "cardinality", "participation",
+        "weak-entities", "extended-er", "er-mapping", "relational-fundamentals", "relational-algebra"
+    ]
+    # Normalize aliases to topic1-topic10
+    alias_map = {
+        "er-intro": "topic1",
+        "attributes-keys": "topic2",
+        "relationships": "topic3",
+        "cardinality": "topic4",
+        "participation": "topic5",
+        "weak-entities": "topic6",
+        "extended-er": "topic7",
+        "er-mapping": "topic8",
+        "relational-fundamentals": "topic9",
+        "relational-algebra": "topic10"
+    }
+    canonical_topic = alias_map.get(topic, topic)
+    if canonical_topic not in ["topic1", "topic2", "topic3", "topic4", "topic5", "topic6", "topic7", "topic8", "topic9", "topic10"]:
+        canonical_topic = default_topic
+    return render_template("phase6.html", active_page="phase6", current_topic=canonical_topic)
+
+
 # ====================================================================
 # REST API ENDPOINTS
 # ====================================================================
@@ -144,6 +182,73 @@ def api_verify_decomposition():
         "verification": res,
         **res
     })
+
+@app.route("/api/progress/phase6", methods=["GET", "POST"])
+def api_phase6_progress():
+    """Get or save Phase 6 learning, quiz, ER diagram, and relational algebra lab progress."""
+    if request.method == "GET":
+        session_id = request.args.get("session_id", "default_student")
+        res = db.get_phase6_progress(session_id)
+        return jsonify(res)
+    else:
+        data = request.get_json() or {}
+        session_id = data.get("session_id", "default_student")
+        lesson_id = data.get("lesson_id", "")
+        if not lesson_id:
+            return jsonify({"success": False, "error": "lesson_id is required."}), 400
+        score = data.get("score") if data.get("score") is not None else data.get("quiz_score", 0)
+        quiz_max_score = int(data.get("quiz_max_score", 5))
+        completed = data.get("completed", True if int(score) >= 3 else False)
+        practice_completed = data.get("practice_completed", False)
+        diagram_saved = data.get("diagram_saved", False)
+        algebra_lab_completed = data.get("algebra_lab_completed", False)
+
+        canonical_id = f"topic_{lesson_id}" if isinstance(lesson_id, int) else str(lesson_id)
+        res = db.save_phase6_progress(
+            session_id=session_id,
+            lesson_id=canonical_id,
+            completed=completed,
+            quiz_score=int(score),
+            quiz_max_score=quiz_max_score,
+            practice_completed=practice_completed,
+            diagram_saved=diagram_saved,
+            algebra_lab_completed=algebra_lab_completed
+        )
+        return jsonify(res)
+
+@app.route("/api/relational-algebra/eval", methods=["POST"])
+def api_relational_algebra_eval():
+    """Safely evaluate Relational Algebra operations against educational datasets."""
+    data = request.get_json() or {}
+    operator = data.get("operator", "").strip()
+    relation1 = data.get("relation1") or data.get("r1") or "STUDENT"
+    relation2 = data.get("relation2") or data.get("r2")
+    attributes = data.get("attributes")
+    condition = data.get("condition")
+    rename_map = data.get("rename_map")
+
+    if not operator:
+        return jsonify({"success": False, "error": "operator is required (e.g. 'select', 'project', 'union', 'natural_join')."}), 400
+
+    result = db.evaluate_relational_algebra(
+        operator=operator,
+        relation1=relation1,
+        relation2=relation2,
+        attributes=attributes,
+        condition=condition,
+        rename_map=rename_map
+    )
+    status_code = 200 if result.get("success", False) else 400
+    return jsonify(result), status_code
+
+@app.route("/api/relational-algebra/datasets", methods=["GET"])
+def api_relational_algebra_datasets():
+    """Retrieve educational sample datasets for Relational Algebra."""
+    return jsonify({
+        "success": True,
+        "datasets": db.RELATIONAL_ALGEBRA_DATASETS
+    })
+
 
 @app.route("/api/health", methods=["GET"])
 def api_health():

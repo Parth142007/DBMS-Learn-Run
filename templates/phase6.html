@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Phase 6 — ER & Relational Model | NEPC42 Syllabus{% endblock %}
+
+{% block content %}
+<!-- Phase 6 Module Header -->
+<div class="topic-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold">
+                    <i class="bi bi-mortarboard-fill me-1"></i> NEPC42 Syllabus &bull; Module 6
+                </span>
+                <span class="badge bg-light text-secondary border">Conceptual &amp; Relational Data Modeling</span>
+            </div>
+            <h1 class="topic-title">Phase 6 &mdash; ER &amp; Relational Model</h1>
+            <p class="topic-subtitle">
+                Master Entity-Relationship Modeling, Attributes &amp; Keys, Cardinality &amp; Participation Constraints, ER-to-Relational Mapping, and Procedural Relational Algebra Operations.
+            </p>
+        </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <a href="/" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Main Dashboard
+            </a>
+            <a href="/phase-5" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-diagram-2 me-1"></i> Phase 5: Normalization
+            </a>
+            <button type="button" class="btn btn-primary btn-sm btn-open-er-builder" id="btn-header-open-builder">
+                <i class="bi bi-bounding-box-circles me-1"></i> Open ER Builder
+            </button>
+            <a href="/schema" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-diagram-3 me-1"></i> Schema Inspector
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Learning Objectives & Module Overview Banner -->
+<div class="card shadow-sm border mb-4 bg-white">
+    <div class="card-body p-4">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-8">
+                <h5 class="fw-bold text-dark mb-2">
+                    <i class="bi bi-book-half text-success me-2"></i>Module Learning Objectives
+                </h5>
+                <p class="small text-secondary mb-3">
+                    By completing this comprehensive interactive module on Entity-Relationship and Relational Modeling, students will be able to:
+                </p>
+                <div class="row g-2 small text-secondary">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Construct <strong>Entity-Relationship Diagrams</strong> using standard Chen and Crow's Foot notations.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Classify attributes (composite, multivalued, derived) and identify <strong>Candidate, Primary, &amp; Foreign Keys</strong>.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Distinguish <strong>Cardinality Ratios</strong> (1:1, 1:N, M:N) from <strong>Participation Constraints</strong> (Total vs Partial).</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Model <strong>Weak Entities</strong> with partial keys and identifying relationships.</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Apply <strong>Extended ER (EER)</strong> concepts: Specialization, Generalization, Disjoint/Overlapping constraints, and Aggregation.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Systematically <strong>Map ER Diagrams to Relational Schemas</strong> adhering to foreign-key and junction table rules.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Explain <strong>Relational Model Fundamentals</strong>: Tuples, Domains, Degree, Entity &amp; Referential Integrity.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Execute and analyze <strong>Relational Algebra Operators</strong> ($\sigma, \pi, \cup, -, \times, \rho, \bowtie, \div$) in the Interactive Lab.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 border-start-lg ps-lg-4">
+                <div class="p-3 bg-light rounded border text-center">
+                    <span class="text-uppercase small fw-bold text-muted d-block mb-1">Estimated Total Study Time</span>
+                    <span class="h3 fw-bold text-dark d-block mb-1">
+                        <i class="bi bi-clock-history text-primary me-1"></i> ~240 mins
+                    </span>
+                    <span class="small text-muted d-block mb-3">10 Lessons &bull; 50+ Assessment Questions &bull; ER Builder &bull; Algebra Lab</span>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-gfg btn-sm" id="btn-start-reading">
+                            <i class="bi bi-play-circle me-1"></i> Start Lesson 1 Reading
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" id="btn-jump-er-builder">
+                            <i class="bi bi-diagram-3 me-1"></i> Open ER Diagram Builder
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Learning Progress Tracker Card -->
+<div class="card shadow-sm border mb-4 bg-white" id="progress-card">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-trophy-fill text-warning fs-5"></i>
+                <span class="fw-bold text-dark">Phase 6 Curriculum Progress:</span>
+                <span class="badge bg-success" id="progress-percentage-badge">0% Complete</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 small text-muted">
+                <span class="badge bg-light text-secondary border">
+                    <i class="bi bi-hdd-network me-1"></i> Synced with MySQL
+                </span>
+                <button class="btn btn-link btn-sm text-decoration-none p-0 text-muted" id="btn-reset-phase6-progress" title="Reset module progress">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Master Progress Bar -->
+        <div class="progress mb-3" style="height: 10px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="master-progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <!-- 10 Topic Progress Status Pills -->
+        <div class="row g-2 text-center" id="pills-container">
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill active-pill" id="pill-progress-topic1" data-target="topic1" title="Click to view Lesson 1">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">1. ER Intro</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic1">Quiz: 0/5</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-topic2" data-target="topic2" title="Click to view Lesson 2">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">2. Keys</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic2">Quiz: 0/5</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-topic3" data-target="topic3" title="Click to view Lesson 3">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">3. Degree</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic3">Quiz: 0/5</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-topic4" data-target="topic4" title="Click to view Lesson 4">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">4. Cardinality</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic4">Quiz: 0/5</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-topic5" data-target="topic5" title="Click to view Lesson 5">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">5. Participation</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic5">Quiz: 0/5</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-topic6" data-target="topic6" title="Click to view Lesson 6">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">6. Weak Entity</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic6">Quiz: 0/5</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-topic7" data-target="topic7" title="Click to view Lesson 7">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">7. Ext. ER</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic7">Quiz: 0/5</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-topic8" data-target="topic8" title="Click to view Lesson 8">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">8. ER Mapping</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic8">Quiz: 0/5</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-topic9" data-target="topic9" title="Click to view Lesson 9">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">9. Relational</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic9">Quiz: 0/5</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-topic10" data-target="topic10" title="Click to view Lesson 10">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold d-block text-truncate">10. Algebra Lab</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-topic10">Quiz: 0/5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Topic Navigation Tabs (Sticky Toolbar) -->
+<div class="topic-nav-sticky mb-4" id="topics-navigation">
+    <div class="nav nav-pills nav-fill p-1 bg-white border rounded shadow-sm gap-1 overflow-x-auto flex-nowrap" id="phase6-topic-tabs" role="tablist">
+        <button class="nav-link py-2 px-2 active fw-semibold text-nowrap phase6-nav-tab" id="tab-btn-topic1" data-target="topic1" data-topic="1" title="Lesson 1: Introduction to the ER Model">
+            1. ER Intro
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase6-nav-tab" id="tab-btn-topic2" data-target="topic2" data-topic="2" title="Lesson 2: Attributes and Keys">
+            2. Attributes &amp; Keys
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase6-nav-tab" id="tab-btn-topic3" data-target="topic3" data-topic="3" title="Lesson 3: Relationships &amp; Degree">
+            3. Relationships
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase6-nav-tab" id="tab-btn-topic4" data-target="topic4" data-topic="4" title="Lesson 4: Cardinality Constraints">
+            4. Cardinality
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase6-nav-tab" id="tab-btn-topic5" data-target="topic5" data-topic="5" title="Lesson 5: Participation Constraints">
+            5. Participation
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase6-nav-tab" id="tab-btn-topic6" data-target="topic6" data-topic="6" title="Lesson 6: Weak Entities &amp; Identifying Relationships">
+            6. Weak Entities
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase6-nav-tab" id="tab-btn-topic7" data-target="topic7" data-topic="7" title="Lesson 7: Extended ER (EER) Concepts">
+            7. Extended ER
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase6-nav-tab" id="tab-btn-topic8" data-target="topic8" data-topic="8" title="Lesson 8: Mapping ER Diagrams to Relational Schemas">
+            8. ER Mapping
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase6-nav-tab" id="tab-btn-topic9" data-target="topic9" data-topic="9" title="Lesson 9: Relational Model Fundamentals">
+            9. Relational Model
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase6-nav-tab" id="tab-btn-topic10" data-target="topic10" data-topic="10" title="Lesson 10: Relational Algebra &amp; Interactive Labs">
+            10. Relational Algebra
+        </button>
+    </div>
+</div>
+
+<!-- ====================================================================
+     Topic Content Containers (Lessons 1-10)
+     ==================================================================== -->
+<div id="topic-container-topic1" class="topic-section-panel">
+    {% include 'phase6/topic1_er_intro.html' %}
+</div>
+
+<div id="topic-container-topic2" class="topic-section-panel d-none">
+    {% include 'phase6/topic2_attributes_keys.html' %}
+</div>
+
+<div id="topic-container-topic3" class="topic-section-panel d-none">
+    {% include 'phase6/topic3_relationships_degree.html' %}
+</div>
+
+<div id="topic-container-topic4" class="topic-section-panel d-none">
+    {% include 'phase6/topic4_cardinality.html' %}
+</div>
+
+<div id="topic-container-topic5" class="topic-section-panel d-none">
+    {% include 'phase6/topic5_participation.html' %}
+</div>
+
+<div id="topic-container-topic6" class="topic-section-panel d-none">
+    {% include 'phase6/topic6_weak_entities.html' %}
+</div>
+
+<div id="topic-container-topic7" class="topic-section-panel d-none">
+    {% include 'phase6/topic7_extended_er.html' %}
+</div>
+
+<div id="topic-container-topic8" class="topic-section-panel d-none">
+    {% include 'phase6/topic8_er_mapping.html' %}
+</div>
+
+<div id="topic-container-topic9" class="topic-section-panel d-none">
+    {% include 'phase6/topic9_relational_fundamentals.html' %}
+</div>
+
+<div id="topic-container-topic10" class="topic-section-panel d-none">
+    {% include 'phase6/topic10_relational_algebra.html' %}
+</div>
+
+<!-- Bottom Navigation Bar (Prev / Next Buttons) -->
+<div class="card shadow-sm border mt-4 mb-5 bg-white">
+    <div class="card-body p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <button class="btn btn-outline-secondary btn-sm" id="btn-prev-lesson" disabled>
+            <i class="bi bi-chevron-left me-1"></i> Previous Lesson
+        </button>
+        <span class="small text-muted fw-semibold" id="lesson-indicator-text">
+            Lesson 1 of 10: Introduction to the ER Model
+        </span>
+        <button class="btn btn-gfg btn-sm" id="btn-next-lesson">
+            Next Lesson: Attributes &amp; Keys <i class="bi bi-chevron-right ms-1"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Toast Feedback Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+    <div id="phase6-toast" class="toast align-items-center text-white bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="phase6-toast-message">
+                Progress saved successfully!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/phase6.js') }}"></script>
+{% endblock %}

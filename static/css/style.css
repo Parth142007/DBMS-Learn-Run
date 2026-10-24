@@ -492,5 +492,45 @@ body {
     font-size: 0.85rem;
 }
 
+/* ====================================================================
+   Phase 6: ER & Relational Model Styles
+   ==================================================================== */
+#phase6-topic-tabs {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
 
+#phase6-topic-tabs::-webkit-scrollbar {
+    display: none;
+}
 
+#phase6-topic-tabs .nav-link {
+    font-size: 0.84rem;
+    padding: 0.45rem 0.65rem;
+    color: var(--gfg-gray);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+#phase6-topic-tabs .nav-link:hover {
+    background-color: var(--gfg-green-light);
+    color: var(--gfg-green);
+    border-color: rgba(47, 141, 70, 0.2);
+}
+
+#phase6-topic-tabs .nav-link.active {
+    background-color: var(--gfg-green) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(47, 141, 70, 0.25);
+}
+
+#er-canvas-container {
+    background: radial-gradient(circle, #eef2f5 10%, transparent 11%);
+    background-size: 16px 16px;
+    background-color: #fafbfc;
+}
+
+#er-builder-svg text {
+    user-select: none;
+}

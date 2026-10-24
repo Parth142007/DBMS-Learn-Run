@@ -970,4 +970,865 @@ def get_phase5_progress(session_id="default_student"):
     except Exception as e:
         return {"success": False, "error": str(e), "progress": []}
 
+# ====================================================================
+# PHASE 6: ER & RELATIONAL MODEL PERSISTENCE & SAFE ALGEBRA EVALUATOR
+# ====================================================================
+
+def save_phase6_progress(session_id, lesson_id, completed=True, quiz_score=0, quiz_max_score=5,
+                         practice_completed=False, diagram_saved=False, algebra_lab_completed=False):
+    """Saves or updates progress for a Phase 6 lesson in MySQL."""
+    session_id = session_id or "default_student"
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            sql = """
+                INSERT INTO phase6_learning_progress 
+                    (session_id, lesson_id, completed, quiz_score, quiz_max_score, quiz_attempted,
+                     practice_completed, diagram_saved, algebra_lab_completed)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    completed = VALUES(completed),
+                    quiz_score = GREATEST(quiz_score, VALUES(quiz_score)),
+                    quiz_max_score = VALUES(quiz_max_score),
+                    quiz_attempted = VALUES(quiz_attempted),
+                    practice_completed = VALUES(practice_completed),
+                    diagram_saved = VALUES(diagram_saved),
+                    algebra_lab_completed = VALUES(algebra_lab_completed),
+                    updated_at = NOW();
+            """
+            cursor.execute(sql, (
+                session_id,
+                str(lesson_id),
+                bool(completed),
+                int(quiz_score),
+                int(quiz_max_score),
+                True if int(quiz_score) > 0 else False,
+                bool(practice_completed),
+                bool(diagram_saved),
+                bool(algebra_lab_completed)
+            ))
+        conn.close()
+        return {"success": True, "message": f"Phase 6 progress for '{lesson_id}' saved successfully."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def get_phase6_progress(session_id="default_student"):
+    """Fetches all stored Phase 6 progress for the session."""
+    session_id = session_id or "default_student"
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT lesson_id, completed, quiz_score, quiz_max_score, quiz_attempted, "
+                "practice_completed, diagram_saved, algebra_lab_completed, updated_at "
+                "FROM phase6_learning_progress WHERE session_id = %s;",
+                (session_id,)
+            )
+            rows = cursor.fetchall()
+            columns = [c[0] for c in cursor.description] if cursor.description else []
+            data = [{col: serialize_value(r[col]) for col in columns} for r in rows]
+        conn.close()
+        return {"success": True, "progress": data, "count": len(data)}
+    except Exception as e:
+        return {"success": False, "error": str(e), "progress": []}
+
+# In-memory Educational Datasets for Relational Algebra (Safe & Isolated)
+RELATIONAL_ALGEBRA_DATASETS = {
+    "STUDENT": {
+        "columns": ["StudentID", "StudentName", "DepartmentID", "GPA"],
+        "rows": [
+            {"StudentID": 101, "StudentName": "Amit", "DepartmentID": 10, "GPA": 8.5},
+            {"StudentID": 102, "StudentName": "Neha", "DepartmentID": 20, "GPA": 9.2},
+            {"StudentID": 103, "StudentName": "Ravi", "DepartmentID": 10, "GPA": 7.8},
+            {"StudentID": 104, "StudentName": "Sara", "DepartmentID": 30, "GPA": 8.9}
+        ]
+    },
+    "DEPARTMENT": {
+        "columns": ["DepartmentID", "DepartmentName"],
+        "rows": [
+            {"DepartmentID": 10, "DepartmentName": "Computer"},
+            {"DepartmentID": 20, "DepartmentName": "Electronics"},
+            {"DepartmentID": 30, "DepartmentName": "Mechanical"},
+            {"DepartmentID": 40, "DepartmentName": "Civil"}
+        ]
+    },
+    "COURSE": {
+        "columns": ["CourseID", "CourseName", "DepartmentID"],
+        "rows": [
+            {"CourseID": "C101", "CourseName": "DBMS", "DepartmentID": 10},
+            {"CourseID": "C102", "CourseName": "Python", "DepartmentID": 10},
+            {"CourseID": "C201", "CourseName": "Circuits", "DepartmentID": 20},
+            {"CourseID": "C301", "CourseName": "Thermodynamics", "DepartmentID": 30}
+        ]
+    },
+    "ENROLLMENT": {
+        "columns": ["StudentID", "CourseID", "Grade"],
+        "rows": [
+            {"StudentID": 101, "CourseID": "C101", "Grade": "A"},
+            {"StudentID": 101, "CourseID": "C102", "Grade": "B"},
+            {"StudentID": 102, "CourseID": "C101", "Grade": "A"},
+            {"StudentID": 103, "CourseID": "C101", "Grade": "B"},
+            {"StudentID": 104, "CourseID": "C201", "Grade": "A"}
+        ]
+    },
+    "HONOR_STUDENT": {
+        "columns": ["StudentID", "StudentName", "DepartmentID", "GPA"],
+        "rows": [
+            {"StudentID": 102, "StudentName": "Neha", "DepartmentID": 20, "GPA": 9.2},
+            {"StudentID": 104, "StudentName": "Sara", "DepartmentID": 30, "GPA": 8.9},
+            {"StudentID": 105, "StudentName": "Vikram", "DepartmentID": 10, "GPA": 9.5}
+        ]
+    },
+    "CS_COURSE": {
+        "columns": ["CourseID"],
+        "rows": [
+            {"CourseID": "C101"},
+            {"CourseID": "C102"}
+        ]
+    },
+    "STUDENT_COURSE": {
+        "columns": ["StudentID", "CourseID"],
+        "rows": [
+            {"StudentID": 101, "CourseID": "C101"},
+            {"StudentID": 101, "CourseID": "C102"},
+            {"StudentID": 102, "CourseID": "C101"},
+            {"StudentID": 103, "CourseID": "C101"},
+            {"StudentID": 104, "CourseID": "C201"}
+        ]
+    }
+}
+
+def get_relational_dataset(name_or_dict):
+    """Safely retrieves a dataset copy by name or validates a custom dictionary table."""
+    if isinstance(name_or_dict, dict) and "columns" in name_or_dict and "rows" in name_or_dict:
+        return {
+            "name": name_or_dict.get("name", "CUSTOM"),
+            "columns": list(name_or_dict["columns"]),
+            "rows": [dict(r) for r in name_or_dict["rows"]]
+        }
+    name = str(name_or_dict).strip().upper()
+    if name in RELATIONAL_ALGEBRA_DATASETS:
+        ds = RELATIONAL_ALGEBRA_DATASETS[name]
+        return {
+            "name": name,
+            "columns": list(ds["columns"]),
+            "rows": [dict(r) for r in ds["rows"]]
+        }
+    return None
+
+def _eval_single_condition(row, condition_str):
+    """
+    Safely evaluates a single predicate without eval(), e.g.
+    'DepartmentID = 10', 'GPA >= 8.5', 'StudentName = Amit', 'R1.Dept = R2.Dept'.
+    """
+    cond = condition_str.strip()
+    if not cond:
+        return True
+
+    operators = [">=", "<=", "!=", "<>", "=", ">", "<"]
+    matched_op = None
+    lhs_str = ""
+    rhs_str = ""
+    for op in operators:
+        if op in cond:
+            parts = cond.split(op, 1)
+            lhs_str = parts[0].strip()
+            rhs_str = parts[1].strip()
+            matched_op = "!=" if op == "<>" else op
+            break
+
+    if not matched_op:
+        raise ValueError(f"Unrecognized comparison operator in condition: '{cond}'. Use =, !=, >, <, >=, or <=.")
+
+    # Resolve LHS value from row
+    clean_lhs = lhs_str.strip("`'\" ")
+    if clean_lhs in row:
+        lhs_val = row[clean_lhs]
+    else:
+        # Check if attribute has table prefix (e.g. STUDENT.DepartmentID)
+        col_suffix = clean_lhs.split(".")[-1]
+        matching_keys = [k for k in row.keys() if k == clean_lhs or k.endswith(f".{col_suffix}")]
+        if matching_keys:
+            lhs_val = row[matching_keys[0]]
+        else:
+            raise ValueError(f"Attribute '{lhs_str}' not found in relation schema attributes: {list(row.keys())}")
+
+    # Resolve RHS: can be attribute in row or literal constant
+    clean_rhs = rhs_str.strip()
+    if (clean_rhs.startswith("'") and clean_rhs.endswith("'")) or (clean_rhs.startswith('"') and clean_rhs.endswith('"')):
+        rhs_val = clean_rhs[1:-1]
+    elif clean_rhs in row:
+        rhs_val = row[clean_rhs]
+    else:
+        # Check if attribute with table prefix in row
+        col_suffix = clean_rhs.split(".")[-1]
+        matching_keys = [k for k in row.keys() if k == clean_rhs or k.endswith(f".{col_suffix}")]
+        if matching_keys:
+            rhs_val = row[matching_keys[0]]
+        else:
+            # Try numeric literal
+            try:
+                if "." in clean_rhs:
+                    rhs_val = float(clean_rhs)
+                else:
+                    rhs_val = int(clean_rhs)
+            except ValueError:
+                rhs_val = clean_rhs
+
+    # Normalize types for comparison if needed
+    try:
+        if isinstance(lhs_val, (int, float)) and isinstance(rhs_val, (int, float)):
+            pass
+        elif isinstance(lhs_val, (int, float)) and isinstance(rhs_val, str):
+            rhs_val = float(rhs_val) if "." in rhs_val else int(rhs_val)
+        elif isinstance(rhs_val, (int, float)) and isinstance(lhs_val, str):
+            lhs_val = float(lhs_val) if "." in lhs_val else int(lhs_val)
+        else:
+            lhs_val = str(lhs_val).strip()
+            rhs_val = str(rhs_val).strip()
+    except Exception:
+        lhs_val = str(lhs_val)
+        rhs_val = str(rhs_val)
+
+    if matched_op == "=":
+        return lhs_val == rhs_val
+    elif matched_op == "!=":
+        return lhs_val != rhs_val
+    elif matched_op == ">":
+        return lhs_val > rhs_val
+    elif matched_op == "<":
+        return lhs_val < rhs_val
+    elif matched_op == ">=":
+        return lhs_val >= rhs_val
+    elif matched_op == "<=":
+        return lhs_val <= rhs_val
+    return False
+
+def evaluate_relational_algebra(operator, relation1, relation2=None, attributes=None, condition=None, rename_map=None):
+    """
+    Pure Python, safe and sandboxed Relational Algebra engine.
+    Supports:
+      1. Selection (σ): filters tuples based on predicate
+      2. Projection (π): extracts specified attributes, enforces strict set duplicate elimination
+      3. Union (∪): validates union-compatibility and combines distinct tuples
+      4. Set Difference (−): validates union-compatibility and subtracts tuples
+      5. Cartesian Product (×): pairwise tuple combination with prefix collision handling
+      6. Rename (ρ): renames relation and/or attributes
+      7. Equi-Join (⨝): pairs tuples satisfying equality condition
+      8. Natural Join (⨝): automatically equates common attributes and merges them
+      9. Intersection (∩): common tuples between union-compatible relations
+      10. Relational Division (÷): finds attributes in R1 linked to all tuples of R2
+      11. Left Outer Join (⟕): preserves all tuples of R1, fills missing R2 with NULL
+    """
+    op = str(operator).strip().lower()
+    op_aliases = {
+        "selection": "select", "sigma": "select", "σ": "select",
+        "projection": "project", "pi": "project", "π": "project",
+        "union": "union", "∪": "union",
+        "difference": "difference", "minus": "difference", "set_difference": "difference", "-": "difference", "−": "difference",
+        "cartesian": "cartesian", "product": "cartesian", "cross": "cartesian", "×": "cartesian", "cross_join": "cartesian",
+        "rename": "rename", "rho": "rename", "ρ": "rename",
+        "join": "equi_join", "equi_join": "equi_join", "equi-join": "equi_join", "⨝": "natural_join",
+        "natural_join": "natural_join", "natural-join": "natural_join",
+        "intersection": "intersection", "∩": "intersection",
+        "division": "division", "divide": "division", "÷": "division",
+        "left_outer_join": "left_outer_join", "left-outer-join": "left_outer_join", "⟕": "left_outer_join"
+    }
+    canonical_op = op_aliases.get(op, op)
+
+    # Load Relational Data
+    r1 = get_relational_dataset(relation1)
+    if not r1:
+        return {
+            "success": False,
+            "error": f"Primary relation '{relation1}' was not found. Available datasets: {list(RELATIONAL_ALGEBRA_DATASETS.keys())}"
+        }
+
+    r2 = None
+    if canonical_op in ["union", "difference", "cartesian", "equi_join", "natural_join", "intersection", "division", "left_outer_join"]:
+        if not relation2:
+            return {"success": False, "error": f"Operator '{canonical_op}' requires a second relation (relation2)."}
+        r2 = get_relational_dataset(relation2)
+        if not r2:
+            return {
+                "success": False,
+                "error": f"Second relation '{relation2}' was not found. Available datasets: {list(RELATIONAL_ALGEBRA_DATASETS.keys())}"
+            }
+
+    # 1. SELECTION (σ)
+    if canonical_op == "select":
+        cond = (condition or "").strip()
+        if not cond:
+            return {"success": False, "error": "Selection (σ) requires a valid condition predicate (e.g. 'DepartmentID = 10' or 'GPA >= 8.5')."}
+        
+        filtered_rows = []
+        try:
+            # Support multiple conditions with AND
+            sub_conds = [c.strip() for c in cond.split(" AND ") if c.strip()]
+            for row in r1["rows"]:
+                if all(_eval_single_condition(row, sc) for sc in sub_conds):
+                    filtered_rows.append(dict(row))
+        except Exception as e:
+            return {"success": False, "error": f"Selection error: {str(e)}"}
+
+        explanation = (
+            f"Selection operation σ_{{{cond}}}({r1['name']}) inspected all {len(r1['rows'])} tuples in {r1['name']}. "
+            f"Exactly {len(filtered_rows)} tuple(s) satisfied the predicate."
+        )
+        notation = f"σ_{{{cond}}}({r1['name']})"
+        return {
+            "success": True,
+            "operator": "Selection (σ)",
+            "notation": notation,
+            "relation_name": f"Result(σ_{r1['name']})",
+            "columns": r1["columns"],
+            "rows": filtered_rows,
+            "cardinality": len(filtered_rows),
+            "degree": len(r1["columns"]),
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Input Relation: {r1['name']} with {len(r1['rows'])} tuples and degree {len(r1['columns'])}.",
+                f"2. Evaluated condition: '{cond}' for each tuple.",
+                f"3. Kept matching tuples: {len(filtered_rows)} row(s) retained.",
+                "4. Relational Algebra Selection operates horizontally (filters rows) without changing relation degree."
+            ]
+        }
+
+    # 2. PROJECTION (π)
+    elif canonical_op == "project":
+        if isinstance(attributes, list):
+            attr_list = [a.strip() for a in attributes if a.strip()]
+        elif isinstance(attributes, str):
+            attr_list = [a.strip() for a in attributes.split(",") if a.strip()]
+        else:
+            attr_list = []
+
+        if not attr_list:
+            return {"success": False, "error": f"Projection (π) requires attribute list (e.g. 'StudentName, DepartmentID'). Valid attributes for {r1['name']}: {r1['columns']}"}
+
+        # Validate attributes exist in R1
+        for a in attr_list:
+            if a not in r1["columns"]:
+                return {
+                    "success": False,
+                    "error": f"Attribute '{a}' does not exist in relation {r1['name']}. Available attributes: {r1['columns']}"
+                }
+
+        # Project attributes and strictly eliminate duplicate tuples (Set Semantics)
+        projected_rows = []
+        seen_tuples = set()
+        duplicates_removed = 0
+
+        for row in r1["rows"]:
+            tuple_dict = {a: row[a] for a in attr_list}
+            # Create immutable representation to check uniqueness
+            tuple_key = tuple((a, tuple_dict[a]) for a in attr_list)
+            if tuple_key not in seen_tuples:
+                seen_tuples.add(tuple_key)
+                projected_rows.append(tuple_dict)
+            else:
+                duplicates_removed += 1
+
+        explanation = (
+            f"Projection π_{{{', '.join(attr_list)}}}({r1['name']}) extracted columns {attr_list}. "
+            f"Classical Relational Algebra enforces set semantics: {duplicates_removed} duplicate tuple(s) "
+            f"were automatically eliminated. (Unlike SQL SELECT, which requires SELECT DISTINCT to eliminate duplicates)."
+        )
+        notation = f"π_{{{', '.join(attr_list)}}}({r1['name']})"
+        return {
+            "success": True,
+            "operator": "Projection (π)",
+            "notation": notation,
+            "relation_name": f"Result(π_{r1['name']})",
+            "columns": attr_list,
+            "rows": projected_rows,
+            "cardinality": len(projected_rows),
+            "degree": len(attr_list),
+            "duplicates_removed": duplicates_removed,
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Selected columns: {attr_list}.",
+                f"2. Extracted values for each of the {len(r1['rows'])} tuples in {r1['name']}.",
+                f"3. Duplicate Elimination: Removed {duplicates_removed} duplicate tuple(s) to strictly maintain mathematical set semantics.",
+                f"4. Result Relation has degree {len(attr_list)} and cardinality {len(projected_rows)}."
+            ]
+        }
+
+    # Helper: Check Union Compatibility
+    def _check_union_compatibility(r_a, r_b):
+        if len(r_a["columns"]) != len(r_b["columns"]):
+            return (
+                False,
+                f"Union Compatibility Violation: Degree mismatch! {r_a['name']} has degree {len(r_a['columns'])} "
+                f"({r_a['columns']}) while {r_b['name']} has degree {len(r_b['columns'])} ({r_b['columns']}). "
+                f"Relations must have the exact same number of attributes to be union-compatible."
+            )
+        # Check compatible attribute names or order
+        # For educational clarity, attributes should align
+        return True, ""
+
+    # 3. UNION (∪)
+    if canonical_op == "union":
+        compatible, err_msg = _check_union_compatibility(r1, r2)
+        if not compatible:
+            return {"success": False, "error": err_msg}
+
+        combined_rows = []
+        seen = set()
+        cols = r1["columns"]
+
+        for row in r1["rows"] + r2["rows"]:
+            t_key = tuple(row.get(c) for c in cols)
+            if t_key not in seen:
+                seen.add(t_key)
+                combined_rows.append({c: row.get(c) for c in cols})
+
+        notation = f"{r1['name']} ∪ {r2['name']}"
+        explanation = (
+            f"Union of {r1['name']} and {r2['name']} produced {len(combined_rows)} distinct tuples. "
+            f"Both relations satisfied Union Compatibility (degree = {len(cols)}). "
+            f"Tuples present in either relation are included, with identical tuples unified."
+        )
+        return {
+            "success": True,
+            "operator": "Union (∪)",
+            "notation": notation,
+            "relation_name": f"Result({r1['name']} ∪ {r2['name']})",
+            "columns": cols,
+            "rows": combined_rows,
+            "cardinality": len(combined_rows),
+            "degree": len(cols),
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Verified Union Compatibility: Degree({r1['name']}) = Degree({r2['name']}) = {len(cols)}.",
+                f"2. Pooled {len(r1['rows'])} rows from {r1['name']} and {len(r2['rows'])} rows from {r2['name']}.",
+                f"3. Deduplicated identical tuples: Result contains {len(combined_rows)} unique tuples."
+            ]
+        }
+
+    # 4. SET DIFFERENCE (−)
+    elif canonical_op == "difference":
+        compatible, err_msg = _check_union_compatibility(r1, r2)
+        if not compatible:
+            return {"success": False, "error": err_msg}
+
+        cols = r1["columns"]
+        r2_set = set(tuple(r.get(c) for c in cols) for r in r2["rows"])
+        result_rows = []
+        seen = set()
+
+        for r in r1["rows"]:
+            t_key = tuple(r.get(c) for c in cols)
+            if t_key not in r2_set and t_key not in seen:
+                seen.add(t_key)
+                result_rows.append({c: r.get(c) for c in cols})
+
+        notation = f"{r1['name']} − {r2['name']}"
+        explanation = (
+            f"Set Difference {r1['name']} − {r2['name']} returned tuples that belong to {r1['name']} "
+            f"but DO NOT appear in {r2['name']}. Yielded {len(result_rows)} tuple(s)."
+        )
+        return {
+            "success": True,
+            "operator": "Set Difference (−)",
+            "notation": notation,
+            "relation_name": f"Result({r1['name']} − {r2['name']})",
+            "columns": cols,
+            "rows": result_rows,
+            "cardinality": len(result_rows),
+            "degree": len(cols),
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Verified Union Compatibility between {r1['name']} and {r2['name']}.",
+                f"2. Scanned {len(r1['rows'])} tuples in {r1['name']}.",
+                f"3. Filtered out any tuple found in {r2['name']}.",
+                f"4. Result: {len(result_rows)} distinct tuples retained."
+            ]
+        }
+
+    # 5. CARTESIAN PRODUCT (×)
+    elif canonical_op == "cartesian":
+        # Handle attribute name collisions by prefixing table names
+        overlap = set(r1["columns"]).intersection(set(r2["columns"]))
+        res_cols = []
+        col_mapping_r1 = {}
+        col_mapping_r2 = {}
+
+        for c in r1["columns"]:
+            new_col = f"{r1['name']}.{c}" if c in overlap else c
+            res_cols.append(new_col)
+            col_mapping_r1[c] = new_col
+
+        for c in r2["columns"]:
+            new_col = f"{r2['name']}.{c}" if c in overlap else c
+            res_cols.append(new_col)
+            col_mapping_r2[c] = new_col
+
+        cross_rows = []
+        for row1 in r1["rows"]:
+            for row2 in r2["rows"]:
+                new_row = {}
+                for c, mapped_c in col_mapping_r1.items():
+                    new_row[mapped_c] = row1[c]
+                for c, mapped_c in col_mapping_r2.items():
+                    new_row[mapped_c] = row2[c]
+                cross_rows.append(new_row)
+
+        notation = f"{r1['name']} × {r2['name']}"
+        expected_card = len(r1["rows"]) * len(r2["rows"])
+        expected_deg = len(r1["columns"]) + len(r2["columns"])
+        explanation = (
+            f"Cartesian Product {r1['name']} × {r2['name']} paired each of the {len(r1['rows'])} tuples "
+            f"in {r1['name']} with each of the {len(r2['rows'])} tuples in {r2['name']}. "
+            f"Result Degree = deg(R1) + deg(R2) = {expected_deg}. "
+            f"Result Cardinality = |R1| × |R2| = {len(r1['rows'])} × {len(r2['rows'])} = {expected_card}."
+        )
+        return {
+            "success": True,
+            "operator": "Cartesian Product (×)",
+            "notation": notation,
+            "relation_name": f"Result({r1['name']} × {r2['name']})",
+            "columns": res_cols,
+            "rows": cross_rows,
+            "cardinality": len(cross_rows),
+            "degree": len(res_cols),
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Degree of Result: {len(r1['columns'])} + {len(r2['columns'])} = {expected_deg}.",
+                f"2. Multiplied every tuple of {r1['name']} with every tuple of {r2['name']}.",
+                f"3. Resolved attribute name collisions using prefixes: {list(overlap) if overlap else 'None'}.",
+                f"4. Result Cardinality: {expected_card} tuples."
+            ]
+        }
+
+    # 6. RENAME (ρ)
+    elif canonical_op == "rename":
+        # Parse rename_map: can be dict, or string like "OldAttr -> NewAttr, Col2 -> NewCol2"
+        # or new relation name like "ρ(STUDENT_DIRECTORY, STUDENT)"
+        new_relation_name = f"ρ_{r1['name']}"
+        mapping = {}
+
+        if isinstance(rename_map, dict):
+            mapping = {str(k).strip(): str(v).strip() for k, v in rename_map.items()}
+        elif isinstance(rename_map, str) and rename_map.strip():
+            str_map = rename_map.strip()
+            # If formatted like "NewName (A1, A2)"
+            if "(" in str_map and str_map.endswith(")"):
+                nname, rest = str_map.split("(", 1)
+                new_relation_name = nname.strip()
+                attrs = [a.strip() for a in rest[:-1].split(",") if a.strip()]
+                for idx, a in enumerate(attrs):
+                    if idx < len(r1["columns"]):
+                        mapping[r1["columns"][idx]] = a
+            else:
+                pairs = str_map.split(",")
+                for p in pairs:
+                    if "->" in p:
+                        orig, ren = p.split("->", 1)
+                        mapping[orig.strip()] = ren.strip()
+                    elif "=" in p:
+                        ren, orig = p.split("=", 1)
+                        mapping[orig.strip()] = ren.strip()
+                    elif ":" in p:
+                        orig, ren = p.split(":", 1)
+                        mapping[orig.strip()] = ren.strip()
+
+        if not mapping and not (isinstance(rename_map, str) and rename_map.strip()):
+            # Default educational rename demonstration
+            mapping = {r1["columns"][0]: f"{r1['columns'][0]}_Renamed"}
+
+        new_columns = [mapping.get(c, c) for c in r1["columns"]]
+        renamed_rows = []
+        for r in r1["rows"]:
+            new_r = {}
+            for c in r1["columns"]:
+                new_r[mapping.get(c, c)] = r[c]
+            renamed_rows.append(new_r)
+
+        notation = f"ρ_{{{', '.join([f'{k}→{v}' for k, v in mapping.items()])}}}({r1['name']})"
+        explanation = (
+            f"Rename operation ρ renamed attributes {list(mapping.keys())} to {list(mapping.values())} "
+            f"in relation {r1['name']}. The tuple values remain identical."
+        )
+        return {
+            "success": True,
+            "operator": "Rename (ρ)",
+            "notation": notation,
+            "relation_name": new_relation_name,
+            "columns": new_columns,
+            "rows": renamed_rows,
+            "cardinality": len(renamed_rows),
+            "degree": len(new_columns),
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Input relation: {r1['name']}.",
+                f"2. Applied attribute renaming mapping: {mapping}.",
+                f"3. Resulting relation attributes: {new_columns}.",
+                "4. All underlying data rows preserved without modification."
+            ]
+        }
+
+    # 7. EQUI-JOIN (⨝_condition)
+    elif canonical_op == "equi_join":
+        cond = (condition or "").strip()
+        if not cond:
+            # Default to matching common column if condition not specified
+            common = list(set(r1["columns"]).intersection(set(r2["columns"])))
+            if common:
+                cond = f"{r1['name']}.{common[0]} = {r2['name']}.{common[0]}"
+            else:
+                return {"success": False, "error": "Equi-Join requires an equality condition (e.g. 'STUDENT.DepartmentID = DEPARTMENT.DepartmentID')."}
+
+        # Combine schema with prefixes
+        overlap = set(r1["columns"]).intersection(set(r2["columns"]))
+        res_cols = []
+        col_map_r1 = {}
+        col_map_r2 = {}
+        for c in r1["columns"]:
+            mapped = f"{r1['name']}.{c}" if c in overlap else c
+            res_cols.append(mapped)
+            col_map_r1[c] = mapped
+        for c in r2["columns"]:
+            mapped = f"{r2['name']}.{c}" if c in overlap else c
+            res_cols.append(mapped)
+            col_map_r2[c] = mapped
+
+        joined_rows = []
+        for row1 in r1["rows"]:
+            for row2 in r2["rows"]:
+                combined = {}
+                for c, mc in col_map_r1.items():
+                    combined[mc] = row1[c]
+                for c, mc in col_map_r2.items():
+                    combined[mc] = row2[c]
+
+                try:
+                    if _eval_single_condition(combined, cond):
+                        joined_rows.append(combined)
+                except Exception as e:
+                    return {"success": False, "error": f"Join condition evaluation error: {str(e)}"}
+
+        notation = f"{r1['name']} ⨝_{{{cond}}} {r2['name']}"
+        explanation = (
+            f"Equi-Join {r1['name']} ⨝_{{{cond}}} {r2['name']} evaluated the Cartesian product "
+            f"and selected only pairs satisfying '{cond}'. Retained {len(joined_rows)} joined tuple(s)."
+        )
+        return {
+            "success": True,
+            "operator": "Equi-Join (⨝)",
+            "notation": notation,
+            "relation_name": f"Result({r1['name']} ⨝ {r2['name']})",
+            "columns": res_cols,
+            "rows": joined_rows,
+            "cardinality": len(joined_rows),
+            "degree": len(res_cols),
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Computed Cartesian product: {len(r1['rows'])} × {len(r2['rows'])} = {len(r1['rows']) * len(r2['rows'])} potential pairs.",
+                f"2. Evaluated join condition: '{cond}'.",
+                f"3. Retained matching tuples: {len(joined_rows)} row(s).",
+                "4. Equi-join is formally defined as σ_{condition}(R1 × R2)."
+            ]
+        }
+
+    # 8. NATURAL JOIN (⨝)
+    elif canonical_op == "natural_join":
+        common = [c for c in r1["columns"] if c in r2["columns"]]
+        if not common:
+            return {
+                "success": False,
+                "error": f"Natural Join requires at least one common attribute name! {r1['name']} has {r1['columns']} and {r2['name']} has {r2['columns']} with no shared column names."
+            }
+
+        # Result columns: R1 columns + R2 columns that are not in common
+        res_cols = list(r1["columns"]) + [c for c in r2["columns"] if c not in common]
+
+        joined_rows = []
+        for row1 in r1["rows"]:
+            for row2 in r2["rows"]:
+                # Check equality across all common attributes
+                if all(row1[c] == row2[c] for c in common):
+                    new_r = dict(row1)
+                    for c in r2["columns"]:
+                        if c not in common:
+                            new_r[c] = row2[c]
+                    joined_rows.append(new_r)
+
+        notation = f"{r1['name']} ⨝ {r2['name']}"
+        explanation = (
+            f"Natural Join {r1['name']} ⨝ {r2['name']} automatically matched common attribute(s) {common}. "
+            f"Unlike Cartesian Product or Equi-Join, Natural Join projects only ONE copy of the shared attribute(s). "
+            f"Result Degree = {len(res_cols)}, Cardinality = {len(joined_rows)}."
+        )
+        return {
+            "success": True,
+            "operator": "Natural Join (⨝)",
+            "notation": notation,
+            "relation_name": f"Result({r1['name']} ⨝ {r2['name']})",
+            "columns": res_cols,
+            "rows": joined_rows,
+            "cardinality": len(joined_rows),
+            "degree": len(res_cols),
+            "common_attributes": common,
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Identified common attribute(s): {common}.",
+                f"2. Equated common attribute(s): {', '.join(common)}.",
+                f"3. Merged attributes without duplicate columns: {res_cols}.",
+                f"4. Result: {len(joined_rows)} matching tuple(s)."
+            ]
+        }
+
+    # 9. INTERSECTION (∩)
+    elif canonical_op == "intersection":
+        compatible, err_msg = _check_union_compatibility(r1, r2)
+        if not compatible:
+            return {"success": False, "error": err_msg}
+
+        cols = r1["columns"]
+        r2_set = set(tuple(r.get(c) for c in cols) for r in r2["rows"])
+        result_rows = []
+        seen = set()
+
+        for r in r1["rows"]:
+            t_key = tuple(r.get(c) for c in cols)
+            if t_key in r2_set and t_key not in seen:
+                seen.add(t_key)
+                result_rows.append({c: r.get(c) for c in cols})
+
+        notation = f"{r1['name']} ∩ {r2['name']}"
+        explanation = (
+            f"Set Intersection {r1['name']} ∩ {r2['name']} returned tuples present in BOTH relations. "
+            f"Note: Intersection is a derived operator, expressible as R1 − (R1 − R2)."
+        )
+        return {
+            "success": True,
+            "operator": "Intersection (∩)",
+            "notation": notation,
+            "relation_name": f"Result({r1['name']} ∩ {r2['name']})",
+            "columns": cols,
+            "rows": result_rows,
+            "cardinality": len(result_rows),
+            "degree": len(cols),
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Verified Union Compatibility between {r1['name']} and {r2['name']}.",
+                f"2. Identified tuples appearing in both sets.",
+                f"3. Intersection formula: R1 ∩ R2 = R1 − (R1 − R2).",
+                f"4. Retained {len(result_rows)} common tuple(s)."
+            ]
+        }
+
+    # 10. RELATIONAL DIVISION (÷)
+    elif canonical_op == "division":
+        # R1(A, B) / R2(B): R2 attributes must be a strict subset of R1 attributes
+        r1_cols = set(r1["columns"])
+        r2_cols = set(r2["columns"])
+
+        if not r2_cols.issubset(r1_cols):
+            return {
+                "success": False,
+                "error": f"Relational Division requires all attributes of {r2['name']} ({list(r2_cols)}) to be a subset of {r1['name']} ({list(r1_cols)})."
+            }
+
+        target_cols = [c for c in r1["columns"] if c not in r2_cols]
+        if not target_cols:
+            return {
+                "success": False,
+                "error": f"Division divisor {r2['name']} contains all columns of {r1['name']}. No quotient attributes remain."
+            }
+
+        # Divisor tuple values
+        r2_tuples = set(tuple(r[c] for c in r2["columns"]) for r in r2["rows"])
+        
+        # Group R1 by target columns
+        from collections import defaultdict
+        groups = defaultdict(set)
+        for r in r1["rows"]:
+            t_target = tuple(r[c] for c in target_cols)
+            t_divisor = tuple(r[c] for c in r2["columns"])
+            groups[t_target].add(t_divisor)
+
+        result_rows = []
+        for t_target, divisor_set in groups.items():
+            # Check if all tuples of R2 are present in this group
+            if r2_tuples.issubset(divisor_set):
+                row_dict = {target_cols[idx]: t_target[idx] for idx in range(len(target_cols))}
+                result_rows.append(row_dict)
+
+        notation = f"{r1['name']} ÷ {r2['name']}"
+        explanation = (
+            f"Relational Division {r1['name']} ÷ {r2['name']} answers the classic 'universal quantification' query: "
+            f"Find values of ({', '.join(target_cols)}) associated with ALL {len(r2_tuples)} tuple(s) in {r2['name']}. "
+            f"Found {len(result_rows)} matching quotient result(s)."
+        )
+        return {
+            "success": True,
+            "operator": "Relational Division (÷)",
+            "notation": notation,
+            "relation_name": f"Result({r1['name']} ÷ {r2['name']})",
+            "columns": target_cols,
+            "rows": result_rows,
+            "cardinality": len(result_rows),
+            "degree": len(target_cols),
+            "divisor_tuples_required": len(r2_tuples),
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Target Quotient Attributes: {target_cols}.",
+                f"2. Divisor {r2['name']} has {len(r2_tuples)} required tuple(s): {list(r2_tuples)}.",
+                f"3. Grouped {r1['name']} by {target_cols} and checked if each group completed the full divisor set.",
+                f"4. Result: {len(result_rows)} entity/tuple(s) satisfied universal quantification."
+            ]
+        }
+
+    # 11. LEFT OUTER JOIN (⟕)
+    elif canonical_op == "left_outer_join":
+        common = [c for c in r1["columns"] if c in r2["columns"]]
+        res_cols = list(r1["columns"]) + [c for c in r2["columns"] if c not in common]
+        joined_rows = []
+
+        for row1 in r1["rows"]:
+            matches = 0
+            for row2 in r2["rows"]:
+                if common and all(row1[c] == row2[c] for c in common):
+                    matches += 1
+                    new_r = dict(row1)
+                    for c in r2["columns"]:
+                        if c not in common:
+                            new_r[c] = row2[c]
+                    joined_rows.append(new_r)
+            if matches == 0:
+                # Retain row1 with NULL (None) for R2 columns
+                new_r = dict(row1)
+                for c in r2["columns"]:
+                    if c not in common:
+                        new_r[c] = None
+                joined_rows.append(new_r)
+
+        notation = f"{r1['name']} ⟕ {r2['name']}"
+        explanation = (
+            f"Left Outer Join {r1['name']} ⟕ {r2['name']} preserves EVERY tuple from {r1['name']}. "
+            f"Tuples without a matching entry in {r2['name']} are padded with NULL (None)."
+        )
+        return {
+            "success": True,
+            "operator": "Left Outer Join (⟕)",
+            "notation": notation,
+            "relation_name": f"Result({r1['name']} ⟕ {r2['name']})",
+            "columns": res_cols,
+            "rows": joined_rows,
+            "cardinality": len(joined_rows),
+            "degree": len(res_cols),
+            "explanation": explanation,
+            "step_by_step": [
+                f"1. Preserved all {len(r1['rows'])} tuples from left relation {r1['name']}.",
+                f"2. Matched on common attribute(s): {common}.",
+                "3. Padded unmatched rows with NULL values.",
+                f"4. Result Cardinality: {len(joined_rows)} tuples."
+            ]
+        }
+
+    return {"success": False, "error": f"Unsupported relational operator '{operator}'."}
+
+
 

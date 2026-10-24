@@ -1,0 +1,370 @@
+<!-- Lesson 9: Relational Model Fundamentals -->
+<div class="card shadow-sm border bg-white mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold me-2">Lesson 9</span>
+            <h4 class="d-inline-block fw-bold text-dark mb-0">Relational Model Fundamentals &amp; Integrity Constraints</h4>
+        </div>
+        <span class="badge bg-light text-secondary border">NEPC42 Core Concept</span>
+    </div>
+    <div class="card-body p-4">
+        <!-- Section 1: Mathematical Foundations -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-calculator me-2"></i>1. Mathematical Foundations of the Relational Model
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                Proposed in 1970 by <strong>Dr. E.F. Codd (IBM)</strong>, the <strong>Relational Model</strong> grounded database management in rigorous first-order predicate logic and mathematical set theory. Rather than physical pointers (as in hierarchical or network databases), data is organized into simple two-dimensional mathematical relations:
+            </p>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 20%;">Formal Relational Term</th>
+                            <th style="width: 25%;">Informal SQL Term</th>
+                            <th style="width: 55%;">Formal Definition &amp; Mathematical Meaning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-primary">Relation</td>
+                            <td>Table</td>
+                            <td>A mathematical relation $R$ defined over domains $D_1, D_2, \dots, D_n$ is a subset of the Cartesian product: $R \subseteq D_1 \times D_2 \times \dots \times D_n$.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Tuple</td>
+                            <td>Row / Record</td>
+                            <td>An ordered list of $n$ values $t = \langle v_1, v_2, \dots, v_n \rangle$ where each value $v_i \in D_i$.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Attribute</td>
+                            <td>Column / Field</td>
+                            <td>A named role played by a domain in a relation schema, denoting a specific property.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Domain</td>
+                            <td>Data Type / Permitted Set</td>
+                            <td>A set of atomic (indivisible) values. Example: Domain of <code>DepartmentID</code> is positive integers $\mathbb{Z}^+$.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Relation Schema</td>
+                            <td>Table Structure (DDL)</td>
+                            <td>Denoted $R(A_1:D_1, A_2:D_2, \dots, A_n:D_n)$, specifying the relation name, attribute names, and domain definitions.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Relation Instance</td>
+                            <td>Current Table Data (State)</td>
+                            <td>The specific set of tuples present in the relation at a given moment in time: $r(R) = \{t_1, t_2, \dots, t_m\}$.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Degree (Arity)</td>
+                            <td>Number of Columns</td>
+                            <td>The total count of attributes in the relation schema. For $STUDENT(ID, Name, Dept, GPA)$, <strong>Degree = 4</strong>.</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-primary">Cardinality</td>
+                            <td>Number of Rows</td>
+                            <td>The total count of tuples currently stored in the relation instance. Changes dynamically with INSERTs/DELETEs.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mathematical Relation vs SQL Table Comparison -->
+            <div class="card border mb-3">
+                <div class="card-header bg-light py-2 fw-semibold">
+                    <i class="bi bi-shuffle text-warning me-1"></i> Key Differences: Pure Mathematical Relations vs. Practical SQL Tables
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 small text-secondary">
+                        <div class="col-md-6 border-end">
+                            <h6 class="fw-bold text-dark">Mathematical Relational Model (Codd)</h6>
+                            <ul class="ps-3 mb-0">
+                                <li class="mb-1"><strong>Pure Set Semantics:</strong> A set by definition contains NO duplicate elements. Two identical tuples cannot exist.</li>
+                                <li class="mb-1"><strong>No Tuple Ordering:</strong> Sets are unordered: $\{t_1, t_2\} \equiv \{t_2, t_1\}$.</li>
+                                <li class="mb-1"><strong>No Attribute Ordering:</strong> Attributes are identified strictly by name, not index position.</li>
+                                <li><strong>Strict First Normal Form:</strong> All values must be strictly atomic.</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-dark">Practical Commercial SQL (MySQL 8)</h6>
+                            <ul class="ps-3 mb-0">
+                                <li class="mb-1"><strong>Multiset / Bag Semantics:</strong> Tables permit duplicate rows unless constrained by a <code>PRIMARY KEY</code> or <code>UNIQUE</code> index.</li>
+                                <li class="mb-1"><strong>Physical Ordering Exists:</strong> Rows are stored physically ordered by the clustered primary key index (B+Tree).</li>
+                                <li class="mb-1"><strong>Column Ordinal Position:</strong> Columns have fixed left-to-right positions (e.g. <code>SELECT *</code> returns columns in order of definition).</li>
+                                <li><strong>NULL Semantics:</strong> Supports SQL 3-valued logic (<code>UNKNOWN</code>).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Relational Integrity Constraints -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-shield-check me-2"></i>2. Core Relational Integrity Constraints
+            </h5>
+            <p class="text-secondary leading-relaxed">
+                Relational databases maintain data consistency via three foundational integrity rules:
+            </p>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card h-100 border-primary-subtle bg-primary-subtle bg-opacity-10">
+                        <div class="card-body">
+                            <span class="badge bg-primary mb-2">Rule 1</span>
+                            <h6 class="fw-bold text-dark">Entity Integrity</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Rule:</strong> No primary key value can be <code>NULL</code>! Every tuple must be definitively identifiable.
+                            </p>
+                            <div class="p-2 border rounded bg-white small">
+                                <strong>MySQL Enforcement:</strong> <code>PRIMARY KEY</code> columns automatically enforce <code>NOT NULL UNIQUE</code>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100 border-success-subtle bg-success-subtle bg-opacity-10">
+                        <div class="card-body">
+                            <span class="badge bg-success mb-2">Rule 2</span>
+                            <h6 class="fw-bold text-dark">Referential Integrity</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Rule:</strong> A foreign key value in a child relation must either <em>match a valid existing primary key</em> in the parent relation, or be entirely <code>NULL</code>.
+                            </p>
+                            <div class="p-2 border rounded bg-white small">
+                                <strong>MySQL Enforcement:</strong> <code>FOREIGN KEY ... REFERENCES</code> blocks orphaned records.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100 border-info-subtle bg-info-subtle bg-opacity-10">
+                        <div class="card-body">
+                            <span class="badge bg-info text-dark mb-2">Rule 3</span>
+                            <h6 class="fw-bold text-dark">Domain Integrity</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Rule:</strong> Every value stored in an attribute must be an atomic element belonging to that attribute's defined domain.
+                            </p>
+                            <div class="p-2 border rounded bg-white small">
+                                <strong>MySQL Enforcement:</strong> Data types (<code>INT</code>, <code>VARCHAR</code>) and <code>CHECK (gpa &gt;= 0)</code> constraints.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NULL Values Alert -->
+            <div class="alert alert-secondary border d-flex gap-3 align-items-center mt-3">
+                <i class="bi bi-question-diamond-fill text-dark fs-3 flex-shrink-0"></i>
+                <div class="small">
+                    <strong>NULL Values &amp; 3-Valued Logic:</strong><br>
+                    In relational algebra and SQL, <code>NULL</code> is NOT zero (<code>0</code>) and NOT an empty string (<code>''</code>). It represents <em>unknown, unrecorded, or inapplicable information</em>. Comparing any value to NULL using <code>=</code> evaluates to <strong>UNKNOWN</strong>, not TRUE or FALSE! Hence, SQL provides explicit operators <code>IS NULL</code> and <code>IS NOT NULL</code>.
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Interactive Schema Inspector Demo -->
+        <section class="mb-5">
+            <h5 class="fw-bold text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-table me-2"></i>3. Interactive Relation Inspector: STUDENT Table
+            </h5>
+            <p class="small text-muted mb-3">
+                Click on the elements below to inspect Degree, Cardinality, Primary Key, and Foreign Key relationships:
+            </p>
+
+            <div class="table-responsive border rounded bg-white shadow-sm mb-3">
+                <table class="table table-bordered table-hover align-middle mb-0 text-center">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="bg-success text-white" title="Primary Key">StudentID (PK)</th>
+                            <th>StudentName</th>
+                            <th class="bg-primary text-white" title="Foreign Key referencing DEPARTMENT">DepartmentID (FK)</th>
+                            <th>GPA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-success">101</td>
+                            <td>Amit Sharma</td>
+                            <td class="text-primary fw-bold">10 &rarr; Computer</td>
+                            <td>8.50</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-success">102</td>
+                            <td>Neha Patel</td>
+                            <td class="text-primary fw-bold">20 &rarr; Electronics</td>
+                            <td>9.20</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-success">103</td>
+                            <td>Ravi Kumar</td>
+                            <td class="text-primary fw-bold">10 &rarr; Computer</td>
+                            <td>7.80</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-success">104</td>
+                            <td>Sara Khan</td>
+                            <td class="text-primary fw-bold">30 &rarr; Mechanical</td>
+                            <td>8.90</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 small text-muted">
+                <span><strong>Relation:</strong> STUDENT</span>
+                <span><strong>Degree (Columns):</strong> 4</span>
+                <span><strong>Cardinality (Rows):</strong> 4</span>
+                <span><strong>Primary Key:</strong> StudentID</span>
+                <span><strong>Foreign Key:</strong> DepartmentID &rarr; DEPARTMENT</span>
+            </div>
+        </section>
+
+        <!-- Section 4: Quiz (5 Questions) -->
+        <section class="mt-5 pt-3 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-patch-question-fill text-success me-2"></i>Lesson 9 Assessment &amp; Concept Check
+                </h5>
+                <span class="badge bg-light text-secondary border">5 Questions &bull; Pass Mark: 3/5</span>
+            </div>
+            <p class="small text-muted mb-4">
+                Test your mastery of relational model definitions, degree, cardinality, and integrity rules.
+            </p>
+
+            <div id="quiz-container-topic9" class="lesson-quiz-block" data-lesson="topic9">
+                <!-- Question 1 -->
+                <div class="card mb-3 border quiz-question-card" id="q1-card-topic9">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">1. In relational algebra, what is the 'Degree' of a relation?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic9" id="q1_t9_opt1" value="A">
+                            <label class="form-check-label" for="q1_t9_opt1">A) The number of rows currently stored in the relation.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic9" id="q1_t9_opt2" value="B">
+                            <label class="form-check-label" for="q1_t9_opt2">B) The number of attributes (columns) in the relation schema.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic9" id="q1_t9_opt3" value="C">
+                            <label class="form-check-label" for="q1_t9_opt3">C) The size of the database on disk in megabytes.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q1_topic9" id="q1_t9_opt4" value="D">
+                            <label class="form-check-label" for="q1_t9_opt4">D) The number of foreign keys referencing the relation.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="card mb-3 border quiz-question-card" id="q2-card-topic9">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">2. What does the 'Entity Integrity' constraint strictly mandate?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic9" id="q2_t9_opt1" value="A">
+                            <label class="form-check-label" for="q2_t9_opt1">A) Foreign keys must be indexed.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic9" id="q2_t9_opt2" value="B">
+                            <label class="form-check-label" for="q2_t9_opt2">B) No component of a Primary Key can ever be NULL.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic9" id="q2_t9_opt3" value="C">
+                            <label class="form-check-label" for="q2_t9_opt3">C) All tables must have at least 10 rows.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q2_topic9" id="q2_t9_opt4" value="D">
+                            <label class="form-check-label" for="q2_t9_opt4">D) Every column must be of VARCHAR type.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="card mb-3 border quiz-question-card" id="q3-card-topic9">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">3. What is the fundamental mathematical difference between a classical Relational Model relation and a standard SQL table?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic9" id="q3_t9_opt1" value="A">
+                            <label class="form-check-label" for="q3_t9_opt1">A) Mathematical relations are sets (no duplicate tuples permitted), whereas SQL tables are multisets/bags (permit duplicate rows unless constrained).</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic9" id="q3_t9_opt2" value="B">
+                            <label class="form-check-label" for="q3_t9_opt2">B) Mathematical relations only accept floating-point numbers.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic9" id="q3_t9_opt3" value="C">
+                            <label class="form-check-label" for="q3_t9_opt3">C) SQL tables cannot have columns.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q3_topic9" id="q3_t9_opt4" value="D">
+                            <label class="form-check-label" for="q3_t9_opt4">D) There is zero difference; both are mathematically identical in every way.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="card mb-3 border quiz-question-card" id="q4-card-topic9">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">4. A child table contains a foreign key column department_id referencing the departments table. Which scenario violates 'Referential Integrity'?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic9" id="q4_t9_opt1" value="A">
+                            <label class="form-check-label" for="q4_t9_opt1">A) Inserting a child row with department_id = NULL (when NULL is allowed).</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic9" id="q4_t9_opt2" value="B">
+                            <label class="form-check-label" for="q4_t9_opt2">B) Inserting a child row with department_id = 999 when no department with ID 999 exists in parent table departments.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic9" id="q4_t9_opt3" value="C">
+                            <label class="form-check-label" for="q4_t9_opt3">C) Deleting a child row while the parent row still exists.</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q4_topic9" id="q4_t9_opt4" value="D">
+                            <label class="form-check-label" for="q4_t9_opt4">D) Having two child rows reference the same parent department_id.</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="card mb-3 border quiz-question-card" id="q5-card-topic9">
+                    <div class="card-body">
+                        <p class="fw-semibold text-dark mb-2">5. In SQL 3-valued logic, what is the result of evaluating the conditional expression (NULL = NULL)?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic9" id="q5_t9_opt1" value="A">
+                            <label class="form-check-label" for="q5_t9_opt1">A) TRUE</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic9" id="q5_t9_opt2" value="B">
+                            <label class="form-check-label" for="q5_t9_opt2">B) FALSE</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic9" id="q5_t9_opt3" value="C">
+                            <label class="form-check-label" for="q5_t9_opt3">C) UNKNOWN</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q5_topic9" id="q5_t9_opt4" value="D">
+                            <label class="form-check-label" for="q5_t9_opt4">D) 0</label>
+                        </div>
+                        <div class="feedback-msg mt-2 small d-none"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-gfg btn-sm btn-submit-quiz" data-lesson="topic9">
+                        <i class="bi bi-check-circle me-1"></i> Submit Lesson 9 Answers
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm btn-reset-quiz d-none" data-lesson="topic9">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Quiz
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

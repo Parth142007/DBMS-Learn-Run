@@ -326,3 +326,119 @@ Access the live module at: **`http://localhost:5000/phase-4`** (or alias **`/vie
   - Full automated test suite in `tests/test_phase4.py` (8 new test methods covering routes, API endpoints, triggers, constraints, views, and procedures).
   - 100% test pass rate across all 39 unit tests in the project (`python -m unittest discover tests`).
 
+---
+
+## Phase 5 Deliverables Summary &mdash; Database Design & Normalization (NEPC42)
+
+Access the live module at: **`http://localhost:5000/phase-5`** (or alias **`/normalization`**)
+
+- [x] **Dedicated Phase 5 Learning Module & Sticky Navigation:**
+  - Modern, responsive GeeksforGeeks-inspired interface with sticky topic navigation pills across all 10 syllabus lessons (`intro`, `fds`, `axioms`, `1nf`, `2nf`, `3nf`, `bcnf`, `comparison`, `lossless`, `practice-lab`).
+  - Dual progress tracking: browser `localStorage` + server-side MySQL persistence via `phase5_learning_progress` table.
+  - Visual progress bar (0%&ndash;100%), 10 lesson status badges with dynamic quiz scores, and Previous / Next footer navigation controls.
+  - Estimated study time (~240 mins) for diploma and degree curriculum mastery.
+
+- [x] **Lesson 1 &mdash; Introduction to Database Design &amp; Modification Anomalies:**
+  - Core objectives of database design and relational modeling.
+  - Pitfalls of poorly designed "flat" tables: data redundancy, wasted storage, and data inconsistency.
+  - Concrete worked example: Student-Course registration table (`StudentID`, `StudentName`, `CourseID`, `CourseName`, `Instructor`) with students Amit and Neha, instructors Sharma and Patil.
+  - Comprehensive breakdown of anomalies:
+    - **Insertion Anomaly:** Inability to add a new course without enrolling a student (violating Entity Integrity with NULL PK).
+    - **Update Anomaly:** Modifying an instructor across multiple student records risking inconsistent state.
+    - **Deletion Anomaly:** Erasing a student inadvertently deleting the university's only record of a course offering.
+  - **Interactive Anomaly Investigator Tool:** Interactive buttons to trigger and inspect highlighted anomaly scenarios.
+
+- [x] **Lesson 2 &mdash; Functional Dependencies &amp; Domain Business Rules:**
+  - Formal definition: $X \to Y$ (Determinant $X$ and Dependent $Y$).
+  - Critical domain principle: Functional dependencies cannot be derived merely from sample rows; they represent enterprise domain rules and semantic specifications.
+  - Classification of functional dependencies:
+    - **Trivial:** $Y \subseteq X$ (holds by definition).
+    - **Non-Trivial:** $Y \not\subseteq X$.
+    - **Full:** Dependent relies on the entire composite key.
+    - **Partial:** Dependent relies on a proper subset of a candidate key.
+    - **Transitive:** Non-key attribute determines another non-key attribute ($X \to Y \to Z$).
+  - **Interactive Functional Dependency Explorer:** Live interactive widget allowing students to switch schemas (`STUDENT`, `ENROLLMENT`) and inspect determinants, dependents, candidate keys, and normalization implications.
+
+- [x] **Lesson 3 &mdash; Armstrong's Axioms &amp; Inference Rules:**
+  - Fundamental Armstrong's Axioms:
+    - **Reflexivity:** If $Y \subseteq X$, then $X \to Y$.
+    - **Augmentation:** If $X \to Y$, then $XZ \to YZ$.
+    - **Transitivity:** If $X \to Y$ and $Y \to Z$, then $X \to Z$.
+  - Derived Secondary Rules:
+    - **Union (Additive):** If $X \to Y$ and $X \to Z$, then $X \to YZ$.
+    - **Decomposition (Projective):** If $X \to YZ$, then $X \to Y$ and $X \to Z$.
+    - **Pseudotransitivity:** If $X \to Y$ and $WY \to Z$, then $WX \to Z$.
+  - Mathematical notation, plain-English explanations, and real-world database examples for every rule.
+  - Mathematical property: Armstrong's axioms are both **Sound** and **Complete**.
+  - **Interactive Armstrong Axiom Derivation Tool:** Live derivation explorer with step-by-step reasoning.
+
+- [x] **Lesson 4 &mdash; First Normal Form (1NF) &amp; Attribute Atomicity:**
+  - Definition: All attribute values must be atomic (indivisible) with no repeating groups or multivalued columns.
+  - The danger of comma-separated strings (`Courses = 'DBMS, Python'`): query complexity, inability to enforce foreign keys, and absence of B-Tree indexing.
+  - Before-and-after table transformation: converting multivalued fields into distinct rows and separate bridge relations.
+  - Clarification on atomicity: Atomicity depends on domain business meaning, not merely word or character length.
+
+- [x] **Lesson 5 &mdash; Second Normal Form (2NF) &amp; Partial Dependencies:**
+  - Definition: Must be in 1NF and have **no partial functional dependencies** for any non-prime attribute.
+  - Core concepts: Candidate keys, composite keys, prime attributes vs. non-prime attributes.
+  - Special theorem: If all candidate keys consist of single attributes, the relation is automatically in 2NF!
+  - Canonical worked decomposition:
+    - Unnormalized: `ENROLLMENT(StudentID, CourseID, StudentName, CourseName, Grade)`
+    - Dependencies: `{StudentID, CourseID} -> Grade`, `StudentID -> StudentName`, `CourseID -> CourseName`
+    - Identified partial dependencies and decomposition into `STUDENT`, `COURSE`, and `ENROLLMENT`.
+
+- [x] **Lesson 6 &mdash; Third Normal Form (3NF) &amp; Transitive Dependencies:**
+  - Intuitive definition: Must be in 2NF and have no transitive functional dependencies.
+  - Formal Codd & Zaniolo 3NF Condition: For every non-trivial $X \to A$, either:
+    1. $X$ is a **superkey**, OR
+    2. $A$ is a **prime attribute** (member of some candidate key).
+  - Decomposition: `STUDENT(StudentID, StudentName, DepartmentID, DepartmentName)` decomposed into `STUDENT(StudentID, StudentName, DepartmentID)` and `DEPARTMENT(DepartmentID, DepartmentName)`.
+
+- [x] **Lesson 7 &mdash; Boyce-Codd Normal Form (BCNF) &amp; Superkey Enforcements:**
+  - Why BCNF is stricter than 3NF: Every determinant $X$ in a non-trivial dependency $X \to A$ must be a superkey (no prime-attribute escape clause).
+  - Canonical 3NF-but-not-BCNF case study:
+    - Schema: `STUDENT_ADVISING(Student, Course, Instructor)`
+    - FDs: `{Student, Course} -> Instructor`, `Instructor -> Course`
+    - Candidate Keys: `{Student, Course}` and `{Student, Instructor}`. All attributes are prime.
+    - 3NF check: `Instructor -> Course` satisfies 3NF because `Course` is prime!
+    - BCNF check: `Instructor -> Course` violates BCNF because `Instructor` is NOT a superkey.
+    - BCNF Decomposition: `INSTRUCTOR_ASSIGNMENT(Instructor, Course)` and `STUDENT_INSTRUCTOR(Student, Instructor)`.
+    - Trade-off analysis: Decomposition is lossless, but `{Student, Course} -> Instructor` is lost!
+
+- [x] **Lesson 8 &mdash; Comparative Matrix: 1NF vs. 2NF vs. 3NF vs. BCNF:**
+  - Concentric nesting hierarchy: Relations $\supset$ 1NF $\supset$ 2NF $\supset$ 3NF $\supset$ BCNF.
+  - Comprehensive 5-column comparison table covering core requirements, targeted dependencies, canonical example violations, and decomposition strategies.
+  - Real-world database engineering realities: Normalization vs. Denormalization, OLTP (high normalization) vs. OLAP/Data Warehousing (star schemas), and the mnemonic: *"The key, the whole key (2NF), and nothing but the key (3NF), so help me Codd!"*
+
+- [x] **Lesson 9 &mdash; Lossless Join Decomposition &amp; Dependency Preservation:**
+  - Lossless (non-additive) join definition: $R_1 \bowtie R_2 \bowtie \dots \bowtie R_k = R$.
+  - Spurious tuples demonstration: joining lossy tables hallucinating false rows.
+  - Binary Lossless Join Theorem: Decomposition into $(R_1, R_2)$ is lossless iff $(R_1 \cap R_2) \to R_1$ or $(R_1 \cap R_2) \to R_2$ in $F^+$.
+  - Dependency preservation definition: $(F_1 \cup F_2 \cup \dots \cup F_k)^+ = F^+$ and its impact on single-table integrity enforcement vs. multi-table join triggers.
+  - **Live Interactive Decomposition Verifier Widget:** Connects to `/api/normalization/verify-decomposition` to verify attribute preservation, binary lossless join test, and dependency preservation.
+
+- [x] **Lesson 10 &mdash; Interactive Normalization Practice Lab:**
+  - 5 comprehensive real-world case studies:
+    1. **Case 1: Student Courses & Departments** (`STUDENT_ENROLLMENT`, 1NF $\to$ 3NF)
+    2. **Case 2: Corporate Employee Projects** (`EMP_PROJECT_HOURS`, 1NF $\to$ 3NF)
+    3. **Case 3: Hospital Clinic Patient Visits** (`HOSPITAL_VISIT`, 2NF $\to$ 3NF)
+    4. **Case 4: Academic Advising** (`COLLEGE_ADVISING`, 3NF $\to$ BCNF with dependency trade-off)
+    5. **Case 5: E-Commerce Orders & Line Items** (`ORDER_LINE_ITEMS`, Full Pipeline)
+  - Guided 4-step workflow per case:
+    - Step 1: Candidate Key Identification
+    - Step 2: Partial vs. Transitive Dependency Classification
+    - Step 3: Determine Highest Normal Form
+    - Step 4: Decomposed Schema Review & Mathematical Guarantees Verification
+  - Revealable model solutions and one-click reset for every case study.
+
+- [x] **Interactive Assessments & Safeguards:**
+  - 10 interactive knowledge check quizzes (30 multiple-choice questions total) with instant technical explanations.
+  - 20 practice exercises with collapsible hints and full step-by-step solutions.
+  - Safe mathematical algorithms for attribute closures ($X^+$) and binary decomposition testing.
+  - Zero modification to real application tables &mdash; educational data is isolated.
+
+- [x] **Testing & Verification:**
+  - 11 comprehensive automated tests in `tests/test_phase5.py`.
+  - **100% test pass rate across all 50 unit tests in the project (`python -m unittest discover tests`).**
+
+

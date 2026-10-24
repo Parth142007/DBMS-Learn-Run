@@ -432,3 +432,65 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
+/* Phase 5: Normalization Styles */
+#phase5-topic-tabs {
+    white-space: nowrap;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE & Edge */
+    -webkit-overflow-scrolling: touch;
+}
+
+#phase5-topic-tabs::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+    height: 0;
+    width: 0;
+}
+
+#phase5-topic-tabs .nav-link {
+    font-size: 0.84rem;
+    padding: 0.45rem 0.65rem;
+    color: var(--gfg-gray);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+#phase5-topic-tabs .nav-link:hover {
+    background-color: var(--gfg-green-light);
+    color: var(--gfg-green);
+    border-color: rgba(47, 141, 70, 0.2);
+}
+
+#phase5-topic-tabs .nav-link.active {
+    background-color: var(--gfg-green) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 4px rgba(47, 141, 70, 0.25);
+}
+
+.topic-progress-pill {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.topic-progress-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    border-color: var(--gfg-green) !important;
+}
+
+.topic-progress-pill.active-pill {
+    border-color: var(--gfg-green) !important;
+    background-color: var(--gfg-green-light) !important;
+}
+
+.exercise-item {
+    border-left: 4px solid var(--gfg-green) !important;
+}
+
+.lab-fd-classifier-select {
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+
+

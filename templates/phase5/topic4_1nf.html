@@ -1,0 +1,333 @@
+<!-- ====================================================================
+     Topic 4: First Normal Form (1NF)
+     NEPC42 Syllabus — Module 5: Database Design & Normalization
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-1nf">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Lesson 4 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 20 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">4. First Normal Form (1NF) &amp; Attribute Atomicity</h2>
+            <p class="text-secondary mb-0">
+                Understand the bedrock prerequisite of the relational model &mdash; why <strong>multivalued attributes</strong>, <strong>repeating groups</strong>, and <strong>comma-separated lists</strong> violate 1NF, and how to transform unnormalized datasets into pure atomic relations.
+            </p>
+        </div>
+    </div>
+
+    <!-- 4.1 Definition of 1NF & Atomicity -->
+    <section class="mb-5" id="1nf-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is First Normal Form (1NF)?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A relational table is in <strong>First Normal Form (1NF)</strong> if and only if:
+                </p>
+                <div class="p-3 bg-light rounded border my-2 small">
+                    <ul class="mb-0 ps-3">
+                        <li class="mb-1"><strong>Atomic Values:</strong> Every column contains only <strong>atomic (indivisible)</strong> values &mdash; no sets, arrays, nested tables, or composite sub-records.</li>
+                        <li class="mb-1"><strong>No Repeating Groups:</strong> There are no multiple columns storing the same type of data (e.g. <code>Phone1</code>, <code>Phone2</code>, <code>Phone3</code>).</li>
+                        <li class="mb-1"><strong>Unique Rows:</strong> Every row must be unique and identifiable by a Primary Key.</li>
+                        <li><strong>Order Independence:</strong> The order of rows and columns has no bearing on relational semantics.</li>
+                    </ul>
+                </div>
+
+                <!-- Atomicity Context Note -->
+                <div class="alert alert-info mt-3 mb-0 small">
+                    <strong class="d-block mb-1"><i class="bi bi-info-circle me-1"></i> What Does "Atomicity" Really Mean?</strong>
+                    Atomicity is defined by <strong>how the application uses the data</strong>, not by string length or character count! A column storing a book title like <code>'Database System Concepts'</code> is completely atomic if the system treats it as a single unit. However, a column storing <code>'Sharma, Patil'</code> is <strong>non-atomic</strong> because it packs multiple distinct instructors into one field.
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.2 Why Comma-Separated Lists are Relational Poison -->
+    <section class="mb-5" id="1nf-hazards">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Why Comma-Separated Values Harm Relational Engines</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Software beginners often store multiple items in a single column using commas (e.g. <code>Courses = "DBMS, Python"</code>). In MySQL, this creates severe engineering penalties:
+                </p>
+
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-danger mb-2">1. Broken Indexes</span>
+                            <p class="small text-muted mb-0">B-Tree indexes cannot index elements inside text strings. Searching requires slow full table scans using <code>LIKE '%Python%'</code>.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-warning text-dark mb-2">2. No Foreign Keys</span>
+                            <p class="small text-muted mb-0">MySQL InnoDB cannot enforce foreign key referential integrity on individual values locked inside a text string.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-primary mb-2">3. Aggregates Disabled</span>
+                            <p class="small text-muted mb-0">You cannot run standard SQL aggregate queries like <code>COUNT(CourseID)</code> or <code>GROUP BY CourseID</code>.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-info text-dark mb-2">4. Substring Hazards</span>
+                            <p class="small text-muted mb-0">A search for <code>'Java'</code> accidentally matches <code>'JavaScript'</code> unless complex regex parsing is applied.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.3 Interactive Transformation: Unnormalized to 1NF -->
+    <section class="mb-5" id="1nf-transformation">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Interactive 1NF Transformation</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="fw-bold"><i class="bi bi-arrow-left-right text-success me-2"></i>Before &amp; After 1NF Transformation</span>
+                <span class="badge bg-success-subtle text-success">Atomic Conversion</span>
+            </div>
+            <div class="card-body p-4">
+                
+                <div class="row g-4 align-items-center">
+                    
+                    <!-- Before: Unnormalized Table -->
+                    <div class="col-lg-5">
+                        <div class="p-3 border border-danger-subtle rounded bg-danger-subtle h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-danger-emphasis"><i class="bi bi-x-circle-fill me-1"></i> BEFORE: Non-1NF Table</h6>
+                                <span class="badge bg-danger">Violates 1NF</span>
+                            </div>
+                            <p class="small text-muted mb-2">Row 1 packs multiple courses into a single cell:</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered bg-white text-center font-monospace small mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>StudentID</th>
+                                            <th>StudentName</th>
+                                            <th class="text-danger">Courses (Multi-valued)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>101</td>
+                                            <td>Amit</td>
+                                            <td class="bg-danger-subtle fw-bold text-danger">DBMS, Python</td>
+                                        </tr>
+                                        <tr>
+                                            <td>102</td>
+                                            <td>Neha</td>
+                                            <td>Java</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Arrow / Action -->
+                    <div class="col-lg-2 text-center">
+                        <i class="bi bi-arrow-right fs-1 text-success d-none d-lg-inline-block"></i>
+                        <i class="bi bi-arrow-down fs-1 text-success d-lg-none"></i>
+                        <div class="small text-muted fw-bold">Flatten into Atomic Rows</div>
+                    </div>
+
+                    <!-- After: 1NF Table -->
+                    <div class="col-lg-5">
+                        <div class="p-3 border border-success-subtle rounded bg-success-subtle h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-success-emphasis"><i class="bi bi-check-circle-fill me-1"></i> AFTER: 1NF Atomic Table</h6>
+                                <span class="badge bg-success">1NF Valid</span>
+                            </div>
+                            <p class="small text-muted mb-2">Every cell contains exactly one atomic value:</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered bg-white text-center font-monospace small mb-0">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>StudentID</th>
+                                            <th>StudentName</th>
+                                            <th class="text-success">Course</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>101</td>
+                                            <td>Amit</td>
+                                            <td class="fw-bold text-success">DBMS</td>
+                                        </tr>
+                                        <tr>
+                                            <td>101</td>
+                                            <td>Amit</td>
+                                            <td class="fw-bold text-success">Python</td>
+                                        </tr>
+                                        <tr>
+                                            <td>102</td>
+                                            <td>Neha</td>
+                                            <td class="fw-bold text-success">Java</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="p-3 bg-light border rounded mt-4 small">
+                    <h6 class="fw-bold text-dark mb-1"><i class="bi bi-key-fill text-warning me-1"></i> Candidate Key After 1NF Transformation:</h6>
+                    <p class="text-secondary mb-0">
+                        In the 1NF table above, neither <code>StudentID</code> alone nor <code>Course</code> alone uniquely identifies a row. The new Primary Key becomes the <strong>composite key: <code>(StudentID, Course)</code></strong>!
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.4 Practice Exercises -->
+    <section class="mb-5" id="1nf-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 4.1</span>
+                        <span class="text-muted small">Repeating Groups</span>
+                    </div>
+                    <p class="fw-bold mb-1">Repeating Columns vs 1NF:</p>
+                    <p class="small text-secondary mb-2">
+                        A table has columns: <code>STUDENT(RollNo, Name, Phone1, Phone2, Phone3)</code>. Explain why this violates First Normal Form even if each column holds a single phone number.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-1nf-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-1nf-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> <code>Phone1, Phone2, Phone3</code> represent a <strong>repeating group</strong>. If a student has 4 phones, the schema must be altered; if a student has only 1 phone, columns waste space storing NULLs. The solution is a separate related table <code>STUDENT_PHONE(RollNo, Phone)</code>.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 4.2</span>
+                        <span class="text-muted small">Composite Key Emergence</span>
+                    </div>
+                    <p class="fw-bold mb-1">Primary Key Selection in 1NF:</p>
+                    <p class="small text-secondary mb-2">
+                        When an unnormalized relation with a single-attribute key is converted to 1NF by splitting a multi-valued attribute into separate tuples, what almost always happens to the relation's primary key?
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-1nf-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-1nf-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> The original key values now repeat across multiple rows, so the original key alone can no longer guarantee uniqueness. The primary key becomes a <strong>composite key</strong> combining the original key and the repeating attribute!
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 4.5 Lesson 4 Knowledge Check Quiz -->
+    <section class="mb-5" id="1nf-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">4.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Lesson 4 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase5-1nf">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. What is the fundamental requirement of First Normal Form (1NF)?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_1nf_0" id="q_1nf_0_a" value="a">
+                            <label class="form-check-label" for="q_1nf_0_a">A) Every table must have a foreign key to another table</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_1nf_0" id="q_1nf_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_1nf_0_b">B) Every attribute must contain only atomic (indivisible) values with no repeating groups</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_1nf_0" id="q_1nf_0_c" value="c">
+                            <label class="form-check-label" for="q_1nf_0_c">C) Every column must be of type INTEGER</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. Why is storing comma-separated values like <code>"DBMS, Python, Java"</code> in a single column problematic in MySQL?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_1nf_1" id="q_1nf_1_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_1nf_1_a">A) It prevents index lookups, breaks foreign key constraints, and makes aggregate calculations impossible</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_1nf_1" id="q_1nf_1_b" value="b">
+                            <label class="form-check-label" for="q_1nf_1_b">B) MySQL refuses to start if text columns contain commas</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_1nf_1" id="q_1nf_1_c" value="c">
+                            <label class="form-check-label" for="q_1nf_1_c">C) Comma-separated columns automatically convert to binary format</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. Does First Normal Form mandate that every string value must be a single word or character?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_1nf_2" id="q_1nf_2_a" value="a">
+                            <label class="form-check-label" for="q_1nf_2_a">A) Yes, multi-word strings are strictly forbidden in 1NF</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_1nf_2" id="q_1nf_2_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_1nf_2_b">B) No &mdash; atomicity is determined by whether the application treats the value as an indivisible unit of data</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_1nf_2" id="q_1nf_2_c" value="c">
+                            <label class="form-check-label" for="q_1nf_2_c">C) Yes, only numeric data is allowed in 1NF</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase5-1nf">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

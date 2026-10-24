@@ -1,0 +1,309 @@
+<!-- ====================================================================
+     Topic 5: Second Normal Form (2NF)
+     NEPC42 Syllabus — Module 5: Database Design & Normalization
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-2nf">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Lesson 5 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">5. Second Normal Form (2NF) &amp; Partial Dependencies</h2>
+            <p class="text-secondary mb-0">
+                Eliminate partial functional dependencies on composite candidate keys &mdash; understand <strong>Prime vs. Non-Prime attributes</strong>, diagnose 2NF violations in multi-attribute keys, and decompose relations into pure entity schemas.
+            </p>
+        </div>
+    </div>
+
+    <!-- 5.1 Definition & Prime Attributes -->
+    <section class="mb-5" id="2nf-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is Second Normal Form (2NF)?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    A relational schema $R$ is in <strong>Second Normal Form (2NF)</strong> if and only if:
+                </p>
+                <div class="p-3 bg-light rounded border my-2 small">
+                    <ol class="mb-0 ps-3">
+                        <li class="mb-1">It is already in <strong>First Normal Form (1NF)</strong>.</li>
+                        <li><strong>No Partial Dependencies:</strong> Every <strong>non-prime attribute</strong> is <strong>fully functionally dependent</strong> on every candidate key of $R$.</li>
+                    </ol>
+                </div>
+
+                <!-- Prime vs Non-Prime Attributes Grid -->
+                <h6 class="fw-bold text-dark mt-4 mb-2"><i class="bi bi-key-fill text-warning me-1"></i> Prime vs. Non-Prime Attributes:</h6>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-primary-subtle h-100">
+                            <span class="badge bg-primary mb-1">Prime Attribute</span>
+                            <h6 class="fw-bold mb-1">Part of a Key</h6>
+                            <p class="small text-secondary mb-0">An attribute that belongs to <strong>at least one candidate key</strong> of the relation. (e.g. <code>StudentID</code> and <code>CourseID</code> in composite key <code>(StudentID, CourseID)</code>).</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-secondary mb-1">Non-Prime Attribute</span>
+                            <h6 class="fw-bold mb-1">Descriptive Attribute</h6>
+                            <p class="small text-secondary mb-0">An attribute that does <strong>NOT belong to any candidate key</strong>. (e.g. <code>StudentName</code>, <code>CourseName</code>, <code>Grade</code>).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gold Rule: Single Attribute Keys -->
+                <div class="alert alert-info small mb-0">
+                    <strong class="d-block mb-1"><i class="bi bi-lightbulb-fill text-warning me-1"></i> Relational Theorem: Single-Attribute Keys Guarantee 2NF!</strong>
+                    If every candidate key of a 1NF relation consists of a <strong>single attribute</strong> (not composite), the relation is <strong>automatically in 2NF</strong>! Partial dependencies are mathematically impossible because a single-attribute key has no proper subsets!
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5.2 Case Study: The 2NF Enrollment Violation -->
+    <section class="mb-5" id="2nf-case-study">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Case Study: The 2NF Enrollment Violation</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Consider the 1NF table <code>ENROLLMENT</code> created in Lesson 4:
+                </p>
+                <div class="p-2 bg-dark text-light rounded font-monospace small mb-3">
+                    ENROLLMENT(<u>StudentID</u>, <u>CourseID</u>, StudentName, CourseName, Grade)
+                </div>
+
+                <p class="small text-secondary mb-2"><strong>Assumed Domain Business Rules (Functional Dependencies):</strong></p>
+                <div class="p-3 bg-light rounded border font-monospace small mb-3">
+                    1. <strong>(StudentID, CourseID) &rarr; Grade</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="badge bg-success">Full Dependency (Valid)</span><br>
+                    2. <strong>StudentID &rarr; StudentName</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="badge bg-danger">Partial Dependency (Violates 2NF!)</span><br>
+                    3. <strong>CourseID &rarr; CourseName</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="badge bg-danger">Partial Dependency (Violates 2NF!)</span>
+                </div>
+
+                <div class="alert alert-danger small mb-4">
+                    <strong>Why it fails 2NF:</strong> The Candidate Key is composite: <code>(StudentID, CourseID)</code>. The non-prime attribute <code>StudentName</code> depends <em>only</em> on <code>StudentID</code> (a proper subset of the key). Similarly, <code>CourseName</code> depends <em>only</em> on <code>CourseID</code>.
+                </div>
+
+                <!-- 2NF Decomposition Result Cards -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-diagram-3-fill text-success me-1"></i> The 2NF Decomposition Solution:</h6>
+                <p class="small text-muted mb-3">
+                    To satisfy 2NF, each partial dependency is extracted into its own independent relation with its determinant as the primary key:
+                </p>
+
+                <div class="row g-3">
+                    
+                    <!-- Table 1: STUDENT -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-primary mb-2">Relation 1: STUDENT</span>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-center font-monospace small mb-2">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th><u>StudentID (PK)</u></th>
+                                            <th>StudentName</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>101</td><td>Amit</td></tr>
+                                        <tr><td>102</td><td>Neha</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <small class="text-muted">FD: StudentID &rarr; StudentName (Full key)</small>
+                        </div>
+                    </div>
+
+                    <!-- Table 2: COURSE -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-success mb-2">Relation 2: COURSE</span>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-center font-monospace small mb-2">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th><u>CourseID (PK)</u></th>
+                                            <th>CourseName</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>C01</td><td>DBMS</td></tr>
+                                        <tr><td>C02</td><td>Python</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <small class="text-muted">FD: CourseID &rarr; CourseName (Full key)</small>
+                        </div>
+                    </div>
+
+                    <!-- Table 3: ENROLLMENT -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-warning text-dark mb-2">Relation 3: ENROLLMENT</span>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-center font-monospace small mb-2">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th><u>StudentID (FK)</u></th>
+                                            <th><u>CourseID (FK)</u></th>
+                                            <th>Grade</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>101</td><td>C01</td><td>A</td></tr>
+                                        <tr><td>101</td><td>C02</td><td>B+</td></tr>
+                                        <tr><td>102</td><td>C01</td><td>A-</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <small class="text-muted">FD: (StudentID, CourseID) &rarr; Grade (Pure Full FD)</small>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5.3 Practice Exercises -->
+    <section class="mb-5" id="2nf-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 5.1</span>
+                        <span class="text-muted small">Single vs Composite Keys</span>
+                    </div>
+                    <p class="fw-bold mb-1">Single-Attribute Key 2NF Evaluation:</p>
+                    <p class="small text-secondary mb-2">
+                        A table <code>EMPLOYEE(EmpID, Name, DeptID, Salary)</code> has primary key <code>EmpID</code>. Is it possible for this table to violate 2NF? Explain why or why not.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-2nf-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-2nf-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> No! Since the candidate key has only one attribute (<code>EmpID</code>), there are no proper subsets of the key. Therefore, partial dependencies cannot exist, and any 1NF table with a single-attribute candidate key is automatically in 2NF!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 5.2</span>
+                        <span class="text-muted small">Warehouse Inventory Decomposition</span>
+                    </div>
+                    <p class="fw-bold mb-1">Decompose Warehouse Inventory into 2NF:</p>
+                    <p class="small text-secondary mb-2">
+                        Given <code>INVENTORY(WarehouseID, ItemID, QtyOnHand, WarehouseCity, ItemDescription)</code> with key <code>(WarehouseID, ItemID)</code>. Decompose it into 2NF relations.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-2nf-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-2nf-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong><br>
+                            1. <code>WAREHOUSE(WarehouseID, WarehouseCity)</code> (Determinant: WarehouseID)<br>
+                            2. <code>ITEM(ItemID, ItemDescription)</code> (Determinant: ItemID)<br>
+                            3. <code>INVENTORY(WarehouseID, ItemID, QtyOnHand)</code> (Determinant: (WarehouseID, ItemID))
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 5.4 Lesson 5 Knowledge Check Quiz -->
+    <section class="mb-5" id="2nf-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">5.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Lesson 5 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase5-2nf">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. What constitutes a Partial Functional Dependency that violates 2NF?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_2nf_0" id="q_2nf_0_a" value="a">
+                            <label class="form-check-label" for="q_2nf_0_a">A) A primary key determining a non-prime attribute</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_2nf_0" id="q_2nf_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_2nf_0_b">B) A non-prime attribute being functionally determined by a proper subset of a composite candidate key</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_2nf_0" id="q_2nf_0_c" value="c">
+                            <label class="form-check-label" for="q_2nf_0_c">C) An attribute with multiple NULL values</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. In relation $R(A, B, C, D)$ with Candidate Key $(A, B)$, which dependency directly violates 2NF?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_2nf_1" id="q_2nf_1_a" value="a">
+                            <label class="form-check-label" for="q_2nf_1_a">A) $(A, B) \to C$</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_2nf_1" id="q_2nf_1_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_2nf_1_b">B) $A \to C$</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_2nf_1" id="q_2nf_1_c" value="c">
+                            <label class="form-check-label" for="q_2nf_1_c">C) $(A, B) \to D$</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. What is a "prime attribute" in relational database normalization theory?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_2nf_2" id="q_2nf_2_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_2nf_2_a">A) An attribute that is a member of at least one candidate key of the relation</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_2nf_2" id="q_2nf_2_b" value="b">
+                            <label class="form-check-label" for="q_2nf_2_b">B) An attribute whose values are prime numbers (2, 3, 5, 7)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_2nf_2" id="q_2nf_2_c" value="c">
+                            <label class="form-check-label" for="q_2nf_2_c">C) The first column created in a table</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase5-2nf">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

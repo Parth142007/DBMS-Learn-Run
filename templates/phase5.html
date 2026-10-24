@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Phase 5 — Database Design & Normalization | NEPC42 Syllabus{% endblock %}
+
+{% block content %}
+<!-- Phase 5 Module Header -->
+<div class="topic-header">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold">
+                    <i class="bi bi-mortarboard-fill me-1"></i> NEPC42 Syllabus &bull; Module 5
+                </span>
+                <span class="badge bg-light text-secondary border">Relational Theory &amp; Schema Design</span>
+            </div>
+            <h1 class="topic-title">Phase 5 &mdash; Database Design &amp; Normalization</h1>
+            <p class="topic-subtitle">
+                Eliminate Redundancy, Master Functional Dependencies &amp; Armstrong's Axioms, Decompose 1NF &rarr; 2NF &rarr; 3NF &rarr; BCNF, and Guarantee Lossless Joins
+            </p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <a href="/" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Main Dashboard
+            </a>
+            <a href="/phase-4" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-shield-lock me-1"></i> Phase 4: Views &amp; Security
+            </a>
+            <a href="/schema" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-diagram-3 me-1"></i> Schema Inspector
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Learning Objectives & Module Overview Banner -->
+<div class="card shadow-sm border mb-4 bg-white">
+    <div class="card-body p-4">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-8">
+                <h5 class="fw-bold text-dark mb-2">
+                    <i class="bi bi-book-half text-success me-2"></i>Module Learning Objectives
+                </h5>
+                <p class="small text-secondary mb-3">
+                    By completing this interactive normalization and schema design module, students will be able to:
+                </p>
+                <div class="row g-2 small text-secondary">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Identify <strong>Insertion, Update, and Deletion Anomalies</strong> caused by uncontrolled data redundancy.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Formulate <strong>Functional Dependencies ($X \to Y$)</strong>, deduce candidate keys, and apply <strong>Armstrong's Axioms</strong>.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Decompose relations sequentially into <strong>1NF, 2NF, 3NF, and BCNF</strong> without losing information.</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Differentiate between 3NF and BCNF using <strong>prime attributes</strong> and superkey determinants.</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-check2-circle text-success fs-6 mt-1 flex-shrink-0"></i>
+                            <span>Test and verify <strong>Lossless Join Decomposition</strong> and <strong>Dependency Preservation</strong> in interactive labs.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 border-start-lg ps-lg-4">
+                <div class="p-3 bg-light rounded border text-center">
+                    <span class="text-uppercase small fw-bold text-muted d-block mb-1">Estimated Total Study Time</span>
+                    <span class="h3 fw-bold text-dark d-block mb-1">
+                        <i class="bi bi-clock-history text-primary me-1"></i> ~150 mins
+                    </span>
+                    <span class="small text-muted d-block mb-3">10 Lessons &bull; 10 Quizzes &bull; Visualizers &amp; Practice Lab</span>
+                    <button class="btn btn-gfg btn-sm w-100" id="btn-start-reading">
+                        <i class="bi bi-play-circle me-1"></i> Start Lesson 1 Reading
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Learning Progress Tracker Card -->
+<div class="card shadow-sm border mb-4 bg-white" id="progress-card">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-trophy-fill text-warning fs-5"></i>
+                <span class="fw-bold text-dark">Phase 5 Normalization Progress:</span>
+                <span class="badge bg-success" id="progress-percentage-badge">0% Complete</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 small text-muted">
+                <span class="badge bg-light text-secondary border">
+                    <i class="bi bi-hdd-network me-1"></i> Saved locally &amp; synced with MySQL
+                </span>
+                <button class="btn btn-link btn-sm text-danger p-0 text-decoration-none" id="btn-reset-all-progress" title="Reset all Phase 5 progress">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="progress mb-3" style="height: 10px;">
+            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+                 id="phase5-progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        <!-- 10 Topic Status Indicators (Clickable Shortcuts) -->
+        <div class="row g-2 text-center small">
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill active-pill" id="pill-progress-intro" data-target="intro" title="Click to view Lesson 1">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">1. Design</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-intro">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-fds" data-target="fds" title="Click to view Lesson 2">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">2. FDs</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-fds">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-axioms" data-target="axioms" title="Click to view Lesson 3">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">3. Axioms</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-axioms">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-1nf" data-target="1nf" title="Click to view Lesson 4">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">4. 1NF</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-1nf">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-2nf" data-target="2nf" title="Click to view Lesson 5">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">5. 2NF</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-2nf">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-3nf" data-target="3nf" title="Click to view Lesson 6">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">6. 3NF</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-3nf">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-bcnf" data-target="bcnf" title="Click to view Lesson 7">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">7. BCNF</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-bcnf">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-comparison" data-target="comparison" title="Click to view Lesson 8">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">8. Compare</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-comparison">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-lossless" data-target="lossless" title="Click to view Lesson 9">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">9. Lossless</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-lossless">Quiz: 0/3</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-2 col-lg">
+                <div class="p-2 border rounded bg-light topic-progress-pill" id="pill-progress-practice-lab" data-target="practice-lab" title="Click to view Lesson 10">
+                    <i class="bi bi-circle text-muted me-1 status-icon"></i>
+                    <span class="fw-semibold">10. Lab</span>
+                    <span class="d-block text-muted" style="font-size: 0.72rem;" id="quiz-status-practice-lab">Cases: 0/5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Topic Navigation Tabs (Sticky Toolbar) -->
+<div class="topic-nav-sticky mb-4" id="topics-navigation">
+    <div class="nav nav-pills nav-fill p-1 bg-white border rounded shadow-sm gap-1 overflow-x-auto flex-nowrap" id="phase5-topic-tabs" role="tablist">
+        <button class="nav-link py-2 px-2 active fw-semibold text-nowrap phase5-nav-tab" id="tab-btn-intro" data-target="intro" data-topic="1" title="Lesson 1: Introduction to Database Design &amp; Modification Anomalies">
+            1. Design &amp; Anomalies
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase5-nav-tab" id="tab-btn-fds" data-target="fds" data-topic="2" title="Lesson 2: Functional Dependencies &amp; Candidate Keys">
+            2. Functional Deps
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase5-nav-tab" id="tab-btn-axioms" data-target="axioms" data-topic="3" title="Lesson 3: Armstrong's Axioms &amp; Inference Rules">
+            3. Armstrong Axioms
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase5-nav-tab" id="tab-btn-1nf" data-target="1nf" data-topic="4" title="Lesson 4: First Normal Form (1NF)">
+            4. 1NF
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase5-nav-tab" id="tab-btn-2nf" data-target="2nf" data-topic="5" title="Lesson 5: Second Normal Form (2NF)">
+            5. 2NF
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase5-nav-tab" id="tab-btn-3nf" data-target="3nf" data-topic="6" title="Lesson 6: Third Normal Form (3NF)">
+            6. 3NF
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase5-nav-tab" id="tab-btn-bcnf" data-target="bcnf" data-topic="7" title="Lesson 7: Boyce-Codd Normal Form (BCNF)">
+            7. BCNF
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase5-nav-tab" id="tab-btn-comparison" data-target="comparison" data-topic="8" title="Lesson 8: Comparing Normal Forms">
+            8. Compare NFs
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase5-nav-tab" id="tab-btn-lossless" data-target="lossless" data-topic="9" title="Lesson 9: Lossless Join &amp; Dependency Preservation">
+            9. Lossless &amp; Preserv.
+        </button>
+        <button class="nav-link py-2 px-2 fw-semibold text-secondary text-nowrap phase5-nav-tab" id="tab-btn-practice-lab" data-target="practice-lab" data-topic="10" title="Lesson 10: Normalization Practice Lab">
+            10. Practice Lab
+        </button>
+    </div>
+</div>
+
+<!-- ====================================================================
+     Topic Content Containers (Lessons 1-10)
+     ==================================================================== -->
+<div id="topic-container-intro" class="topic-section-panel">
+    {% include 'phase5/topic1_intro_design.html' %}
+</div>
+
+<div id="topic-container-fds" class="topic-section-panel d-none">
+    {% include 'phase5/topic2_functional_dependencies.html' %}
+</div>
+
+<div id="topic-container-axioms" class="topic-section-panel d-none">
+    {% include 'phase5/topic3_armstrongs_axioms.html' %}
+</div>
+
+<div id="topic-container-1nf" class="topic-section-panel d-none">
+    {% include 'phase5/topic4_1nf.html' %}
+</div>
+
+<div id="topic-container-2nf" class="topic-section-panel d-none">
+    {% include 'phase5/topic5_2nf.html' %}
+</div>
+
+<div id="topic-container-3nf" class="topic-section-panel d-none">
+    {% include 'phase5/topic6_3nf.html' %}
+</div>
+
+<div id="topic-container-bcnf" class="topic-section-panel d-none">
+    {% include 'phase5/topic7_bcnf.html' %}
+</div>
+
+<div id="topic-container-comparison" class="topic-section-panel d-none">
+    {% include 'phase5/topic8_comparison.html' %}
+</div>
+
+<div id="topic-container-lossless" class="topic-section-panel d-none">
+    {% include 'phase5/topic9_lossless_preservation.html' %}
+</div>
+
+<div id="topic-container-practice-lab" class="topic-section-panel d-none">
+    {% include 'phase5/topic10_practice_lab.html' %}
+</div>
+
+<!-- Prev / Next Navigation Footer -->
+<div class="card border shadow-sm mt-4 bg-white">
+    <div class="card-body p-3 d-flex justify-content-between align-items-center">
+        <button class="btn btn-outline-secondary btn-sm" id="btn-prev-topic" disabled>
+            <i class="bi bi-chevron-left me-1"></i> Previous Lesson
+        </button>
+        <span class="small text-muted" id="topic-indicator-text">Viewing Lesson 1 of 10: Introduction to Database Design</span>
+        <button class="btn btn-gfg btn-sm" id="btn-next-topic">
+            Next Lesson: Functional Dependencies <i class="bi bi-chevron-right ms-1"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Toast for Copy & Feedback -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1090">
+    <div id="phase5-toast" class="toast align-items-center text-bg-success border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body small" id="phase5-toast-msg">
+                Action completed successfully!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/phase5.js') }}"></script>
+{% endblock %}

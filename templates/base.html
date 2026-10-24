@@ -54,6 +54,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if active_page == 'phase5' %}active fw-semibold text-success{% endif %}" href="/phase-5">
+                            <i class="bi bi-diagram-2-fill me-1"></i> Phase 5: Normalization
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if active_page == 'schema' %}active fw-semibold text-success{% endif %}" href="/schema">
                             <i class="bi bi-diagram-3-fill me-1"></i> Schema Inspector
                         </a>
@@ -168,9 +173,39 @@
                 <i class="bi bi-key"></i> 5. Authorization &amp; Security
             </a>
 
-            <div class="sidebar-header">Module 5: Design & Theory</div>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 5">
-                <i class="bi bi-diagram-2"></i> Normalization (1NF to BCNF)
+            <div class="sidebar-header">Module 5: Normalization (Phase 5)</div>
+            <a href="/phase-5" class="sidebar-nav-link {% if active_page == 'phase5' and not current_topic %}active{% endif %}">
+                <i class="bi bi-award"></i> Phase 5 Dashboard
+            </a>
+            <a href="/phase-5?topic=intro" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == 'intro' %}active{% endif %}">
+                <i class="bi bi-exclamation-triangle"></i> 1. Design &amp; Anomalies
+            </a>
+            <a href="/phase-5?topic=fds" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == 'fds' %}active{% endif %}">
+                <i class="bi bi-arrow-right-circle"></i> 2. Functional Dependencies
+            </a>
+            <a href="/phase-5?topic=axioms" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == 'axioms' %}active{% endif %}">
+                <i class="bi bi-calculator"></i> 3. Armstrong's Axioms
+            </a>
+            <a href="/phase-5?topic=1nf" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == '1nf' %}active{% endif %}">
+                <i class="bi bi-1-circle"></i> 4. First Normal Form (1NF)
+            </a>
+            <a href="/phase-5?topic=2nf" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == '2nf' %}active{% endif %}">
+                <i class="bi bi-2-circle"></i> 5. Second Normal Form (2NF)
+            </a>
+            <a href="/phase-5?topic=3nf" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == '3nf' %}active{% endif %}">
+                <i class="bi bi-3-circle"></i> 6. Third Normal Form (3NF)
+            </a>
+            <a href="/phase-5?topic=bcnf" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == 'bcnf' %}active{% endif %}">
+                <i class="bi bi-shield-shaded"></i> 7. Boyce-Codd Form (BCNF)
+            </a>
+            <a href="/phase-5?topic=comparison" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == 'comparison' %}active{% endif %}">
+                <i class="bi bi-table"></i> 8. Comparing Normal Forms
+            </a>
+            <a href="/phase-5?topic=lossless" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == 'lossless' %}active{% endif %}">
+                <i class="bi bi-check2-circle"></i> 9. Lossless &amp; Preservation
+            </a>
+            <a href="/phase-5?topic=practice-lab" class="sidebar-nav-link {% if active_page == 'phase5' and current_topic == 'practice-lab' %}active{% endif %}">
+                <i class="bi bi-tools"></i> 10. Normalization Practice Lab
             </a>
 
             <div class="sidebar-header">Module 6: Transactions</div>

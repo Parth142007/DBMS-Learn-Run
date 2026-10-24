@@ -1,0 +1,311 @@
+<!-- ====================================================================
+     Topic 2: Functional Dependencies
+     NEPC42 Syllabus — Module 5: Database Design & Normalization
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-fds">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Lesson 2 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">2. Functional Dependencies &amp; Candidate Keys</h2>
+            <p class="text-secondary mb-0">
+                Master the formal language of relational schema constraints &mdash; discover what functional dependencies mean, explore Determinants and Dependents, and classify dependencies into <strong>Trivial</strong>, <strong>Full</strong>, <strong>Partial</strong>, and <strong>Transitive</strong>.
+            </p>
+        </div>
+    </div>
+
+    <!-- 2.1 Formal Definition -->
+    <section class="mb-5" id="fds-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is a Functional Dependency?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Let $R$ be a relational schema, and let $X$ and $Y$ be subsets of attributes in $R$. A <strong>functional dependency</strong>, denoted by:
+                </p>
+                <div class="text-center my-3">
+                    <span class="h4 fw-bold text-primary font-monospace p-2 border rounded bg-light d-inline-block">
+                        X &rarr; Y
+                    </span>
+                    <span class="d-block text-muted small mt-1">(Read as: "X functionally determines Y", or "Y is functionally dependent on X")</span>
+                </div>
+                <p>
+                    <strong>Formal Definition:</strong> In any legal relational state $r(R)$, for every pair of tuples $t_1, t_2 \in r$:
+                </p>
+                <div class="p-3 bg-light rounded border font-monospace text-center small mb-3">
+                    If &nbsp; <strong>t<sub>1</sub>[X] = t<sub>2</sub>[X]</strong>, &nbsp; then &nbsp; <strong>t<sub>1</sub>[Y] = t<sub>2</sub>[Y]</strong>.
+                </div>
+                <p class="small text-secondary mb-3">
+                    In plain English: If you know the value of attribute set $X$, there is <strong>exactly one corresponding value</strong> of attribute set $Y$.
+                </p>
+
+                <!-- Determinant and Dependent Box -->
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-primary-subtle h-100">
+                            <span class="badge bg-primary mb-1">Left-Hand Side (LHS)</span>
+                            <h6 class="fw-bold mb-1">Determinant (X)</h6>
+                            <p class="small text-secondary mb-0">The attribute or set of attributes whose values uniquely determine the values of the dependent attributes.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-success-subtle h-100">
+                            <span class="badge bg-success mb-1">Right-Hand Side (RHS)</span>
+                            <h6 class="fw-bold mb-1">Dependent (Y)</h6>
+                            <p class="small text-secondary mb-0">The attribute or set of attributes whose value is uniquely determined by the determinant.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CRITICAL WARNING: Domain rules vs Sample Rows -->
+                <div class="alert alert-warning mt-4 mb-0 small">
+                    <strong class="d-block mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Crucial Relational Rule: FDs Cannot Be Inferred from Sample Rows Alone!</strong>
+                    A sample instance of a table can demonstrate that a functional dependency <em>does NOT hold</em> (by showing a counterexample with identical $X$ but differing $Y$). However, you can <strong>never prove that an FD holds purely by inspecting current rows</strong>! Functional dependencies are <strong>enterprise business rules and physical integrity constraints</strong> defined by the real-world domain.
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.2 Classification of Functional Dependencies -->
+    <section class="mb-5" id="fds-classification">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Classification of Functional Dependencies</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <div class="row g-3 mb-4">
+                    <!-- Trivial vs Non-Trivial -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h6 class="fw-bold text-dark"><i class="bi bi-bookmark-check text-primary me-1"></i> Trivial vs. Non-Trivial FDs</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Trivial:</strong> $X \to Y$ is trivial if $Y \subseteq X$. For example, <code>(StudentID, CourseID) &rarr; StudentID</code> is always guaranteed to hold mathematically because $StudentID$ is already inside the determinant!
+                            </p>
+                            <p class="small text-secondary mb-0">
+                                <strong>Non-Trivial:</strong> $X \to Y$ is non-trivial if $Y \not\subseteq X$. It is <em>completely non-trivial</em> if $X \cap Y = \emptyset$.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Full vs Partial -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h6 class="fw-bold text-dark"><i class="bi bi-diagram-2 text-danger me-1"></i> Full vs. Partial Dependencies</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Full Dependency:</strong> $Y$ is fully functionally dependent on $X$ if removing <em>any attribute</em> from $X$ causes the dependency to no longer hold. E.g. <code>(StudentID, CourseID) &rarr; Grade</code>.
+                            </p>
+                            <p class="small text-secondary mb-0">
+                                <strong>Partial Dependency:</strong> An attribute $Y$ depends on a <em>proper subset</em> of a composite key $X$. E.g. <code>(StudentID, CourseID) &rarr; StudentName</code> is partial because <code>StudentID &rarr; StudentName</code> holds alone!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transitive Dependency Deep Dive -->
+                <div class="p-3 bg-warning-subtle border rounded mb-3">
+                    <h6 class="fw-bold text-dark mb-1"><i class="bi bi-shuffle text-warning me-1"></i> Transitive Functional Dependency ($X \to Y \to Z$)</h6>
+                    <p class="small text-secondary mb-2">
+                        A functional dependency $X \to Z$ is <strong>transitive</strong> if there exists an attribute or set $Y$ such that:
+                    </p>
+                    <div class="font-monospace text-center small my-2 p-2 bg-white rounded border">
+                        X &rarr; Y &nbsp;&nbsp; AND &nbsp;&nbsp; Y &rarr; Z &nbsp;&nbsp; (where Y does not determine X, and Z is not a subset of Y)
+                    </div>
+                    <p class="small text-secondary mb-0">
+                        <strong>Student-Department Example:</strong><br>
+                        In <code>STUDENT(StudentID, StudentName, DepartmentID, DepartmentName)</code>:<br>
+                        1. <code>StudentID &rarr; DepartmentID</code> (Each student belongs to one department)<br>
+                        2. <code>DepartmentID &rarr; DepartmentName</code> (Each department has one unique name)<br>
+                        &rArr; Therefore, <code>StudentID &rarr; DepartmentName</code> is a <strong>transitive dependency</strong>!
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.3 Interactive Functional Dependency Explorer -->
+    <section class="mb-5" id="fds-explorer">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Interactive Functional Dependency Explorer</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="fw-bold"><i class="bi bi-compass-fill text-success me-2"></i>Functional Dependency Analyzer</span>
+                <span class="badge bg-success-subtle text-success">Schema Rule Engine</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-muted mb-3">
+                    Select a sample relation and inspect its dependencies to examine the Determinant, Dependent, Dependency Type, and Normal Form implications:
+                </p>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-dark">Select Enterprise Relation:</label>
+                        <select class="form-select form-select-sm" id="select-fd-relation">
+                            <option value="student_dept" selected>STUDENT(StudentID, Name, DeptID, DeptName)</option>
+                            <option value="enrollment">ENROLLMENT(StudentID, CourseID, Grade, StudentName, CourseName)</option>
+                            <option value="hospital">APPOINTMENT(PatientID, DoctorID, Room, Date, Diagnosis)</option>
+                            <option value="advisor">ADVISOR(Student, Course, Instructor)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-dark">Select Functional Dependency:</label>
+                        <select class="form-select form-select-sm font-monospace" id="select-fd-item">
+                            <!-- Populated dynamically via JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Live Analysis Container -->
+                <div id="fd-analysis-output" class="p-3 bg-light rounded border font-monospace small" style="min-height: 140px;">
+                    <!-- Rendered by JS -->
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.4 Practice Exercises -->
+    <section class="mb-5" id="fds-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 2.1</span>
+                        <span class="text-muted small">Partial Dependency Check</span>
+                    </div>
+                    <p class="fw-bold mb-1">Library Loan System:</p>
+                    <p class="small text-secondary mb-2">
+                        Given relation <code>BOOK_LOAN(BookID, MemberID, DueDate, BookTitle, MemberName)</code> with candidate key <code>(BookID, MemberID)</code>. Identify which dependencies are full and which are partial.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-fd-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-fd-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong><br>
+                            &bull; <code>(BookID, MemberID) &rarr; DueDate</code> is a <strong>Full Functional Dependency</strong>.<br>
+                            &bull; <code>BookID &rarr; BookTitle</code> and <code>MemberID &rarr; MemberName</code> are <strong>Partial Dependencies</strong> because they depend on parts of the primary key!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 2.2</span>
+                        <span class="text-muted small">Transitive Dependency</span>
+                    </div>
+                    <p class="fw-bold mb-1">Order Processing System:</p>
+                    <p class="small text-secondary mb-2">
+                        In relation <code>ORDERS(OrderID, OrderDate, CustomerID, CustomerCity, ShippingRate)</code> where <code>OrderID &rarr; CustomerID</code>, <code>CustomerID &rarr; CustomerCity</code>, and <code>CustomerCity &rarr; ShippingRate</code>. Trace the transitive dependency chain starting from <code>OrderID</code>.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-fd-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-fd-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> <code>OrderID &rarr; CustomerID &rarr; CustomerCity &rarr; ShippingRate</code>. The primary key <code>OrderID</code> determines <code>ShippingRate</code> transitively through <code>CustomerID</code> and <code>CustomerCity</code>!
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 2.5 Lesson 2 Knowledge Check Quiz -->
+    <section class="mb-5" id="fds-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">2.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Lesson 2 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase5-fds">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. In the functional dependency <code>DepartmentID &rarr; DepartmentName</code>, what is <code>DepartmentID</code> called?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_fds_0" id="q_fds_0_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_fds_0_a">A) Determinant</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_fds_0" id="q_fds_0_b" value="b">
+                            <label class="form-check-label" for="q_fds_0_b">B) Dependent</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_fds_0" id="q_fds_0_c" value="c">
+                            <label class="form-check-label" for="q_fds_0_c">C) Trivial attribute</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. Which of the following is a Trivial Functional Dependency?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_fds_1" id="q_fds_1_a" value="a">
+                            <label class="form-check-label" for="q_fds_1_a">A) <code>StudentID &rarr; StudentName</code></label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_fds_1" id="q_fds_1_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_fds_1_b">B) <code>(StudentID, CourseID) &rarr; StudentID</code></label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_fds_1" id="q_fds_1_c" value="c">
+                            <label class="form-check-label" for="q_fds_1_c">C) <code>DeptID &rarr; DeptLocation</code></label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. Can you establish that a functional dependency $X \to Y$ holds for all time simply by verifying that current sample rows in a table do not violate it?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_fds_2" id="q_fds_2_a" value="a">
+                            <label class="form-check-label" for="q_fds_2_a">A) Yes, if the table has more than 100 rows</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_fds_2" id="q_fds_2_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_fds_2_b">B) No &mdash; functional dependencies represent enterprise business rules; sample rows can only disprove an FD, never prove it holds universally</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_fds_2" id="q_fds_2_c" value="c">
+                            <label class="form-check-label" for="q_fds_2_c">C) Yes, because MySQL automatically computes FDs on table creation</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase5-fds">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

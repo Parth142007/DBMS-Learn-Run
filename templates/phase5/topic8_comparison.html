@@ -1,0 +1,421 @@
+<!-- ====================================================================
+     Topic 8: Comparing Normal Forms
+     NEPC42 Syllabus — Module 5: Database Design & Normalization
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-comparison">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-warning">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle fw-bold px-2 py-1">Lesson 8 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 20 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">8. Comparative Matrix: 1NF vs. 2NF vs. 3NF vs. BCNF</h2>
+            <p class="text-secondary mb-0">
+                Synthesize your understanding across all normal forms: requirements, dependency targets, decomposition strategies, and real-world engineering trade-offs between normalization and query performance.
+            </p>
+        </div>
+    </div>
+
+    <!-- 8.1 The Normal Form Hierarchy -->
+    <section class="mb-5" id="nf-hierarchy">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">8.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The Normalization Hierarchy &amp; Nesting</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="text-secondary">
+                    Normal forms exist in a strict nesting hierarchy where each successive normal form adds a tighter constraint to the previous form:
+                </p>
+
+                <!-- Visual Hierarchy Cards -->
+                <div class="row g-2 text-center mb-4">
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <span class="badge bg-secondary mb-2">Level 1</span>
+                            <h6 class="fw-bold mb-1">1NF</h6>
+                            <p class="small text-muted mb-0">Atomic values only; no repeating groups</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light border-primary">
+                            <span class="badge bg-primary mb-2">Level 2</span>
+                            <h6 class="fw-bold mb-1">2NF</h6>
+                            <p class="small text-muted mb-0">1NF + No partial dependencies on composite keys</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light border-success">
+                            <span class="badge bg-success mb-2">Level 3</span>
+                            <h6 class="fw-bold mb-1">3NF</h6>
+                            <p class="small text-muted mb-0">2NF + No transitive dependencies</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light border-info">
+                            <span class="badge bg-info mb-2">Level 3.5</span>
+                            <h6 class="fw-bold mb-1">BCNF</h6>
+                            <p class="small text-muted mb-0">3NF + Every determinant is a superkey</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-secondary py-2 px-3 small font-monospace text-center mb-0">
+                    <strong>Relation Set Inclusion:</strong> All Relations &sup3; 1NF &sup3; 2NF &sup3; 3NF &sup3; BCNF
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8.2 Comprehensive Comparison Matrix -->
+    <section class="mb-5" id="nf-matrix">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">8.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Comprehensive Comparison Matrix</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle small mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 10%;">Normal Form</th>
+                                <th style="width: 20%;">Core Requirement</th>
+                                <th style="width: 18%;">Dependency Targeted</th>
+                                <th style="width: 24%;">Example Violation</th>
+                                <th style="width: 28%;">Typical Decomposition Strategy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary fs-6">1NF</span><br>
+                                    <span class="text-muted small">First Normal Form</span>
+                                </td>
+                                <td>
+                                    All attribute values must be <strong>atomic</strong> (indivisible). No repeating groups, arrays, or comma-separated lists.
+                                </td>
+                                <td>
+                                    <strong>Multivalued / Non-atomic attributes</strong>
+                                </td>
+                                <td>
+                                    <code>Courses = "DBMS, Python"</code> in a single column row.
+                                </td>
+                                <td>
+                                    Create a row for each course value or split out a separate bridge entity with foreign keys.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary fs-6">2NF</span><br>
+                                    <span class="text-muted small">Second Normal Form</span>
+                                </td>
+                                <td>
+                                    Must be in 1NF and have <strong>no partial functional dependencies</strong>. Non-prime attributes must depend on the <em>whole</em> candidate key.
+                                </td>
+                                <td>
+                                    <strong>Partial Functional Dependencies:</strong><br>
+                                    $X \to A$ where $X \subset \text{Candidate Key}$
+                                </td>
+                                <td>
+                                    <code>(StudentID, CourseID) &rarr; StudentName</code> where <code>StudentID &rarr; StudentName</code> holds.
+                                </td>
+                                <td>
+                                    Extract the determinant and dependent attribute into their own entity: <code>STUDENT(StudentID, StudentName)</code>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="badge bg-success fs-6">3NF</span><br>
+                                    <span class="text-muted small">Third Normal Form</span>
+                                </td>
+                                <td>
+                                    Must be in 2NF and have <strong>no transitive dependencies</strong>. For every $X \to A$, either $X$ is superkey or $A$ is prime.
+                                </td>
+                                <td>
+                                    <strong>Transitive Dependencies:</strong><br>
+                                    $Key \to Y \to A$ (non-key determines non-key)
+                                </td>
+                                <td>
+                                    <code>StudentID &rarr; DeptID</code> and <code>DeptID &rarr; DeptName</code> in same relation.
+                                </td>
+                                <td>
+                                    Extract the transitive chain: <code>DEPARTMENT(DeptID, DeptName)</code>, keeping <code>DeptID</code> as FK in <code>STUDENT</code>.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="badge bg-info text-dark fs-6">BCNF</span><br>
+                                    <span class="text-muted small">Boyce-Codd</span>
+                                </td>
+                                <td>
+                                    For <em>every</em> non-trivial $X \to A$, <strong>$X$ must be a superkey</strong>. (No prime-attribute exception).
+                                </td>
+                                <td>
+                                    <strong>Dependencies where determinant is not a superkey</strong> (even if $A$ is prime)
+                                </td>
+                                <td>
+                                    <code>R(Student, Course, Instructor)</code> where <code>Instructor &rarr; Course</code> and keys are <code>{S, C}</code> and <code>{S, I}</code>.
+                                </td>
+                                <td>
+                                    Decompose on the non-superkey determinant: <code>R1(Instructor, Course)</code> and <code>R2(Student, Instructor)</code>.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8.3 Practical Trade-offs: When to Stop Normalizing -->
+    <section class="mb-5" id="nf-tradeoffs">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">8.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Real-World Engineering: Trade-offs &amp; Denormalization</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="text-secondary">
+                    Is the highest normal form always the best engineering choice? <strong>No!</strong> Database design is an engineering discipline that balances theoretical purity against operational performance.
+                </p>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h6 class="fw-bold text-success mb-2"><i class="bi bi-shield-check me-1"></i> Benefits of High Normalization (3NF / BCNF)</h6>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li class="mb-1"><strong>Zero redundancy:</strong> Facts are stored in exactly one place.</li>
+                                <li class="mb-1"><strong>Guaranteed consistency:</strong> Update, insertion, and deletion anomalies are virtually eliminated.</li>
+                                <li class="mb-1"><strong>Minimal storage overhead:</strong> Avoids duplicating repetitive strings across millions of rows.</li>
+                                <li><strong>Optimal for OLTP:</strong> Fast writes, updates, and transactions in high-throughput transactional applications.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h6 class="fw-bold text-danger mb-2"><i class="bi bi-exclamation-triangle me-1"></i> Costs &amp; Drawbacks of Excessive Splitting</h6>
+                            <ul class="small text-secondary ps-3 mb-0">
+                                <li class="mb-1"><strong>Complex multi-table JOINs:</strong> Fetching a simple user profile might require joining 6 or 7 separate normalized tables.</li>
+                                <li class="mb-1"><strong>Slower analytical queries:</strong> High computational cost for reports and aggregations.</li>
+                                <li class="mb-1"><strong>Potential loss of dependency preservation:</strong> Decomposing to BCNF can make constraint enforcement slower.</li>
+                                <li><strong>Developer friction:</strong> More foreign keys, triggers, and query joins to maintain.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Industry Rule of Thumb -->
+                <div class="alert alert-info border-info d-flex align-items-center gap-3 mb-0">
+                    <i class="bi bi-gear-wide-connected fs-2 text-info"></i>
+                    <div class="small">
+                        <strong>Standard Industry Practice:</strong> Most production relational databases are designed to <strong>3NF</strong> for transactional systems (OLTP). In data warehouses and analytical systems (OLAP), intentional <strong>denormalization</strong> (such as Star or Snowflake schemas) is practiced to optimize read throughput.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8.4 Practice Exercises -->
+    <section class="mb-5" id="comparison-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">8.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises with Guided Solutions</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="exercise-item border rounded p-3 mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-secondary">Exercise 1</span>
+                        <span class="text-muted small">Normal Form Identification</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Relation $R(A, B, C)$ has Candidate Key $A$. Dependencies: $A \to B, C$ and $B \to C$.<br>
+                        <strong>Question:</strong> What is the highest normal form satisfied by $R$?
+                    </p>
+                    <div class="d-flex gap-2 mb-2">
+                        <button class="btn btn-sm btn-outline-primary btn-toggle-hint" data-target="#hint-comp-ex1">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-toggle-solution" data-target="#sol-comp-ex1">
+                            <i class="bi bi-check-circle me-1"></i> Show Solution
+                        </button>
+                    </div>
+                    <div class="collapse alert alert-info py-2 px-3 small mb-2" id="hint-comp-ex1">
+                        <strong>Hint:</strong> Candidate key is single-attribute $\{A\}$. Can there be any partial dependency? Is there a transitive dependency?
+                    </div>
+                    <div class="collapse alert alert-success py-2 px-3 small mb-0" id="sol-comp-ex1">
+                        <strong>Solution:</strong><br>
+                        1. Candidate key is single attribute $A$, so partial dependencies are impossible &rarr; <strong>Satisfies 2NF</strong>.<br>
+                        2. In $B \to C$, $B$ is a non-prime attribute determining another non-prime attribute $C$ &rarr; Transitive dependency exists ($A \to B \to C$)!<br>
+                        3. Since $B$ is not a superkey and $C$ is not prime, it violates 3NF.<br>
+                        <strong>Conclusion:</strong> Highest normal form is <strong>2NF</strong>.
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="exercise-item border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-secondary">Exercise 2</span>
+                        <span class="text-muted small">3NF vs. BCNF Distinction</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        State the condition under which a relation in 3NF is guaranteed to also be in BCNF without any further decomposition.
+                    </p>
+                    <div class="d-flex gap-2 mb-2">
+                        <button class="btn btn-sm btn-outline-primary btn-toggle-hint" data-target="#hint-comp-ex2">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-toggle-solution" data-target="#sol-comp-ex2">
+                            <i class="bi bi-check-circle me-1"></i> Show Solution
+                        </button>
+                    </div>
+                    <div class="collapse alert alert-info py-2 px-3 small mb-2" id="hint-comp-ex2">
+                        <strong>Hint:</strong> Think about candidate keys: what if there is only one candidate key, or no composite keys overlap?
+                    </div>
+                    <div class="collapse alert alert-success py-2 px-3 small mb-0" id="sol-comp-ex2">
+                        <strong>Solution:</strong><br>
+                        A relation in 3NF is <strong>guaranteed to be in BCNF</strong> if:<br>
+                        1. It has only a <strong>single candidate key</strong>, OR<br>
+                        2. All candidate keys are <strong>disjoint (non-overlapping)</strong> and single attributes.<br>
+                        BCNF can only differ from 3NF when there are overlapping composite candidate keys.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 8.5 Topic Quiz -->
+    <section class="mb-4" id="comparison-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">8.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Lesson 8 Knowledge Check</h3>
+        </div>
+
+        <div class="card border-0 shadow-sm bg-white rounded-3">
+            <div class="card-body p-4">
+                <form id="quiz-form-topic8" class="topic-quiz-form" data-topic="8">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom">
+                        <h6 class="fw-bold text-dark mb-2">
+                            1. What type of functional dependency is eliminated when progressing specifically from 1NF to 2NF?
+                        </h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q8_1" id="q8_1_a" value="a">
+                            <label class="form-check-label small" for="q8_1_a">
+                                Transitive dependencies
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q8_1" id="q8_1_b" value="b">
+                            <label class="form-check-label small" for="q8_1_b">
+                                Partial functional dependencies on a composite candidate key
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q8_1" id="q8_1_c" value="c">
+                            <label class="form-check-label small" for="q8_1_c">
+                                Trivial functional dependencies
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q8_1" id="q8_1_d" value="d">
+                            <label class="form-check-label small" for="q8_1_d">
+                                Multivalued dependencies
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom">
+                        <h6 class="fw-bold text-dark mb-2">
+                            2. Why is complete decomposition into higher normal forms (like BCNF) sometimes avoided in production databases?
+                        </h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q8_2" id="q8_2_a" value="a">
+                            <label class="form-check-label small" for="q8_2_a">
+                                Because SQL cannot store tables with more than 3 columns
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q8_2" id="q8_2_b" value="b">
+                            <label class="form-check-label small" for="q8_2_b">
+                                Excessive table splitting increases JOIN query costs and may fail to preserve certain functional dependencies
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q8_2" id="q8_2_c" value="c">
+                            <label class="form-check-label small" for="q8_2_c">
+                                BCNF tables do not support primary keys
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q8_2" id="q8_2_d" value="d">
+                            <label class="form-check-label small" for="q8_2_d">
+                                Higher normal forms cannot be queried using SELECT statements
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-4">
+                        <h6 class="fw-bold text-dark mb-2">
+                            3. Which phrase represents the memorable mnemonic for the progression from 1NF to 3NF?
+                        </h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q8_3" id="q8_3_a" value="a">
+                            <label class="form-check-label small" for="q8_3_a">
+                                "The key, the whole key (2NF), and nothing but the key (3NF)"
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q8_3" id="q8_3_b" value="b">
+                            <label class="form-check-label small" for="q8_3_b">
+                                "Primary key, foreign key, and candidate key"
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q8_3" id="q8_3_c" value="c">
+                            <label class="form-check-label small" for="q8_3_c">
+                                "Select, From, and Where"
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q8_3" id="q8_3_d" value="d">
+                            <label class="form-check-label small" for="q8_3_d">
+                                "Rows, Columns, and Tables"
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="btn btn-primary px-4 btn-submit-topic-quiz" data-topic="8">
+                            <i class="bi bi-send-check me-1"></i> Submit Lesson 8 Quiz
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary px-3 btn-retry-topic-quiz d-none" data-topic="8">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Retry
+                        </button>
+                        <div class="quiz-score-badge d-none">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fs-6 px-3 py-2"></span>
+                        </div>
+                    </div>
+
+                    <div class="quiz-feedback-box mt-3 d-none"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+</div>

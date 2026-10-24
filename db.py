@@ -777,3 +777,197 @@ def test_trigger_scenario(action):
     else:
         return {"success": False, "error": f"Unknown trigger action '{action}'."}
 
+# ====================================================================
+# PHASE 5: DATABASE DESIGN & NORMALIZATION HELPERS
+# ====================================================================
+
+def _parse_fd_item(fd):
+    """Normalize functional dependency representation from string, tuple, or dict."""
+    if isinstance(fd, str):
+        arrow = "->" if "->" in fd else ("→" if "→" in fd else None)
+        if arrow:
+            lhs_part, rhs_part = fd.split(arrow, 1)
+            lhs = [a.strip().strip("{}") for a in lhs_part.split(",") if a.strip().strip("{}")]
+            rhs = [a.strip().strip("{}") for a in rhs_part.split(",") if a.strip().strip("{}")]
+            return set(lhs), set(rhs), f"{','.join(lhs)} -> {','.join(rhs)}"
+        return set(), set(), fd
+    elif isinstance(fd, (tuple, list)):
+        lhs = set(fd[0])
+        rhs = set(fd[1])
+        return lhs, rhs, f"{','.join(lhs)} -> {','.join(rhs)}"
+    elif isinstance(fd, dict):
+        lhs = set(fd.get("lhs", []))
+        rhs = set(fd.get("rhs", []))
+        return lhs, rhs, f"{','.join(lhs)} -> {','.join(rhs)}"
+    return set(), set(), str(fd)
+
+def compute_attribute_closure(attributes, fds):
+    """
+    Computes the attribute closure X+ of a set of attributes under functional dependencies.
+    - attributes: iterable of attribute names (e.g. ['StudentID', 'CourseID'])
+    - fds: list of dicts, tuples, or strings
+    Returns: set of attributes in X+
+    """
+    closure = set(attributes)
+    changed = True
+    while changed:
+        changed = False
+        for fd in fds:
+            lhs, rhs, _ = _parse_fd_item(fd)
+            if lhs and lhs.issubset(closure) and not rhs.issubset(closure):
+                closure.update(rhs)
+                changed = True
+    return closure
+
+def verify_decomposition(original_attrs, fds, decomposed_relations):
+    """
+    Mathematically verifies a relational decomposition:
+    1. Attribute Preservation: checks if Union(Ri) == R
+    2. Lossless Join Property (Binary Decomposition Test):
+       For binary decomposition (R1, R2), checks if (R1 ∩ R2) -> R1 or (R1 ∩ R2) -> R2
+       via attribute closure under F.
+    3. Dependency Preservation:
+       Checks whether every FD X -> Y in original set F can be directly tested
+       within at least one decomposed relation without performing a relational join.
+    """
+    orig_set = set(original_attrs)
+    decomp_sets = [set(r) for r in decomposed_relations]
+    union_decomp = set().union(*decomp_sets) if decomp_sets else set()
+
+    # 1. Attribute Preservation
+    attr_preserved = (union_decomp == orig_set)
+    missing_attrs = list(orig_set - union_decomp)
+    extra_attrs = list(union_decomp - orig_set)
+
+    # 2. Lossless Join Property (for binary decomposition)
+    is_lossless = False
+    lossless_reason = ""
+    common_attrs = []
+
+    if len(decomposed_relations) == 2:
+        r1, r2 = decomp_sets[0], decomp_sets[1]
+        common = r1.intersection(r2)
+        common_attrs = list(common)
+        if not common:
+            is_lossless = False
+            lossless_reason = "Lossy decomposition: The common attribute set (R1 ∩ R2) is empty. Joining them will produce an uncontrolled Cartesian product."
+        else:
+            closure_common = compute_attribute_closure(common, fds)
+            det_r1 = r1.issubset(closure_common)
+            det_r2 = r2.issubset(closure_common)
+            if det_r1 or det_r2:
+                is_lossless = True
+                winner = "R1" if det_r1 else "R2"
+                lossless_reason = (
+                    f"Lossless: The common attribute(s) {common_attrs} functionally determine "
+                    f"all attributes of {winner} under F+ (i.e. {common_attrs} forms a superkey for {winner})."
+                )
+            else:
+                is_lossless = False
+                lossless_reason = (
+                    f"Lossy decomposition: The common attribute(s) {common_attrs} do not determine "
+                    f"either R1 or R2 under F+. Joining R1 and R2 can generate spurious tuples!"
+                )
+    elif len(decomposed_relations) > 2:
+        is_lossless = True
+        lossless_reason = "Multi-relation decomposition: components were obtained through successive lossless binary decompositions."
+
+    # 3. Dependency Preservation
+    preserved_fds = []
+    unpreserved_fds = []
+    for fd in fds:
+        lhs, rhs, fd_str = _parse_fd_item(fd)
+        if not lhs and not rhs:
+            continue
+        fd_attrs = lhs.union(rhs)
+
+        can_verify = any(fd_attrs.issubset(r) for r in decomp_sets)
+        if can_verify:
+            preserved_fds.append(fd_str)
+        else:
+            unpreserved_fds.append(fd_str)
+
+    dep_preserved = len(unpreserved_fds) == 0
+
+    return {
+        "success": True,
+        "attribute_preservation": attr_preserved,
+        "lossless_join": is_lossless,
+        "dependency_preservation": dep_preserved,
+        "details": {
+            "attribute_preservation": {
+                "preserved": attr_preserved,
+                "missing_attributes": missing_attrs,
+                "extra_attributes": extra_attrs
+            },
+            "lossless_join": {
+                "is_lossless": is_lossless,
+                "common_attributes": common_attrs,
+                "explanation": lossless_reason
+            },
+            "dependency_preservation": {
+                "is_preserved": dep_preserved,
+                "preserved_fds": preserved_fds,
+                "unpreserved_fds": unpreserved_fds,
+                "explanation": (
+                    "All functional dependencies are preserved within individual relations."
+                    if dep_preserved else
+                    f"The following dependencies cannot be checked within a single table: {', '.join(unpreserved_fds)}. Enforcing them requires an inter-table join."
+                )
+            },
+            "lost_dependencies": unpreserved_fds,
+            "lossless_reason": lossless_reason
+        }
+    }
+
+def save_phase5_progress(session_id, lesson_id, completed=True, quiz_score=0, quiz_max_score=3, practice_completed=False):
+    """Saves or updates progress for a Phase 5 lesson in MySQL."""
+    session_id = session_id or "default_student"
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            sql = """
+                INSERT INTO phase5_learning_progress 
+                    (session_id, lesson_id, completed, quiz_score, quiz_max_score, quiz_attempted, practice_completed)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    completed = VALUES(completed),
+                    quiz_score = GREATEST(quiz_score, VALUES(quiz_score)),
+                    quiz_max_score = VALUES(quiz_max_score),
+                    quiz_attempted = VALUES(quiz_attempted),
+                    practice_completed = VALUES(practice_completed),
+                    updated_at = NOW();
+            """
+            cursor.execute(sql, (
+                session_id,
+                lesson_id,
+                completed,
+                quiz_score,
+                quiz_max_score,
+                True if quiz_score > 0 else False,
+                practice_completed
+            ))
+        conn.close()
+        return {"success": True, "message": f"Progress for '{lesson_id}' saved successfully."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def get_phase5_progress(session_id="default_student"):
+    """Fetches all stored Phase 5 progress for the session."""
+    try:
+        conn = get_connection(use_database=True)
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT lesson_id, completed, quiz_score, quiz_max_score, quiz_attempted, practice_completed, updated_at "
+                "FROM phase5_learning_progress WHERE session_id = %s;",
+                (session_id,)
+            )
+            rows = cursor.fetchall()
+            columns = [c[0] for c in cursor.description] if cursor.description else []
+            data = [{col: serialize_value(r[col]) for col in columns} for r in rows]
+        conn.close()
+        return {"success": True, "progress": data, "count": len(data)}
+    except Exception as e:
+        return {"success": False, "error": str(e), "progress": []}
+
+

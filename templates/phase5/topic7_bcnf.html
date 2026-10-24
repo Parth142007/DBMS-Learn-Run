@@ -1,0 +1,537 @@
+<!-- ====================================================================
+     Topic 7: Boyce-Codd Normal Form (BCNF)
+     NEPC42 Syllabus — Module 5: Database Design & Normalization
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-bcnf">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-info">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-info-subtle text-info border border-info-subtle fw-bold px-2 py-1">Lesson 7 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">7. Boyce-Codd Normal Form (BCNF) &amp; Superkey Enforcements</h2>
+            <p class="text-secondary mb-0">
+                Understand why BCNF is stricter than 3NF, master the superkey determinant rule, and analyze the classic <strong>3NF-compliant yet BCNF-violating</strong> relation with overlapping composite candidate keys.
+            </p>
+        </div>
+    </div>
+
+    <!-- 7.1 What is BCNF? -->
+    <section class="mb-5" id="bcnf-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">7.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Why BCNF? Stricter Than 3NF</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="text-secondary">
+                    Proposed in 1974 by <strong>Raymond F. Boyce</strong> and <strong>Edgar F. Codd</strong>, Boyce-Codd Normal Form (often called <strong>3.5NF</strong>) addresses an edge case that standard 3NF allows: when a relation possesses <strong>multiple overlapping composite candidate keys</strong>.
+                </p>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-success mb-2">3NF Condition Review</span>
+                            <p class="small text-secondary mb-1">For every non-trivial $X \to A$:</p>
+                            <ul class="small text-secondary mb-0 ps-3">
+                                <li>$X$ is a <strong>superkey</strong>, <strong class="text-primary">OR</strong></li>
+                                <li>$A$ is a <strong>prime attribute</strong> (part of ANY candidate key).</li>
+                            </ul>
+                            <div class="mt-2 text-muted small fst-italic">
+                                The prime-attribute clause provides an "escape hatch" that allows redundancy if the dependent attribute happens to be part of another candidate key.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-info-subtle h-100">
+                            <span class="badge bg-info mb-2">BCNF Condition (Strict)</span>
+                            <p class="small text-dark mb-1">For every non-trivial functional dependency $X \to A$:</p>
+                            <div class="p-2 bg-white rounded border border-info fw-bold text-center text-info mb-2 font-monospace">
+                                $X$ MUST be a Superkey of $R$
+                            </div>
+                            <div class="small text-secondary mb-0">
+                                <strong>NO escape hatch:</strong> It does not matter whether $A$ is prime or non-prime. If $X$ is not a superkey, the dependency violates BCNF and must be decomposed!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-info d-flex align-items-center gap-3 mb-0">
+                    <i class="bi bi-info-circle-fill fs-3 text-info"></i>
+                    <div>
+                        <strong>Golden Axiom of BCNF:</strong> Every determinant must be a candidate key (or superkey). In other words: <em>"In BCNF, every arrow $X \to Y$ must have a key on its left-hand side!"</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7.2 Classic Case Study: 3NF but NOT BCNF -->
+    <section class="mb-5" id="bcnf-case-study">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">7.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The Classic Example: 3NF Satisfied, but BCNF Violated</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="text-secondary">
+                    Consider a university course assignment relation:
+                </p>
+
+                <div class="p-3 bg-light rounded border mb-3 font-monospace">
+                    <strong>STUDENT_ADVISING</strong>(<u>Student</u>, <u>Course</u>, Instructor)
+                </div>
+
+                <h6 class="fw-bold text-dark mb-2">Explicit Business Rules &amp; Assumptions:</h6>
+                <ol class="text-secondary small mb-3">
+                    <li>For a given course, each student is taught by exactly one instructor: <code class="fw-bold">{Student, Course} &rarr; Instructor</code>.</li>
+                    <li>Each instructor teaches only <strong>one</strong> course: <code class="fw-bold">Instructor &rarr; Course</code>.</li>
+                    <li>A course may have multiple instructors (e.g. Prof. Sharma and Prof. Gupta both teach DBMS).</li>
+                    <li>A student may take multiple courses taught by different instructors.</li>
+                </ol>
+
+                <!-- Sample Data Showing Redundancy -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered table-sm text-center align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Student (PK1)</th>
+                                <th>Course (PK2)</th>
+                                <th>Instructor</th>
+                                <th>Redundancy Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Amit</td>
+                                <td>DBMS</td>
+                                <td>Prof. Sharma</td>
+                                <td class="text-muted small">Prof. Sharma teaches DBMS</td>
+                            </tr>
+                            <tr>
+                                <td>Neha</td>
+                                <td>DBMS</td>
+                                <td>Prof. Sharma</td>
+                                <td class="text-danger small fw-bold">Duplicated fact: Sharma teaches DBMS!</td>
+                            </tr>
+                            <tr>
+                                <td>Amit</td>
+                                <td>Python</td>
+                                <td>Prof. Patil</td>
+                                <td class="text-muted small">Prof. Patil teaches Python</td>
+                            </tr>
+                            <tr>
+                                <td>Priya</td>
+                                <td>DBMS</td>
+                                <td>Prof. Gupta</td>
+                                <td class="text-muted small">Prof. Gupta also teaches DBMS</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Analysis of Candidate Keys -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-key-fill text-warning me-1"></i> Determining Candidate Keys</h6>
+                            <p class="small text-secondary mb-2">
+                                <strong>Closure of {Student, Course}:</strong><br>
+                                $\{Student, Course\}^+ = \{Student, Course, Instructor\}$.<br>
+                                &rarr; <span class="badge bg-primary">{Student, Course}</span> is Candidate Key 1.
+                            </p>
+                            <p class="small text-secondary mb-0">
+                                <strong>Closure of {Student, Instructor}:</strong><br>
+                                Using $Instructor \to Course$, we get $Course$.<br>
+                                $\{Student, Instructor\}^+ = \{Student, Instructor, Course\}$.<br>
+                                &rarr; <span class="badge bg-success">{Student, Instructor}</span> is Candidate Key 2!
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-tags-fill text-info me-1"></i> Prime vs. Non-Prime Attributes</h6>
+                            <p class="small text-secondary mb-2">
+                                Attributes participating in <em>any</em> candidate key:
+                            </p>
+                            <ul class="small text-secondary mb-2">
+                                <li><strong>Student:</strong> in both keys &rarr; <span class="badge bg-success">Prime</span></li>
+                                <li><strong>Course:</strong> in Key 1 &rarr; <span class="badge bg-success">Prime</span></li>
+                                <li><strong>Instructor:</strong> in Key 2 &rarr; <span class="badge bg-success">Prime</span></li>
+                            </ul>
+                            <div class="alert alert-secondary py-1 px-2 mb-0 small">
+                                <strong>Non-prime attributes:</strong> NONE ($\emptyset$). Every attribute is prime!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Why 3NF passes but BCNF fails -->
+                <div class="card border-warning mb-4">
+                    <div class="card-header bg-warning-subtle fw-bold text-dark">
+                        <i class="bi bi-shield-exclamation text-warning me-1"></i> Normal Form Verification Step-by-Step
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <h6 class="fw-bold text-success mb-2">Why does it satisfy 3NF?</h6>
+                                <p class="small text-secondary mb-2">Check both functional dependencies against 3NF rules:</p>
+                                <ul class="small text-secondary mb-0">
+                                    <li class="mb-2">
+                                        <strong>{Student, Course} &rarr; Instructor:</strong><br>
+                                        $\{Student, Course\}$ is a candidate key (superkey). <span class="text-success fw-bold">&check; Satisfies 3NF</span>.
+                                    </li>
+                                    <li>
+                                        <strong>Instructor &rarr; Course:</strong><br>
+                                        $Instructor$ is NOT a superkey. <strong>HOWEVER</strong>, $Course$ IS a <strong>prime attribute</strong> (member of Key 1).<br>
+                                        Because Condition 2 holds, <span class="text-success fw-bold">&check; Satisfies 3NF!</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="col-md-6 border-start">
+                                <h6 class="fw-bold text-danger mb-2">Why does it VIOLATE BCNF?</h6>
+                                <p class="small text-secondary mb-2">Check the same dependencies against the strict BCNF rule:</p>
+                                <ul class="small text-secondary mb-0">
+                                    <li class="mb-2">
+                                        <strong>{Student, Course} &rarr; Instructor:</strong><br>
+                                        Determinant is a superkey. <span class="text-success fw-bold">&check; BCNF valid</span>.
+                                    </li>
+                                    <li>
+                                        <strong>Instructor &rarr; Course:</strong><br>
+                                        $Instructor$ is <strong>NOT a superkey</strong> (its closure $\{Instructor, Course\} \neq R$).<br>
+                                        BCNF does NOT permit the prime attribute excuse!<br>
+                                        <span class="text-danger fw-bold">&cross; VIOLATES BCNF!</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Anomalies in this relation -->
+                <h6 class="fw-bold text-dark mb-2">Anomalies Arising from the BCNF Violation:</h6>
+                <div class="row g-2 small text-secondary">
+                    <div class="col-md-4">
+                        <div class="p-2 border rounded bg-danger-subtle">
+                            <strong>Update Anomaly:</strong> If Prof. Sharma shifts to teaching "Data Structures", multiple student rows must be updated simultaneously, risking inconsistency.
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 border rounded bg-warning-subtle">
+                            <strong>Insertion Anomaly:</strong> We cannot record a new instructor who teaches Python until at least one student enrolls in that instructor's section.
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 border rounded bg-info-subtle">
+                            <strong>Deletion Anomaly:</strong> If Priya drops DBMS, we might delete the only record showing that Prof. Gupta teaches DBMS.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7.3 BCNF Decomposition -->
+    <section class="mb-5" id="bcnf-decomposition">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">7.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">BCNF Decomposition &amp; Trade-off Analysis</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p class="text-secondary">
+                    To eliminate the BCNF violation, we decompose $R(Student, Course, Instructor)$ using the violating functional dependency $Instructor \to Course$:
+                </p>
+
+                <!-- Decomposed Relations -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-primary">
+                            <div class="card-header bg-primary text-white fw-bold py-2">
+                                R1: INSTRUCTOR_ASSIGNMENT
+                            </div>
+                            <div class="card-body">
+                                <div class="font-monospace small mb-2"><strong>INSTRUCTOR_ASSIGNMENT</strong>(<u>Instructor</u>, Course)</div>
+                                <p class="small text-secondary mb-2">
+                                    Primary Key: <code>Instructor</code><br>
+                                    Dependency: <code>Instructor &rarr; Course</code>
+                                </p>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered text-center small mb-0">
+                                        <thead class="table-light">
+                                            <tr><th>Instructor (PK)</th><th>Course</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>Prof. Sharma</td><td>DBMS</td></tr>
+                                            <tr><td>Prof. Patil</td><td>Python</td></tr>
+                                            <tr><td>Prof. Gupta</td><td>DBMS</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <span class="badge bg-success mt-2">BCNF Valid: Instructor is Key</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card h-100 border-success">
+                            <div class="card-header bg-success text-white fw-bold py-2">
+                                R2: STUDENT_INSTRUCTOR
+                            </div>
+                            <div class="card-body">
+                                <div class="font-monospace small mb-2"><strong>STUDENT_INSTRUCTOR</strong>(<u>Student</u>, <u>Instructor</u>)</div>
+                                <p class="small text-secondary mb-2">
+                                    Primary Key: <code>(Student, Instructor)</code><br>
+                                    Foreign Key: <code>Instructor</code> references R1
+                                </p>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered text-center small mb-0">
+                                        <thead class="table-light">
+                                            <tr><th>Student (PK)</th><th>Instructor (PK)</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td>Amit</td><td>Prof. Sharma</td></tr>
+                                            <tr><td>Neha</td><td>Prof. Sharma</td></tr>
+                                            <tr><td>Amit</td><td>Prof. Patil</td></tr>
+                                            <tr><td>Priya</td><td>Prof. Gupta</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <span class="badge bg-success mt-2">BCNF Valid: All attributes form Key</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification: Lossless & Dependency Preservation -->
+                <div class="card bg-light border p-3">
+                    <h6 class="fw-bold text-dark mb-2">Verification of Properties:</h6>
+                    <ul class="text-secondary small mb-0">
+                        <li class="mb-2">
+                            <strong>1. Lossless Join Property:</strong><br>
+                            $R_1 \cap R_2 = \{Instructor\}$.<br>
+                            Since $Instructor \to Course$, $\{Instructor\}$ is a superkey of $R_1$.<br>
+                            Therefore, $(R_1 \cap R_2) \to R_1$ holds! The decomposition is <span class="text-success fw-bold">100% Lossless</span>.
+                        </li>
+                        <li>
+                            <strong>2. Dependency Preservation Property (CRITICAL LESSON):</strong><br>
+                            In $R_1$, $Instructor \to Course$ is preserved.<br>
+                            In $R_2$, only $\{Student, Instructor\}$ are present.<br>
+                            What happened to $(Student, Course) \to Instructor$? To check if a student has multiple instructors for the same course, we must <strong>join $R_1$ and $R_2$</strong>!<br>
+                            <span class="text-danger fw-bold">Dependency $(Student, Course) \to Instructor$ is NOT preserved!</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-warning border-warning mt-3 mb-0 small">
+                    <strong>Theoretical Trade-off:</strong> It is always possible to find a <strong>3NF</strong> decomposition that is both lossless and dependency-preserving. However, a <strong>BCNF</strong> decomposition is always lossless, but may NOT always preserve all functional dependencies.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7.4 Practice Exercises -->
+    <section class="mb-5" id="bcnf-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">7.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises with Guided Solutions</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="exercise-item border rounded p-3 mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-secondary">Exercise 1</span>
+                        <span class="text-muted small">Candidate Key &amp; Prime Attribute Check</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        Relation $R(A, B, C, D)$ has functional dependencies: $AB \to C$, $C \to D$, and $D \to A$.<br>
+                        <strong>Question:</strong> What are all candidate keys of $R$, and which attributes are prime?
+                    </p>
+                    <div class="d-flex gap-2 mb-2">
+                        <button class="btn btn-sm btn-outline-primary btn-toggle-hint" data-target="#hint-bcnf-ex1">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-toggle-solution" data-target="#sol-bcnf-ex1">
+                            <i class="bi bi-check-circle me-1"></i> Show Solution
+                        </button>
+                    </div>
+                    <div class="collapse alert alert-info py-2 px-3 small mb-2" id="hint-bcnf-ex1">
+                        <strong>Hint:</strong> Notice attribute $B$ never appears on the right-hand side of any dependency. Therefore, $B$ must be in every candidate key!
+                    </div>
+                    <div class="collapse alert alert-success py-2 px-3 small mb-0" id="sol-bcnf-ex1">
+                        <strong>Solution:</strong><br>
+                        1. $B$ is essential. Compute closures:<br>
+                        - $\{A, B\}^+ = \{A, B, C, D\}$ &rarr; Candidate key: <code>{A, B}</code>.<br>
+                        - Since $D \to A$, $\{B, D\}^+ = \{B, D, A, C\}$ &rarr; Candidate key: <code>{B, D}</code>.<br>
+                        - Since $C \to D$, $\{B, C\}^+ = \{B, C, D, A\}$ &rarr; Candidate key: <code>{B, C}</code>.<br>
+                        2. Candidate keys: <code>{A, B}</code>, <code>{B, C}</code>, <code>{B, D}</code>.<br>
+                        3. Every attribute ($A, B, C, D$) belongs to at least one candidate key! So <strong>all attributes are prime</strong>.
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="exercise-item border rounded p-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-secondary">Exercise 2</span>
+                        <span class="text-muted small">BCNF Test</span>
+                    </div>
+                    <p class="small text-secondary mb-2">
+                        In the relation from Exercise 1 ($R(A, B, C, D)$ with keys $AB, BC, BD$), does $C \to D$ violate 3NF? Does it violate BCNF?
+                    </p>
+                    <div class="d-flex gap-2 mb-2">
+                        <button class="btn btn-sm btn-outline-primary btn-toggle-hint" data-target="#hint-bcnf-ex2">
+                            <i class="bi bi-lightbulb me-1"></i> Show Hint
+                        </button>
+                        <button class="btn btn-sm btn-outline-success btn-toggle-solution" data-target="#sol-bcnf-ex2">
+                            <i class="bi bi-check-circle me-1"></i> Show Solution
+                        </button>
+                    </div>
+                    <div class="collapse alert alert-info py-2 px-3 small mb-2" id="hint-bcnf-ex2">
+                        <strong>Hint:</strong> Is $C$ a superkey? Is $D$ a prime attribute? Remember the 3NF escape hatch vs. BCNF strict requirement.
+                    </div>
+                    <div class="collapse alert alert-success py-2 px-3 small mb-0" id="sol-bcnf-ex2">
+                        <strong>Solution:</strong><br>
+                        - <strong>3NF check:</strong> $C$ is not a superkey, but $D$ is a prime attribute (part of key $\{B, D\}$). Thus, $C \to D$ <strong>satisfies 3NF</strong>!<br>
+                        - <strong>BCNF check:</strong> BCNF requires the determinant $C$ to be a superkey. Since $C^+ = \{C, D\} \neq \{A, B, C, D\}$, $C$ is not a superkey. Thus, $C \to D$ <strong>VIOLATES BCNF</strong>!
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 7.5 Topic Quiz -->
+    <section class="mb-4" id="bcnf-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">7.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Lesson 7 Knowledge Check</h3>
+        </div>
+
+        <div class="card border-0 shadow-sm bg-white rounded-3">
+            <div class="card-body p-4">
+                <form id="quiz-form-topic7" class="topic-quiz-form" data-topic="7">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom">
+                        <h6 class="fw-bold text-dark mb-2">
+                            1. What is the fundamental condition for a relation $R$ to be in Boyce-Codd Normal Form (BCNF)?
+                        </h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q7_1" id="q7_1_a" value="a">
+                            <label class="form-check-label small" for="q7_1_a">
+                                Every non-prime attribute must depend on the primary key
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q7_1" id="q7_1_b" value="b">
+                            <label class="form-check-label small" for="q7_1_b">
+                                For every non-trivial functional dependency $X \to A$, $X$ must be a superkey of $R$
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q7_1" id="q7_1_c" value="c">
+                            <label class="form-check-label small" for="q7_1_c">
+                                There must be no multi-valued attributes in the relation
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q7_1" id="q7_1_d" value="d">
+                            <label class="form-check-label small" for="q7_1_d">
+                                Every attribute must belong to at least two candidate keys
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom">
+                        <h6 class="fw-bold text-dark mb-2">
+                            2. Under what circumstance can a relation be in 3NF but NOT in BCNF?
+                        </h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q7_2" id="q7_2_a" value="a">
+                            <label class="form-check-label small" for="q7_2_a">
+                                When candidate keys are strictly single attributes with no overlap
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q7_2" id="q7_2_b" value="b">
+                            <label class="form-check-label small" for="q7_2_b">
+                                When there are multiple overlapping composite candidate keys, and a non-superkey determines a prime attribute
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q7_2" id="q7_2_c" value="c">
+                            <label class="form-check-label small" for="q7_2_c">
+                                When the relation contains transitive dependencies among non-prime attributes
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q7_2" id="q7_2_d" value="d">
+                            <label class="form-check-label small" for="q7_2_d">
+                                Any relation in 3NF is automatically guaranteed to be in BCNF
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-4">
+                        <h6 class="fw-bold text-dark mb-2">
+                            3. What is a known limitation or trade-off when decomposing a 3NF relation into BCNF?
+                        </h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q7_3" id="q7_3_a" value="a">
+                            <label class="form-check-label small" for="q7_3_a">
+                                BCNF decomposition cannot guarantee a lossless join
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q7_3" id="q7_3_b" value="b">
+                            <label class="form-check-label small" for="q7_3_b">
+                                BCNF decomposition guarantees lossless join, but may NOT preserve all functional dependencies
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q7_3" id="q7_3_c" value="c">
+                            <label class="form-check-label small" for="q7_3_c">
+                                BCNF always introduces NULL values into the decomposed tables
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q7_3" id="q7_3_d" value="d">
+                            <label class="form-check-label small" for="q7_3_d">
+                                BCNF can only be applied to relations with fewer than 3 attributes
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="btn btn-primary px-4 btn-submit-topic-quiz" data-topic="7">
+                            <i class="bi bi-send-check me-1"></i> Submit Lesson 7 Quiz
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary px-3 btn-retry-topic-quiz d-none" data-topic="7">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Retry
+                        </button>
+                        <div class="quiz-score-badge d-none">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fs-6 px-3 py-2"></span>
+                        </div>
+                    </div>
+
+                    <div class="quiz-feedback-box mt-3 d-none"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+</div>

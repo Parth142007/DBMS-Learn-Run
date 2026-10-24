@@ -1,0 +1,355 @@
+<!-- ====================================================================
+     Topic 10: Normalization Practice Lab
+     NEPC42 Syllabus — Module 5: Database Design & Normalization
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-lab">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-danger">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold px-2 py-1">Lesson 10 of 10</span>
+                <span class="text-muted small"><i class="bi bi-laptop me-1"></i> Interactive Practice Environment</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">10. Interactive Normalization Practice Lab</h2>
+            <p class="text-secondary mb-0">
+                Apply your complete normalization toolkit on <strong>5 real-world schemas</strong>. Trace candidate keys, classify dependencies, detect anomalies, execute step-by-step decomposition, and verify lossless joins and dependency preservation.
+            </p>
+        </div>
+    </div>
+
+    <!-- Case Selector Navigation Bar -->
+    <div class="card border shadow-sm mb-4 bg-white">
+        <div class="card-body p-3">
+            <label class="form-label small fw-bold text-dark mb-2">
+                <i class="bi bi-folder-check text-primary me-1"></i> Select Practice Case Study (5 Scenarios):
+            </label>
+            <div class="d-flex flex-wrap gap-2" id="lab-case-buttons">
+                <button type="button" class="btn btn-sm btn-primary btn-case-select active" data-case="1">
+                    <i class="bi bi-mortarboard me-1"></i> Case 1: Student Courses (1NF &rarr; 3NF)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-case-select" data-case="2">
+                    <i class="bi bi-briefcase me-1"></i> Case 2: Employee Projects (1NF &rarr; 3NF)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-case-select" data-case="3">
+                    <i class="bi bi-hospital me-1"></i> Case 3: Hospital Clinic Visits (2NF &rarr; 3NF)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-case-select" data-case="4">
+                    <i class="bi bi-diagram-3 me-1"></i> Case 4: Academic Advising (3NF &rarr; BCNF)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-case-select" data-case="5">
+                    <i class="bi bi-cart3 me-1"></i> Case 5: E-Commerce Orders (Full Pipeline)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Case Scenario Container -->
+    <div class="card border shadow-sm mb-4 bg-white" id="lab-case-display-card">
+        <div class="card-body p-4">
+            
+            <!-- Dynamic Case Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <span class="badge bg-danger mb-1" id="lab-case-badge">Case 1 of 5</span>
+                    <h4 class="h5 fw-bold text-dark mb-0" id="lab-case-title">University Student Course &amp; Department</h4>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" id="btn-reset-current-case">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Exercise
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" id="btn-reveal-model-solution">
+                        <i class="bi bi-eye me-1"></i> Reveal Model Solution
+                    </button>
+                </div>
+            </div>
+
+            <!-- Schema & Stated Dependencies -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-table text-primary me-1"></i> Relation Schema</h6>
+                        <div class="p-2 bg-white rounded border font-monospace small mb-2" id="lab-schema-definition">
+                            <strong>STUDENT_ENROLLMENT</strong>(StudentID, StudentName, CourseID, CourseName, DepartmentID, DepartmentName, Grade)
+                        </div>
+                        <p class="small text-muted mb-0" id="lab-schema-desc">
+                            All values in sample rows are single atomic entries (relation satisfies 1NF).
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="p-3 border rounded bg-light h-100">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-arrow-right-circle text-success me-1"></i> Stated Functional Dependencies (Business Domain Rules)</h6>
+                        <div class="p-2 bg-white rounded border font-monospace small" id="lab-dependencies-list">
+                            1. {StudentID, CourseID} &rarr; Grade<br>
+                            2. StudentID &rarr; StudentName, DepartmentID<br>
+                            3. DepartmentID &rarr; DepartmentName<br>
+                            4. CourseID &rarr; CourseName
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sample Data Preview -->
+            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-eye text-info me-1"></i> Educational Sample Tuples</h6>
+            <div class="table-responsive mb-4" id="lab-sample-table-container">
+                <!-- Dynamically injected table -->
+            </div>
+
+            <!-- Step-by-Step Interactive Workflow Accordion -->
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-list-check text-primary me-1"></i> Interactive Analysis &amp; Decomposition Steps</h5>
+            
+            <div class="accordion mb-4" id="lab-steps-accordion">
+                
+                <!-- Step 1: Candidate Key -->
+                <div class="accordion-item border mb-2 rounded overflow-hidden">
+                    <h2 class="accordion-header" id="heading-step1">
+                        <button class="accordion-button fw-bold py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-step1" aria-expanded="true">
+                            <span class="badge bg-primary me-2">Step 1</span> Identify Candidate Keys
+                        </button>
+                    </h2>
+                    <div id="collapse-step1" class="accordion-collapse collapse show">
+                        <div class="accordion-body bg-light">
+                            <p class="small text-secondary mb-2" id="lab-step1-prompt">
+                                Using the stated functional dependencies, determine the minimal set of attributes that determines all others:
+                            </p>
+                            <div class="row g-2 mb-2" id="lab-step1-options">
+                                <!-- Options dynamically rendered -->
+                            </div>
+                            <button class="btn btn-sm btn-primary" id="btn-check-step1">
+                                <i class="bi bi-check2-circle me-1"></i> Check Candidate Key
+                            </button>
+                            <div id="lab-step1-feedback" class="mt-2 small d-none"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Dependency Classification -->
+                <div class="accordion-item border mb-2 rounded overflow-hidden">
+                    <h2 class="accordion-header" id="heading-step2">
+                        <button class="accordion-button collapsed fw-bold py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-step2">
+                            <span class="badge bg-primary me-2">Step 2</span> Classify Dependencies (Partial vs. Transitive)
+                        </button>
+                    </h2>
+                    <div id="collapse-step2" class="accordion-collapse collapse">
+                        <div class="accordion-body bg-light">
+                            <p class="small text-secondary mb-2" id="lab-step2-prompt">
+                                Inspect each dependency and classify it relative to the Candidate Key:
+                            </p>
+                            <div id="lab-step2-classifier" class="mb-3">
+                                <!-- Dynamic classifier items -->
+                            </div>
+                            <button class="btn btn-sm btn-primary" id="btn-check-step2">
+                                <i class="bi bi-check2-circle me-1"></i> Verify Classifications
+                            </button>
+                            <div id="lab-step2-feedback" class="mt-2 small d-none"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Determine Highest Normal Form -->
+                <div class="accordion-item border mb-2 rounded overflow-hidden">
+                    <h2 class="accordion-header" id="heading-step3">
+                        <button class="accordion-button collapsed fw-bold py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-step3">
+                            <span class="badge bg-primary me-2">Step 3</span> Determine Current Normal Form
+                        </button>
+                    </h2>
+                    <div id="collapse-step3" class="accordion-collapse collapse">
+                        <div class="accordion-body bg-light">
+                            <p class="small text-secondary mb-2">
+                                Based on the dependencies and violations identified above, what is the highest normal form satisfied by the un-decomposed relation?
+                            </p>
+                            <div class="d-flex gap-3 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="lab_current_nf" id="lab_nf_1" value="1NF">
+                                    <label class="form-check-label small" for="lab_nf_1">1NF</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="lab_current_nf" id="lab_nf_2" value="2NF">
+                                    <label class="form-check-label small" for="lab_nf_2">2NF</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="lab_current_nf" id="lab_nf_3" value="3NF">
+                                    <label class="form-check-label small" for="lab_nf_3">3NF</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="lab_current_nf" id="lab_nf_4" value="BCNF">
+                                    <label class="form-check-label small" for="lab_nf_4">BCNF</label>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-primary" id="btn-check-step3">
+                                <i class="bi bi-check2-circle me-1"></i> Check Normal Form
+                            </button>
+                            <div id="lab-step3-feedback" class="mt-2 small d-none"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Normalization Decomposition & Verification -->
+                <div class="accordion-item border rounded overflow-hidden">
+                    <h2 class="accordion-header" id="heading-step4">
+                        <button class="accordion-button collapsed fw-bold py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-step4">
+                            <span class="badge bg-success me-2">Step 4</span> Execute Decomposition &amp; Verify Guarantees
+                        </button>
+                    </h2>
+                    <div id="collapse-step4" class="accordion-collapse collapse">
+                        <div class="accordion-body bg-light">
+                            <p class="small text-secondary mb-3">
+                                Review the normalized schema resulting from resolving all partial and transitive anomalies:
+                            </p>
+                            <div class="row g-3 mb-3" id="lab-step4-decomposed-cards">
+                                <!-- Cards of R1, R2, R3... dynamically populated -->
+                            </div>
+                            <button class="btn btn-sm btn-success" id="btn-verify-lab-decomposition">
+                                <i class="bi bi-shield-check me-1"></i> Verify Lossless Join &amp; Dependency Preservation
+                            </button>
+                            <div id="lab-step4-verification-report" class="mt-3 p-3 border rounded bg-white d-none">
+                                <!-- Verification results -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Model Solution Box (Initially Hidden) -->
+            <div class="card border-success mt-4 d-none" id="lab-model-solution-card">
+                <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center py-2">
+                    <span><i class="bi bi-trophy-fill me-1"></i> Model Solution &amp; Comprehensive Derivation</span>
+                    <button type="button" class="btn-close btn-close-white btn-sm" id="btn-close-model-solution"></button>
+                </div>
+                <div class="card-body p-4 bg-light">
+                    <div id="lab-model-solution-content" class="small text-secondary">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 10.2 Comprehensive Phase 5 Knowledge Check Quiz -->
+    <section class="mb-4" id="lab-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-success rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">10.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Lesson 10 Comprehensive Mastery Quiz</h3>
+        </div>
+
+        <div class="card border-0 shadow-sm bg-white rounded-3">
+            <div class="card-body p-4">
+                <form id="quiz-form-topic10" class="topic-quiz-form" data-topic="10">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom">
+                        <h6 class="fw-bold text-dark mb-2">
+                            1. In relational database normalization, what is the ultimate source of functional dependencies?
+                        </h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q10_1" id="q10_1_a" value="a">
+                            <label class="form-check-label small" for="q10_1_a">
+                                Looking at sample rows in a test database and guessing
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q10_1" id="q10_1_b" value="b">
+                            <label class="form-check-label small" for="q10_1_b">
+                                Business domain rules, real-world constraints, and semantic specifications
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q10_1" id="q10_1_c" value="c">
+                            <label class="form-check-label small" for="q10_1_c">
+                                The alphabetical order of column names in the CREATE TABLE statement
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q10_1" id="q10_1_d" value="d">
+                            <label class="form-check-label small" for="q10_1_d">
+                                MySQL server configuration parameters
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom">
+                        <h6 class="fw-bold text-dark mb-2">
+                            2. If a table with composite candidate key $(A, B)$ has a dependency $B \to C$, what normal form violation exists?
+                        </h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q10_2" id="q10_2_a" value="a">
+                            <label class="form-check-label small" for="q10_2_a">
+                                Partial dependency violating 2NF
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q10_2" id="q10_2_b" value="b">
+                            <label class="form-check-label small" for="q10_2_b">
+                                Multi-valued dependency violating 1NF
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q10_2" id="q10_2_c" value="c">
+                            <label class="form-check-label small" for="q10_2_c">
+                                Reflexive dependency violating 4NF
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q10_2" id="q10_2_d" value="d">
+                            <label class="form-check-label small" for="q10_2_d">
+                                It satisfies all normal forms up to 5NF
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-4">
+                        <h6 class="fw-bold text-dark mb-2">
+                            3. Which guarantee is ALWAYS achievable when decomposing into 3NF, but NOT always guaranteed in BCNF?
+                        </h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q10_3" id="q10_3_a" value="a">
+                            <label class="form-check-label small" for="q10_3_a">
+                                Lossless join
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q10_3" id="q10_3_b" value="b">
+                            <label class="form-check-label small" for="q10_3_b">
+                                Dependency preservation
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q10_3" id="q10_3_c" value="c">
+                            <label class="form-check-label small" for="q10_3_c">
+                                Elimination of all duplicate rows
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q10_3" id="q10_3_d" value="d">
+                            <label class="form-check-label small" for="q10_3_d">
+                                Primary key index creation
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="btn btn-primary px-4 btn-submit-topic-quiz" data-topic="10">
+                            <i class="bi bi-send-check me-1"></i> Submit Mastery Quiz
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary px-3 btn-retry-topic-quiz d-none" data-topic="10">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Retry
+                        </button>
+                        <div class="quiz-score-badge d-none">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fs-6 px-3 py-2"></span>
+                        </div>
+                    </div>
+
+                    <div class="quiz-feedback-box mt-3 d-none"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+</div>

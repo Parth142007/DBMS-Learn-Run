@@ -1,0 +1,322 @@
+<!-- ====================================================================
+     Topic 3: Armstrong's Axioms
+     NEPC42 Syllabus — Module 5: Database Design & Normalization
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-axioms">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Lesson 3 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">3. Armstrong's Axioms &amp; Inference Rules</h2>
+            <p class="text-secondary mb-0">
+                Explore the sound and complete inference rules of relational database theory formulated by William W. Armstrong in 1974 &mdash; master the 3 primary axioms (<strong>Reflexivity</strong>, <strong>Augmentation</strong>, <strong>Transitivity</strong>) and the 3 secondary rules (<strong>Union</strong>, <strong>Decomposition</strong>, <strong>Pseudotransitivity</strong>).
+            </p>
+        </div>
+    </div>
+
+    <!-- 3.1 Primary Axioms -->
+    <section class="mb-5" id="axioms-primary">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The Three Primary Armstrong Axioms</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Armstrong's axioms are <strong>sound</strong> (they generate only valid functional dependencies that logically follow from $F$) and <strong>complete</strong> (repeated application will generate the entire closure $F^+$ of all valid dependencies).
+                </p>
+
+                <div class="row g-4 my-2">
+                    <!-- Axiom 1: Reflexivity -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-primary mb-2">Axiom 1: Reflexivity Rule</span>
+                            <div class="p-2 bg-white rounded border font-monospace text-center small mb-2 text-primary fw-bold">
+                                If Y &sube; X, then X &rarr; Y
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Plain English:</strong> Any set of attributes functionally determines any of its own subsets.
+                            </p>
+                            <p class="small text-muted mb-0">
+                                <strong>Database Example:</strong> <code>(StudentID, RollNo) &rarr; StudentID</code>. If you know both the StudentID and RollNo, you obviously know the StudentID!
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Axiom 2: Augmentation -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-success mb-2">Axiom 2: Augmentation Rule</span>
+                            <div class="p-2 bg-white rounded border font-monospace text-center small mb-2 text-success fw-bold">
+                                If X &rarr; Y, then XZ &rarr; YZ
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Plain English:</strong> Adding the same arbitrary attributes $Z$ to both sides preserves the validity of the dependency.
+                            </p>
+                            <p class="small text-muted mb-0">
+                                <strong>Database Example:</strong> If <code>StudentID &rarr; StudentName</code>, then <code>(StudentID, Semester) &rarr; (StudentName, Semester)</code>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Axiom 3: Transitivity -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-warning text-dark mb-2">Axiom 3: Transitivity Rule</span>
+                            <div class="p-2 bg-white rounded border font-monospace text-center small mb-2 text-dark fw-bold">
+                                If X &rarr; Y &amp; Y &rarr; Z, then X &rarr; Z
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Plain English:</strong> If $X$ determines $Y$ and $Y$ determines $Z$, then $X$ determines $Z$ directly through the middle term $Y$.
+                            </p>
+                            <p class="small text-muted mb-0">
+                                <strong>Database Example:</strong> If <code>StudentID &rarr; DeptID</code> and <code>DeptID &rarr; DeptBudget</code>, then <code>StudentID &rarr; DeptBudget</code>!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.2 Derived Rules -->
+    <section class="mb-5" id="axioms-derived">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The Three Commonly Derived Inference Rules</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    From the three fundamental axioms above, three extremely convenient shortcut rules can be mathematically proven:
+                </p>
+
+                <div class="row g-4 my-2">
+                    <!-- Rule 4: Union -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-info text-dark mb-2">Rule 4: Union (Additive)</span>
+                            <div class="p-2 bg-white rounded border font-monospace text-center small mb-2 text-dark fw-bold">
+                                If X &rarr; Y &amp; X &rarr; Z, then X &rarr; YZ
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Plain English:</strong> If an attribute determines two separate attributes individually, it determines them collectively.
+                            </p>
+                            <p class="small text-muted mb-0">
+                                <strong>Example:</strong> If <code>RollNo &rarr; FirstName</code> and <code>RollNo &rarr; LastName</code>, then <code>RollNo &rarr; (FirstName, LastName)</code>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Rule 5: Decomposition -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-secondary mb-2">Rule 5: Decomposition (Projective)</span>
+                            <div class="p-2 bg-white rounded border font-monospace text-center small mb-2 text-dark fw-bold">
+                                If X &rarr; YZ, then X &rarr; Y &amp; X &rarr; Z
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Plain English:</strong> You can break apart attributes on the right-hand side (RHS). <em>Warning: You can NEVER break apart attributes on the left-hand side (LHS)!</em>
+                            </p>
+                            <p class="small text-muted mb-0">
+                                <strong>Example:</strong> <code>RollNo &rarr; (GPA, City)</code> implies <code>RollNo &rarr; GPA</code> and <code>RollNo &rarr; City</code>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Rule 6: Pseudotransitivity -->
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-dark mb-2">Rule 6: Pseudotransitivity</span>
+                            <div class="p-2 bg-white rounded border font-monospace text-center small mb-2 text-dark fw-bold">
+                                If X &rarr; Y &amp; WY &rarr; Z, then WX &rarr; Z
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Plain English:</strong> You can substitute $X$ in place of $Y$ on the LHS of another dependency, preserving any extra attributes $W$.
+                            </p>
+                            <p class="small text-muted mb-0">
+                                <strong>Example:</strong> If <code>StudentID &rarr; RollNo</code> and <code>(RollNo, Semester) &rarr; Grade</code>, then <code>(StudentID, Semester) &rarr; Grade</code>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.3 Interactive Functional Dependency Derivation Tool -->
+    <section class="mb-5" id="axioms-derivation-tool">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Interactive FD Derivation Tool</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2 px-3">
+                <span class="fw-bold"><i class="bi bi-cpu-fill text-warning me-2"></i>Armstrong's Axioms Derivation Engine</span>
+                <span class="badge bg-warning text-dark">Interactive Walkthrough</span>
+            </div>
+            <div class="card-body p-4">
+                <p class="small text-muted mb-3">
+                    Select an inference rule to follow a step-by-step mathematical proof and real database application:
+                </p>
+
+                <!-- Rule Selector Pills -->
+                <div class="d-flex gap-2 flex-wrap mb-4" id="axiom-rule-selector">
+                    <button class="btn btn-sm btn-outline-primary active btn-axiom-select" data-rule="reflexivity">1. Reflexivity</button>
+                    <button class="btn btn-sm btn-outline-primary btn-axiom-select" data-rule="augmentation">2. Augmentation</button>
+                    <button class="btn btn-sm btn-outline-primary btn-axiom-select" data-rule="transitivity">3. Transitivity</button>
+                    <button class="btn btn-sm btn-outline-success btn-axiom-select" data-rule="union">4. Union</button>
+                    <button class="btn btn-sm btn-outline-success btn-axiom-select" data-rule="decomposition">5. Decomposition</button>
+                    <button class="btn btn-sm btn-outline-success btn-axiom-select" data-rule="pseudotransitivity">6. Pseudotransitivity</button>
+                </div>
+
+                <!-- Derivation Container Output -->
+                <div id="axiom-derivation-output" class="p-3 bg-light rounded border small font-monospace" style="min-height: 160px;">
+                    <!-- Rendered by JS -->
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.4 Practice Exercises -->
+    <section class="mb-5" id="axioms-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 3.1</span>
+                        <span class="text-muted small">Proof by Armstrong's Axioms</span>
+                    </div>
+                    <p class="fw-bold mb-1">Prove the Union Rule:</p>
+                    <p class="small text-secondary mb-2">
+                        Using only the 3 primary axioms (Reflexivity, Augmentation, Transitivity), prove that if $X \to Y$ and $X \to Z$, then $X \to YZ$.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-ax-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-ax-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Proof Steps:</strong><br>
+                            1. Given: $X \to Y$. Augment with $X \implies XX \to XY$, which simplifies to $X \to XY$.<br>
+                            2. Given: $X \to Z$. Augment with $Y \implies XY \to YZ$.<br>
+                            3. Apply Transitivity to $X \to XY$ and $XY \to YZ \implies X \to YZ$. (Q.E.D.)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 3.2</span>
+                        <span class="text-muted small">Common Mistake Warning</span>
+                    </div>
+                    <p class="fw-bold mb-1">Why LHS Decomposition is Strictly Invalid:</p>
+                    <p class="small text-secondary mb-2">
+                        A student claims: "If $(A, B) \to C$, then by decomposition $A \to C$ and $B \to C$". Give a concrete counterexample demonstrating why this statement is false.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-ax-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-ax-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Counterexample:</strong> In an enrollment table, <code>(StudentID, CourseID) &rarr; Grade</code>. Neither <code>StudentID &rarr; Grade</code> nor <code>CourseID &rarr; Grade</code> holds alone, because a student takes multiple courses with different grades! Decomposition applies strictly to the RHS, NEVER the LHS!
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 3.5 Lesson 3 Knowledge Check Quiz -->
+    <section class="mb-5" id="axioms-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">3.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Lesson 3 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase5-axioms">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. If $X \to Y$, which Armstrong axiom justifies concluding that $XZ \to YZ$?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_ax_0" id="q_ax_0_a" value="a">
+                            <label class="form-check-label" for="q_ax_0_a">A) Reflexivity</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_ax_0" id="q_ax_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_ax_0_b">B) Augmentation</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_ax_0" id="q_ax_0_c" value="c">
+                            <label class="form-check-label" for="q_ax_0_c">C) Pseudotransitivity</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. If $X \to YZ$, which inference rule guarantees that $X \to Y$ and $X \to Z$ hold individually?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_ax_1" id="q_ax_1_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_ax_1_a">A) Decomposition (Projective) Rule</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_ax_1" id="q_ax_1_b" value="b">
+                            <label class="form-check-label" for="q_ax_1_b">B) Union Rule</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_ax_1" id="q_ax_1_c" value="c">
+                            <label class="form-check-label" for="q_ax_1_c">C) Transitivity Rule</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. Does $(A, B) \to C$ imply that $A \to C$?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_ax_2" id="q_ax_2_a" value="a">
+                            <label class="form-check-label" for="q_ax_2_a">A) Yes, by the Decomposition Rule</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_ax_2" id="q_ax_2_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_ax_2_b">B) No &mdash; Decomposition only breaks apart RHS attributes; you cannot decompose the left-hand determinant</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_ax_2" id="q_ax_2_c" value="c">
+                            <label class="form-check-label" for="q_ax_2_c">C) Yes, if $A$ is a primary key</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase5-axioms">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

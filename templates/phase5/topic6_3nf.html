@@ -1,0 +1,293 @@
+<!-- ====================================================================
+     Topic 6: Third Normal Form (3NF)
+     NEPC42 Syllabus — Module 5: Database Design & Normalization
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-3nf">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Lesson 6 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 25 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">6. Third Normal Form (3NF) &amp; Transitive Dependencies</h2>
+            <p class="text-secondary mb-0">
+                Eliminate transitive dependencies across non-key attributes &mdash; master both the <strong>intuitive definition</strong> (no non-prime attribute depends transitively on a key) and the <strong>formal Codd/Zaniolo 3NF definition</strong> ($X$ is a superkey OR $A$ is a prime attribute).
+            </p>
+        </div>
+    </div>
+
+    <!-- 6.1 Definitions: Intuitive vs. Formal 3NF -->
+    <section class="mb-5" id="3nf-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">6.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Intuitive vs. Formal Definitions of 3NF</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <div class="row g-3 mb-4">
+                    <!-- Intuitive Definition -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-secondary mb-2">1. Intuitive Definition (Kent &amp; Codd)</span>
+                            <h6 class="fw-bold text-dark mb-1">No Transitive Dependencies</h6>
+                            <p class="small text-secondary mb-2">
+                                A relation is in 3NF if it is in <strong>2NF</strong> and <strong>no non-prime attribute is transitively dependent on any candidate key</strong>.
+                            </p>
+                            <p class="small text-muted mb-0">
+                                <em>"Every non-key attribute must provide a fact about the key, the whole key (2NF), and nothing but the key (3NF)!"</em>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Formal Definition -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-primary-subtle h-100">
+                            <span class="badge bg-primary mb-2">2. Formal Rigorous Definition</span>
+                            <h6 class="fw-bold text-primary mb-1">Codd &amp; Zaniolo 3NF Condition</h6>
+                            <p class="small text-secondary mb-2">
+                                A relational schema $R$ is in 3NF if, for <strong>every non-trivial functional dependency $X \to A$</strong>, at least ONE of the following is true:
+                            </p>
+                            <ul class="small text-secondary mb-0 ps-3">
+                                <li><strong>Condition 1:</strong> $X$ is a <strong>superkey</strong> of $R$, OR</li>
+                                <li><strong>Condition 2:</strong> $A$ is a <strong>prime attribute</strong> of $R$ (member of some candidate key).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CRITICAL DISTINCTION: Condition 2 -->
+                <div class="alert alert-warning small mb-0">
+                    <strong class="d-block mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Crucial Distinction: Condition 2 is What Makes 3NF Special!</strong>
+                    Many beginner textbooks oversimplify 3NF by claiming that <em>"every determinant on the left must be a candidate key"</em>. <strong>That is BCNF, not 3NF!</strong> 3NF explicitly relaxes the rule: if the determinant $X$ is NOT a superkey, the dependency $X \to A$ is still completely legal in 3NF as long as the dependent attribute $A$ is a <strong>prime attribute</strong>!
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 6.2 Case Study: The Student-Department Transitive Violation -->
+    <section class="mb-5" id="3nf-case-study">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">6.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Case Study: The Student-Department Transitive Violation</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Consider a student academic table that includes department details:
+                </p>
+                <div class="p-2 bg-dark text-light rounded font-monospace small mb-3">
+                    STUDENT(<u>StudentID</u>, StudentName, DepartmentID, DepartmentName)
+                </div>
+
+                <p class="small text-secondary mb-2"><strong>Domain Functional Dependencies:</strong></p>
+                <div class="p-3 bg-light rounded border font-monospace small mb-3">
+                    1. <strong>StudentID &rarr; StudentName, DepartmentID</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="badge bg-success">Valid (StudentID is Superkey)</span><br>
+                    2. <strong>DepartmentID &rarr; DepartmentName</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="badge bg-danger">Violates 3NF!</span><br>
+                    &rArr; <em>Transitive Dependency:</em> <strong>StudentID &rarr; DepartmentID &rarr; DepartmentName</strong>
+                </div>
+
+                <!-- Verification against formal 3NF definition -->
+                <div class="p-3 bg-white border border-danger-subtle rounded mb-3 small">
+                    <h6 class="fw-bold text-danger mb-1"><i class="bi bi-x-circle-fill me-1"></i> Testing DepartmentID &rarr; DepartmentName Against 3NF Rules:</h6>
+                    <ul class="mb-0 ps-3 text-secondary">
+                        <li>Is <code>DepartmentID</code> a superkey of <code>STUDENT</code>? <strong>NO</strong> (multiple students belong to the same department).</li>
+                        <li>Is <code>DepartmentName</code> a prime attribute? <strong>NO</strong> (the only candidate key is <code>StudentID</code>).</li>
+                        <li>Since <strong>neither condition holds</strong>, the table strictly violates Third Normal Form!</li>
+                    </ul>
+                </div>
+
+                <!-- Decomposed Relations -->
+                <h6 class="fw-bold text-dark mb-2"><i class="bi bi-diagram-3-fill text-success me-1"></i> The 3NF Decomposition Solution:</h6>
+                <p class="small text-muted mb-3">
+                    Extract the non-key determinant and its dependent into a separate relation, leaving the determinant behind as a foreign key:
+                </p>
+
+                <div class="row g-3">
+                    <!-- Table 1: STUDENT -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-primary mb-2">Relation 1: STUDENT (3NF)</span>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-center font-monospace small mb-2">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th><u>StudentID (PK)</u></th>
+                                            <th>StudentName</th>
+                                            <th>DepartmentID (FK)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>101</td><td>Amit</td><td>D01</td></tr>
+                                        <tr><td>102</td><td>Neha</td><td>D01</td></tr>
+                                        <tr><td>103</td><td>Pooja</td><td>D02</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <small class="text-muted">FD: StudentID &rarr; StudentName, DepartmentID (Key determines all)</small>
+                        </div>
+                    </div>
+
+                    <!-- Table 2: DEPARTMENT -->
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100">
+                            <span class="badge bg-success mb-2">Relation 2: DEPARTMENT (3NF)</span>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered text-center font-monospace small mb-2">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th><u>DepartmentID (PK)</u></th>
+                                            <th>DepartmentName</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>D01</td><td>Computer Science</td></tr>
+                                        <tr><td>D02</td><td>Mechanical Eng</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <small class="text-muted">FD: DepartmentID &rarr; DepartmentName (DeptID is primary key!)</small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 6.3 Practice Exercises -->
+    <section class="mb-5" id="3nf-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">6.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 6.1</span>
+                        <span class="text-muted small">Transitive Dependency in Orders</span>
+                    </div>
+                    <p class="fw-bold mb-1">E-Commerce Orders Table:</p>
+                    <p class="small text-secondary mb-2">
+                        Given <code>ORDER(OrderID, OrderDate, CustomerID, CustomerEmail, CustomerCity)</code> with key <code>OrderID</code> and dependency <code>CustomerID &rarr; CustomerEmail, CustomerCity</code>. Explain why this violates 3NF and decompose it.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-3nf-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-3nf-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> <code>CustomerID</code> is not a superkey, and <code>CustomerEmail</code> is non-prime. This creates a transitive dependency <code>OrderID &rarr; CustomerID &rarr; (CustomerEmail, CustomerCity)</code>. Decompose into:<br>
+                            1. <code>ORDER(OrderID, OrderDate, CustomerID)</code><br>
+                            2. <code>CUSTOMER(CustomerID, CustomerEmail, CustomerCity)</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 6.2</span>
+                        <span class="text-muted small">Formal 3NF Prime Attribute Rule</span>
+                    </div>
+                    <p class="fw-bold mb-1">When is a Non-Superkey Determinant Permitted in 3NF?</p>
+                    <p class="small text-secondary mb-2">
+                        In relation $R(A, B, C)$ with candidate keys $(A, B)$ and $(A, C)$, suppose there is an FD $B \to C$. Does $B \to C$ violate 3NF?
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-3nf-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-3nf-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> NO, it does NOT violate 3NF! Because $C$ is a member of candidate key $(A, C)$, $C$ is a <strong>prime attribute</strong>! Under 3NF Condition 2, any dependency where the dependent is a prime attribute is valid in 3NF (though it will violate BCNF!).
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 6.4 Lesson 6 Knowledge Check Quiz -->
+    <section class="mb-5" id="3nf-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">6.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Lesson 6 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase5-3nf">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. In relation $R$, for a non-trivial functional dependency $X \to A$ to satisfy Third Normal Form, what must be true?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_3nf_0" id="q_3nf_0_a" value="a">
+                            <label class="form-check-label" for="q_3nf_0_a">A) $X$ and $A$ must both be integers</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_3nf_0" id="q_3nf_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_3nf_0_b">B) Either $X$ is a superkey of $R$, OR $A$ is a prime attribute of $R$</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_3nf_0" id="q_3nf_0_c" value="c">
+                            <label class="form-check-label" for="q_3nf_0_c">C) $X$ must always be a single column</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. In <code>STUDENT(StudentID, StudentName, DeptID, DeptName)</code> where <code>StudentID &rarr; DeptID</code> and <code>DeptID &rarr; DeptName</code>, why does <code>DeptID &rarr; DeptName</code> violate 3NF?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_3nf_1" id="q_3nf_1_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_3nf_1_a">A) Because DeptID is not a superkey, and DeptName is not a prime attribute (transitive dependency on key)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_3nf_1" id="q_3nf_1_b" value="b">
+                            <label class="form-check-label" for="q_3nf_1_b">B) Because DeptID contains characters</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_3nf_1" id="q_3nf_1_c" value="c">
+                            <label class="form-check-label" for="q_3nf_1_c">C) Because 3NF prohibits foreign keys</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. Does 3NF strictly mandate that every functional dependency must have a superkey on the left-hand side?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_3nf_2" id="q_3nf_2_a" value="a">
+                            <label class="form-check-label" for="q_3nf_2_a">A) Yes, that is the definition of 3NF</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_3nf_2" id="q_3nf_2_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_3nf_2_b">B) No &mdash; 3NF permits non-superkey determinants as long as the dependent attribute on the right is a prime attribute (that stricter rule is BCNF!)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_3nf_2" id="q_3nf_2_c" value="c">
+                            <label class="form-check-label" for="q_3nf_2_c">C) Yes, unless the database uses InnoDB</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase5-3nf">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

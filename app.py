@@ -87,9 +87,63 @@ def phase_4():
         topic = "views"
     return render_template("phase4.html", active_page="phase4", current_topic=topic)
 
+@app.route("/phase-5")
+@app.route("/normalization")
+def phase_5():
+    """
+    Phase 5: Database Design & Normalization
+    Comprehensive interactive module covering Functional Dependencies,
+    Armstrong's Axioms, 1NF, 2NF, 3NF, BCNF, Lossless Decomposition,
+    Dependency Preservation, and Normalization Practice Lab.
+    """
+    topic = request.args.get("topic", "intro")
+    valid_topics = [
+        "intro", "fds", "axioms", "1nf", "2nf",
+        "3nf", "bcnf", "comparison", "lossless", "practice-lab"
+    ]
+    if topic not in valid_topics:
+        topic = "intro"
+    return render_template("phase5.html", active_page="phase5", current_topic=topic)
+
 # ====================================================================
 # REST API ENDPOINTS
 # ====================================================================
+
+@app.route("/api/progress/phase5", methods=["GET", "POST"])
+def api_phase5_progress():
+    """Get or save Phase 5 learning and quiz progress."""
+    if request.method == "GET":
+        session_id = request.args.get("session_id", "default_student")
+        res = db.get_phase5_progress(session_id)
+        return jsonify(res)
+    else:
+        data = request.get_json() or {}
+        session_id = data.get("session_id", "default_student")
+        lesson_id = data.get("lesson_id", "")
+        if not lesson_id:
+            return jsonify({"success": False, "error": "lesson_id is required."}), 400
+        score = data.get("score") if data.get("score") is not None else data.get("quiz_score", 0)
+        completed = data.get("completed", True if int(score) >= 66 else False)
+        quiz_max_score = int(data.get("quiz_max_score", 100))
+        practice_completed = data.get("practice_completed", False)
+        res = db.save_phase5_progress(session_id, f"topic_{lesson_id}" if isinstance(lesson_id, int) else str(lesson_id), completed, int(score), quiz_max_score, practice_completed)
+        return jsonify(res)
+
+@app.route("/api/normalization/verify-decomposition", methods=["POST"])
+def api_verify_decomposition():
+    """Mathematically verify whether a proposed relational decomposition is lossless and dependency preserving."""
+    data = request.get_json() or {}
+    original_attrs = data.get("attributes") or data.get("original_attributes", [])
+    fds = data.get("fds") or data.get("functional_dependencies", [])
+    decomposed = data.get("decomposed") or data.get("decomposed_relations", [])
+    if not original_attrs or not decomposed or len(decomposed) < 2:
+        return jsonify({"success": False, "error": "attributes and at least 2 decomposed relations are required."}), 400
+    res = db.verify_decomposition(original_attrs, fds, decomposed)
+    return jsonify({
+        "success": True,
+        "verification": res,
+        **res
+    })
 
 @app.route("/api/health", methods=["GET"])
 def api_health():
@@ -203,3 +257,5 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     print(f" * Starting DBMS Learn & Run on http://localhost:{port}")
     app.run(host="0.0.0.0", port=port, debug=True)
+
+

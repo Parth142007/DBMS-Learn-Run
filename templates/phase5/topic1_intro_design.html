@@ -1,0 +1,345 @@
+<!-- ====================================================================
+     Topic 1: Introduction to Database Design & Anomalies
+     NEPC42 Syllabus — Module 5: Database Design & Normalization
+     ==================================================================== -->
+
+<div class="topic-content-wrapper" id="content-intro">
+    
+    <!-- Topic Header Card -->
+    <div class="card border-0 shadow-sm mb-4 bg-white rounded-3 overflow-hidden">
+        <div class="card-body p-4 border-start border-4 border-success">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1">Lesson 1 of 10</span>
+                <span class="text-muted small"><i class="bi bi-clock me-1"></i> Estimated Study Time: 20 minutes</span>
+            </div>
+            <h2 class="h3 fw-bold text-dark mb-2">1. Introduction to Database Design &amp; Modification Anomalies</h2>
+            <p class="text-secondary mb-0">
+                Understand the goals of relational database design &mdash; why unnormalized "flat" tables lead to harmful data redundancy, inconsistent states, and catastrophic <strong>Insertion</strong>, <strong>Update</strong>, and <strong>Deletion anomalies</strong>.
+            </p>
+        </div>
+    </div>
+
+    <!-- 1.1 What is Database Design & Why It Matters -->
+    <section class="mb-5" id="design-intro">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.1</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">What is Database Design?</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    <strong>Database design</strong> is the systematic process of organizing data into a collection of well-structured relational tables, defining the columns, primary keys, foreign keys, and integrity constraints that accurately model a real-world enterprise.
+                </p>
+                <p class="text-secondary">
+                    The fundamental goal of good database design is to ensure that <strong>each fact is recorded in exactly one place</strong>. When an enterprise combines unrelated entities into a single monolithic table, severe architectural problems arise.
+                </p>
+
+                <!-- 4 Major Consequences of Poor Design -->
+                <div class="row g-3 my-2">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-danger mb-2">1. Data Redundancy</span>
+                            <p class="small text-muted mb-0">The same attribute values (like student name or instructor name) are repeated across dozens or thousands of rows, consuming excess disk storage.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-warning text-dark mb-2">2. Data Inconsistency</span>
+                            <p class="small text-muted mb-0">When duplicated information is updated in one row but not another, contradictory facts exist in the database simultaneously.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-primary mb-2">3. Storage Inefficiency</span>
+                            <p class="small text-muted mb-0">Indexes bloat, memory buffer pools waste valuable RAM caching repeated strings, and backup file sizes expand unnecessarily.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <span class="badge bg-info text-dark mb-2">4. Application Fragility</span>
+                            <p class="small text-muted mb-0">Software engineers must write convoluted multi-row update queries in application code to preserve basic data sanity.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.2 The Poorly Designed Student-Course Table -->
+    <section class="mb-5" id="design-example">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.2</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Case Study: The Monolithic Student-Course Table</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <p>
+                    Suppose a university software developer attempts to record student enrollments by stuffing student details, course details, and instructor assignments into a single table:
+                </p>
+
+                <!-- Poorly Designed Table Display -->
+                <div class="table-responsive my-3">
+                    <table class="table table-bordered table-striped text-center align-middle font-monospace small">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>StudentID</th>
+                                <th>StudentName</th>
+                                <th>CourseID</th>
+                                <th>CourseName</th>
+                                <th>Instructor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold text-primary">101</td>
+                                <td>Amit</td>
+                                <td class="fw-bold text-success">C01</td>
+                                <td>DBMS</td>
+                                <td>Sharma</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-primary">101</td>
+                                <td>Amit</td>
+                                <td class="fw-bold text-success">C02</td>
+                                <td>Python</td>
+                                <td>Patil</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold text-primary">102</td>
+                                <td>Neha</td>
+                                <td class="fw-bold text-success">C01</td>
+                                <td>DBMS</td>
+                                <td>Sharma</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Interactive Anomaly Investigator Widget -->
+                <div class="p-3 bg-light rounded border my-3">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-search text-warning me-1"></i> Interactive Detective: Can You Spot the Vulnerabilities?</h6>
+                    <p class="small text-secondary mb-3">
+                        Click on each operation below to see what happens to this unnormalized table in a real relational database:
+                    </p>
+
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <button class="btn btn-sm btn-outline-danger btn-investigate-anomaly" data-anomaly="insert">
+                            <i class="bi bi-plus-circle me-1"></i> Test: Insert New Course "C03 (Java)"
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning text-dark btn-investigate-anomaly" data-anomaly="update">
+                            <i class="bi bi-pencil-square me-1"></i> Test: Change Instructor for "C01"
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger btn-investigate-anomaly" data-anomaly="delete">
+                            <i class="bi bi-trash3 me-1"></i> Test: Delete Student 102 (Neha)
+                        </button>
+                    </div>
+
+                    <div id="anomaly-investigation-result" class="p-3 bg-white rounded border small font-monospace">
+                        <span class="text-muted"><i class="bi bi-hand-index-thumb me-1"></i> Select one of the three test buttons above to investigate how this table behaves.</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.3 The Three Relational Anomalies Explained -->
+    <section class="mb-5" id="design-anomalies-detail">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.3</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">The Three Relational Modification Anomalies</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <div class="row g-4">
+                    <!-- Insertion Anomaly -->
+                    <div class="col-md-4">
+                        <div class="p-3 border border-danger-subtle rounded bg-danger-subtle h-100">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-danger">Anomaly 1</span>
+                                <h6 class="fw-bold mb-0 text-danger-emphasis">Insertion Anomaly</h6>
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Problem:</strong> You cannot insert information about a course without also inserting a student who enrolled in it!
+                            </p>
+                            <p class="small text-secondary mb-0">
+                                <strong>Why:</strong> If the primary key is composite <code>(StudentID, CourseID)</code>, relational integrity forbids <code>StudentID</code> from being <code>NULL</code>. You cannot introduce course <code>C03</code> until someone registers!
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Update Anomaly -->
+                    <div class="col-md-4">
+                        <div class="p-3 border border-warning-subtle rounded bg-warning-subtle h-100">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-warning text-dark">Anomaly 2</span>
+                                <h6 class="fw-bold mb-0 text-warning-emphasis">Update Anomaly</h6>
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Problem:</strong> If instructor Sharma is replaced by Verma for course <code>C01</code>, you must update multiple rows across the database.
+                            </p>
+                            <p class="small text-secondary mb-0">
+                                <strong>Why:</strong> If the update query misses even a single row, the database enters an <strong>inconsistent state</strong> where DBMS is taught by two different instructors simultaneously!
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Deletion Anomaly -->
+                    <div class="col-md-4">
+                        <div class="p-3 border border-danger-subtle rounded bg-danger-subtle h-100">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-danger">Anomaly 3</span>
+                                <h6 class="fw-bold mb-0 text-danger-emphasis">Deletion Anomaly</h6>
+                            </div>
+                            <p class="small text-secondary mb-2">
+                                <strong>Problem:</strong> If Neha (102) cancels her registration, deleting her row unintentionally deletes course <code>C01</code> or student details!
+                            </p>
+                            <p class="small text-secondary mb-0">
+                                <strong>Why:</strong> If Amit drops out of Python (C02), deleting his row permanently erases all institutional record that course <code>C02</code> exists and that Patil teaches it!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success mt-4 mb-0 small">
+                    <strong class="d-block mb-1"><i class="bi bi-shield-check me-1"></i> The Solution: Database Normalization</strong>
+                    <strong>Normalization</strong> is the formal mathematical technique of decomposing monolithic relations with anomalies into smaller, well-structured relations that preserve all original data and functional dependencies without redundancy.
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.4 Practice Exercises -->
+    <section class="mb-5" id="intro-exercises">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.4</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Practice Exercises</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                
+                <!-- Exercise 1 -->
+                <div class="p-3 border rounded mb-3 bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-success">Exercise 1.1</span>
+                        <span class="text-muted small">Anomaly Identification</span>
+                    </div>
+                    <p class="fw-bold mb-1">Company Department Table Anomalies:</p>
+                    <p class="small text-secondary mb-2">
+                        Consider a single table: <code>EMP_DEPT(EmpID, EmpName, DeptID, DeptName, DeptLocation)</code> where <code>EmpID</code> is primary key. Explain what deletion anomaly occurs if the only employee in Department 'D5' (Research) resigns.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-intro-1">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-intro-1">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> When that employee's tuple is deleted, all records showing that Department 'D5' exists and where it is located are wiped from the database!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exercise 2 -->
+                <div class="p-3 border rounded bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-danger">Exercise 1.2</span>
+                        <span class="text-muted small">Decomposition Strategy</span>
+                    </div>
+                    <p class="fw-bold mb-1">Hospital Patient-Doctor Table:</p>
+                    <p class="small text-secondary mb-2">
+                        A table stores <code>APPOINTMENT(PatientID, PatientName, DoctorID, DoctorName, ClinicRoom, AppointmentDate)</code>. Identify the update anomaly if a doctor changes their clinic room number.
+                    </p>
+                    <button class="btn btn-sm btn-outline-secondary mb-2 btn-toggle-hint" data-target="hint-intro-2">
+                        <i class="bi bi-lightbulb me-1"></i> Show Hint
+                    </button>
+                    <div class="d-none mb-2" id="hint-intro-2">
+                        <div class="p-2 bg-white border rounded small text-muted">
+                            <strong>Hint:</strong> If Doctor Smith has 200 past appointments recorded, updating their room requires modifying 200 rows. If one row is missed, conflicting room numbers will exist.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 1.5 Lesson 1 Knowledge Check Quiz -->
+    <section class="mb-5" id="intro-quiz">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-primary rounded-circle p-2" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">1.5</span>
+            <h3 class="h4 fw-bold mb-0 text-dark">Lesson 1 Knowledge Check</h3>
+        </div>
+
+        <div class="card border shadow-sm mb-4 bg-white">
+            <div class="card-body p-4">
+                <div class="quiz-container" data-quiz-id="phase5-intro">
+                    
+                    <!-- Question 1 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="0">
+                        <p class="fw-bold mb-2">1. What is an Insertion Anomaly in a relational database?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_intro_0" id="q_intro_0_a" value="a">
+                            <label class="form-check-label" for="q_intro_0_a">A) An error caused when disk space runs out during an INSERT query</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_intro_0" id="q_intro_0_b" value="b" data-correct="true">
+                            <label class="form-check-label" for="q_intro_0_b">B) The inability to record certain facts about an entity without artificially inserting unrelated data</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_intro_0" id="q_intro_0_c" value="c">
+                            <label class="form-check-label" for="q_intro_0_c">C) An automatic trigger executing after an INSERT statement</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="quiz-question mb-4 pb-3 border-bottom" data-question-index="1">
+                        <p class="fw-bold mb-2">2. In a table storing <code>(StudentID, CourseID, InstructorName)</code>, what happens if student Amit drops course C02, and he was the only student enrolled in C02?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_intro_1" id="q_intro_1_a" value="a" data-correct="true">
+                            <label class="form-check-label" for="q_intro_1_a">A) Deleting Amit's row accidentally erases all record that Course C02 and its instructor exist (Deletion Anomaly)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_intro_1" id="q_intro_1_b" value="b">
+                            <label class="form-check-label" for="q_intro_1_b">B) The database automatically converts Amit's StudentID to 0</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_intro_1" id="q_intro_1_c" value="c">
+                            <label class="form-check-label" for="q_intro_1_c">C) MySQL raises Error 1062 Duplicate Key</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="quiz-question mb-3" data-question-index="2">
+                        <p class="fw-bold mb-2">3. What is the fundamental strategy used by relational normalization to eradicate anomalies?</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_intro_2" id="q_intro_2_a" value="a">
+                            <label class="form-check-label" for="q_intro_2_a">A) Converting all VARCHAR columns to TEXT columns</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_intro_2" id="q_intro_2_b" value="b">
+                            <label class="form-check-label" for="q_intro_2_b">B) Adding duplicate columns to speed up query execution</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="q_intro_2" id="q_intro_2_c" value="c" data-correct="true">
+                            <label class="form-check-label" for="q_intro_2_c">C) Decomposing monolithic tables into smaller, well-structured relations linked by foreign keys</label>
+                        </div>
+                        <div class="quiz-feedback mt-2" style="display: none;"></div>
+                    </div>
+
+                    <button class="btn btn-primary check-quiz-btn mt-3" data-quiz-id="phase5-intro">
+                        <i class="bi bi-patch-check me-1"></i> Check Quiz Answers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>

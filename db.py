@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from datetime import date, datetime
 from decimal import Decimal
@@ -176,6 +177,75 @@ def test_connection(password=None, user=None, host=None, port=None, database=Non
         result["error"] = f"MySQL server connected, but database '{target_database}' does not exist yet. Run init_db.py to create it."
 
     return result
+
+def get_active_config():
+    """Retrieve active MySQL connection settings dictionary."""
+    return {
+        "host": getattr(Config, "MYSQL_HOST", "localhost"),
+        "port": getattr(Config, "MYSQL_PORT", 3306),
+        "user": getattr(Config, "MYSQL_USER", "root"),
+        "database": getattr(Config, "MYSQL_DATABASE", "dbms_learn_run")
+    }
+
+def list_server_databases(host=None, port=None, user=None, password=None):
+    """
+    Query MySQL server to list all databases available to the connected user.
+    Excludes internal system databases (information_schema, performance_schema, sys, mysql).
+    """
+    target_host = host or Config.MYSQL_HOST
+    target_user = user or Config.MYSQL_USER
+    try:
+        target_port = int(port) if port is not None else Config.MYSQL_PORT
+    except (ValueError, TypeError):
+        target_port = 3306
+    target_pw = password if password is not None and password != "" else Config.MYSQL_PASSWORD
+
+    conn = None
+    try:
+        conn = get_connection(
+            use_database=False,
+            host=target_host,
+            port=target_port,
+            user=target_user,
+            password=target_pw,
+            connect_timeout=3
+        )
+        with conn.cursor() as cursor:
+            cursor.execute("SHOW DATABASES;")
+            rows = cursor.fetchall()
+            dbs = []
+            for r in rows:
+                name = list(r.values())[0]
+                if name.lower() not in {"information_schema", "performance_schema", "sys", "mysql"}:
+                    dbs.append(name)
+        return {"success": True, "databases": sorted(dbs)}
+    except Exception as e:
+        return {"success": False, "error": str(e), "databases": []}
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+def revert_to_default_config():
+    """
+    Reverts active runtime MySQL configuration to values read directly from .env file or environment.
+    """
+    from dotenv import dotenv_values
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    env_vars = dotenv_values(env_path) if os.path.exists(env_path) else {}
+
+    Config.MYSQL_HOST = env_vars.get("MYSQL_HOST") or os.getenv("MYSQL_HOST", "localhost")
+    try:
+        Config.MYSQL_PORT = int(env_vars.get("MYSQL_PORT") or os.getenv("MYSQL_PORT", 3306))
+    except (ValueError, TypeError):
+        Config.MYSQL_PORT = 3306
+    Config.MYSQL_USER = env_vars.get("MYSQL_USER") or os.getenv("MYSQL_USER", "root")
+    Config.MYSQL_PASSWORD = env_vars.get("MYSQL_PASSWORD") or os.getenv("MYSQL_PASSWORD", "")
+    Config.MYSQL_DATABASE = env_vars.get("MYSQL_DATABASE") or os.getenv("MYSQL_DATABASE", "dbms_learn_run")
+
+    return get_active_config()
 
 def update_active_config(host=None, port=None, user=None, password=None, database=None, persist=True):
     """
@@ -2329,6 +2399,652 @@ def simulate_wal_recovery(log_records=None, crash_lsn=None, initial_values=None)
         "explanation": explanation,
         "disclaimer": "Educational WAL recovery model. Actual MySQL InnoDB recovery uses redo log groups (ib_logfile), undo tablespaces, doublewrite buffer, and checkpoint LSNs."
     }
+
+# ====================================================================
+# AI-POWERED DBMS PRACTICAL LAB: WORKSPACE & SQL EXECUTION ENGINE
+# ====================================================================
+
+PROTECTED_SYSTEM_DATABASES = {
+    "dbms_learn_run", "information_schema", "mysql",
+    "performance_schema", "sys"
+}
+
+def split_sql_script(sql_content):
+    """
+    Split SQL script into individual executable statements,
+    properly supporting DELIMITER directives, single-line/inline multi-statements,
+    quotes (single, double, backtick), and comments.
+    """
+    statements = []
+    current_delimiter = ";"
+    in_single_quote = False
+    in_double_quote = False
+    in_backtick = False
+    in_block_comment = False
+    current_token = []
+
+    lines = sql_content.splitlines(keepends=True)
+    for line in lines:
+        stripped = line.strip()
+        if stripped.upper().startswith("DELIMITER"):
+            parts = stripped.split()
+            if len(parts) >= 2:
+                current_delimiter = parts[1]
+                continue
+
+        j = 0
+        line_len = len(line)
+        while j < line_len:
+            ch = line[j]
+
+            # Check comments outside of strings
+            if not in_single_quote and not in_double_quote and not in_backtick:
+                if not in_block_comment and line[j:j+2] == "--" and (j+2 >= line_len or line[j+2].isspace()):
+                    break  # Rest of line is comment
+                if not in_block_comment and ch == "#":
+                    break  # Rest of line is comment
+                if not in_block_comment and line[j:j+2] == "/*":
+                    in_block_comment = True
+                    j += 2
+                    continue
+                if in_block_comment:
+                    if line[j:j+2] == "*/":
+                        in_block_comment = False
+                        j += 2
+                    else:
+                        j += 1
+                    continue
+
+            if not in_block_comment:
+                if ch == "'" and not in_double_quote and not in_backtick:
+                    if j > 0 and line[j-1] == "\\":
+                        pass
+                    else:
+                        in_single_quote = not in_single_quote
+                elif ch == '"' and not in_single_quote and not in_backtick:
+                    if j > 0 and line[j-1] == "\\":
+                        pass
+                    else:
+                        in_double_quote = not in_double_quote
+                elif ch == "`" and not in_single_quote and not in_double_quote:
+                    in_backtick = not in_backtick
+
+                # Check for delimiter match outside of quotes
+                if not in_single_quote and not in_double_quote and not in_backtick:
+                    delim_len = len(current_delimiter)
+                    if line[j:j+delim_len] == current_delimiter:
+                        stmt = "".join(current_token).strip()
+                        if stmt:
+                            statements.append(stmt)
+                        current_token = []
+                        j += delim_len
+                        continue
+
+                current_token.append(ch)
+            j += 1
+        current_token.append("\n")
+
+    stmt = "".join(current_token).strip()
+    if stmt:
+        statements.append(stmt)
+
+    return statements
+
+def validate_workspace_name(name):
+    """Validate that workspace name is a safe MySQL database identifier."""
+    if not name or not isinstance(name, str):
+        return False, "Workspace database name cannot be empty."
+    clean_name = name.strip()
+    if clean_name.lower() in PROTECTED_SYSTEM_DATABASES:
+        return False, f"Database name '{clean_name}' is a protected system or application schema."
+    if not re.match(r"^[a-zA-Z0-9_]{1,64}$", clean_name):
+        return False, "Workspace name must contain only letters, numbers, and underscores (max 64 characters)."
+    return True, clean_name
+
+def list_practice_workspaces():
+    """
+    List practice databases available on the local MySQL server.
+    Ensures default 'dbms_practice_lab' exists.
+    """
+    workspaces = []
+    default_ws = "dbms_practice_lab"
+    has_default = False
+
+    try:
+        conn = get_connection(use_database=False)
+        with conn.cursor() as cursor:
+            cursor.execute("SHOW DATABASES;")
+            rows = cursor.fetchall()
+            for r in rows:
+                db_name = list(r.values())[0]
+                if db_name.lower() not in PROTECTED_SYSTEM_DATABASES:
+                    is_def = (db_name.lower() == default_ws.lower())
+                    if is_def:
+                        has_default = True
+                    workspaces.append({
+                        "name": db_name,
+                        "is_default": is_def
+                    })
+        conn.close()
+
+        # If default workspace doesn't exist yet, create it on local MySQL
+        if not has_default:
+            create_practice_workspace(default_ws)
+            workspaces.insert(0, {"name": default_ws, "is_default": True})
+
+        return {"success": True, "workspaces": workspaces}
+    except Exception as e:
+        return {"success": False, "error": str(e), "workspaces": []}
+
+def create_practice_workspace(workspace_name):
+    """Create a persistent local MySQL database for practical practice."""
+    valid, res = validate_workspace_name(workspace_name)
+    if not valid:
+        return {"success": False, "error": res}
+    clean_name = res
+
+    try:
+        conn = get_connection(use_database=False)
+        with conn.cursor() as cursor:
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{clean_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        conn.close()
+        return {
+            "success": True,
+            "database": clean_name,
+            "message": f"Local MySQL database '{clean_name}' created and ready for practical experiments."
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to create database on local MySQL: {str(e)}"}
+
+def reset_practice_workspace(workspace_name):
+    """
+    Reset a practice workspace by dropping and recreating it.
+    Strictly protects system databases and the main application database.
+    """
+    valid, res = validate_workspace_name(workspace_name)
+    if not valid:
+        return {"success": False, "error": res}
+    clean_name = res
+
+    try:
+        conn = get_connection(use_database=False)
+        with conn.cursor() as cursor:
+            cursor.execute(f"DROP DATABASE IF EXISTS `{clean_name}`;")
+            cursor.execute(f"CREATE DATABASE `{clean_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        conn.close()
+        return {
+            "success": True,
+            "database": clean_name,
+            "message": f"Practice workspace '{clean_name}' was successfully reset on your local MySQL server."
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to reset workspace: {str(e)}"}
+
+def get_workspace_tables(workspace_name):
+    """Retrieve all tables and row counts in the given workspace database."""
+    valid, res = validate_workspace_name(workspace_name)
+    if not valid:
+        return {"success": False, "error": res, "tables": []}
+    clean_name = res
+
+    try:
+        conn = get_connection(use_database=True, database=clean_name)
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT TABLE_NAME as tbl_name, ENGINE as engine, TABLE_ROWS as approx_rows
+                FROM information_schema.tables
+                WHERE table_schema = %s
+                ORDER BY TABLE_NAME;
+            """, (clean_name,))
+            rows = cursor.fetchall()
+
+            table_list = []
+            for r in rows:
+                t_name = r.get("tbl_name") or r.get("TABLE_NAME")
+                engine = r.get("engine") or "InnoDB"
+                try:
+                    cursor.execute(f"SELECT COUNT(*) AS cnt FROM `{t_name}`;")
+                    cnt_res = cursor.fetchone()
+                    exact_cnt = cnt_res.get("cnt") or 0
+                except Exception:
+                    exact_cnt = r.get("approx_rows") or 0
+
+                table_list.append({
+                    "name": t_name,
+                    "engine": engine,
+                    "rows": exact_cnt
+                })
+        conn.close()
+        return {"success": True, "workspace": clean_name, "tables": table_list}
+    except Exception as e:
+        return {"success": False, "workspace": clean_name, "error": str(e), "tables": []}
+
+def get_workspace_table_schema(workspace_name, table_name):
+    """Retrieve full column definitions, constraints, and sample data for a table in the workspace."""
+    valid, res = validate_workspace_name(workspace_name)
+    if not valid:
+        return {"success": False, "error": res}
+    clean_name = res
+
+    if not table_name or not re.match(r"^[a-zA-Z0-9_]{1,64}$", table_name.strip()):
+        return {"success": False, "error": "Invalid table name identifier."}
+    clean_table = table_name.strip()
+
+    try:
+        conn = get_connection(use_database=True, database=clean_name)
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT, EXTRA
+                FROM information_schema.columns
+                WHERE table_schema = %s AND table_name = %s
+                ORDER BY ORDINAL_POSITION;
+            """, (clean_name, clean_table))
+            cols = cursor.fetchall()
+
+            # Row count
+            cursor.execute(f"SELECT COUNT(*) AS cnt FROM `{clean_table}`;")
+            cnt_row = cursor.fetchone()
+            total_rows = cnt_row["cnt"] if cnt_row else 0
+
+            # Sample rows
+            cursor.execute(f"SELECT * FROM `{clean_table}` LIMIT 10;")
+            raw_sample = cursor.fetchall()
+            sample_rows = [{k: serialize_value(v) for k, v in r.items()} for r in raw_sample]
+
+        conn.close()
+
+        formatted_cols = []
+        for c in cols:
+            formatted_cols.append({
+                "name": c.get("COLUMN_NAME"),
+                "field": c.get("COLUMN_NAME"),
+                "type": c.get("COLUMN_TYPE"),
+                "null": c.get("IS_NULLABLE"),
+                "nullable": c.get("IS_NULLABLE"),
+                "key": c.get("COLUMN_KEY"),
+                "default": serialize_value(c.get("COLUMN_DEFAULT")),
+                "extra": c.get("EXTRA")
+            })
+
+        return {
+            "success": True,
+            "workspace": clean_name,
+            "table_name": clean_table,
+            "columns": formatted_cols,
+            "total_rows": total_rows,
+            "sample_rows": sample_rows
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def execute_practical_sql(workspace_name_or_sql, sql_script_or_workspace=None, max_rows=200):
+    """
+    Executes student SQL program against their selected workspace database on local MySQL.
+    Supports multi-statement scripts (DDL, DML, DQL, constraints, joins, views).
+    Accepts either (workspace_name, sql_script) or (sql_script, workspace_name) flexibly.
+    Strictly prevents accessing or modifying the core 'dbms_learn_run' schema or system databases.
+    """
+    if sql_script_or_workspace is not None:
+        first_str = str(workspace_name_or_sql or "").strip()
+        second_str = str(sql_script_or_workspace or "").strip()
+        is_first_ident = bool(re.match(r"^[a-zA-Z0-9_]{1,64}$", first_str)) and not any(kw in first_str.upper() for kw in ["SELECT", "CREATE", "INSERT", "UPDATE", "DELETE", ";"])
+        is_second_ident = bool(re.match(r"^[a-zA-Z0-9_]{1,64}$", second_str)) and not any(kw in second_str.upper() for kw in ["SELECT", "CREATE", "INSERT", "UPDATE", "DELETE", ";"])
+
+        if is_first_ident and not is_second_ident:
+            target_ws = first_str
+            script_to_run = second_str
+        elif is_second_ident and not is_first_ident:
+            target_ws = second_str
+            script_to_run = first_str
+        else:
+            target_ws = first_str
+            script_to_run = second_str
+    else:
+        target_ws = "college_practical"
+        script_to_run = str(workspace_name_or_sql or "").strip()
+
+    if not script_to_run or not script_to_run.strip():
+        return {
+            "success": False,
+            "error": "SQL script is empty. Please enter one or more SQL statements.",
+            "columns": [],
+            "rows": [],
+            "affected_rows": 0,
+            "execution_time_ms": 0,
+            "statements": []
+        }
+
+    valid, res = validate_workspace_name(target_ws)
+    if not valid:
+        return {
+            "success": False,
+            "error": res,
+            "columns": [],
+            "rows": [],
+            "affected_rows": 0,
+            "execution_time_ms": 0,
+            "statements": []
+        }
+    clean_ws = res
+
+    # Security check: cross-database escape guard
+    for protected in PROTECTED_SYSTEM_DATABASES:
+        pattern = rf"\b(from|join|into|update|table|database)\s+[`\"]?{protected}[`\"]?\."
+        if re.search(pattern, script_to_run, re.IGNORECASE) or re.search(rf"\buse\s+[`\"]?{protected}[`\"]?", script_to_run, re.IGNORECASE):
+            return {
+                "success": False,
+                "error": f"Security Notice: Cross-schema queries into protected database '{protected}' are blocked to ensure student workspace isolation.",
+                "columns": [],
+                "rows": [],
+                "affected_rows": 0,
+                "execution_time_ms": 0,
+                "statements": []
+            }
+
+    # Security check: admin operations
+    upper_script = script_to_run.upper()
+    for restricted in Config.RESTRICTED_KEYWORDS:
+        if restricted in upper_script:
+            return {
+                "success": False,
+                "error": f"Security Notice: Restricted operation '{restricted}' is disabled in student practical workspaces.",
+                "columns": [],
+                "rows": [],
+                "affected_rows": 0,
+                "execution_time_ms": 0,
+                "statements": []
+            }
+
+    statements = split_sql_script(script_to_run)
+    if not statements:
+        return {
+            "success": False,
+            "error": "No executable SQL statements found in script (check for comment-only inputs).",
+            "columns": [],
+            "rows": [],
+            "affected_rows": 0,
+            "execution_time_ms": 0,
+            "statements": []
+        }
+
+    start_time = time.perf_counter()
+    executed_count = 0
+    total_affected = 0
+    last_query_result = None
+    messages = []
+    executed_statements = []
+
+    conn = None
+    try:
+        conn = get_connection(use_database=True, database=clean_ws)
+        with conn.cursor() as cursor:
+            for idx, stmt in enumerate(statements):
+                stmt_clean = stmt.strip()
+                if not stmt_clean:
+                    continue
+
+                try:
+                    cursor.execute(stmt_clean)
+                    executed_count += 1
+                    aff = cursor.rowcount if cursor.rowcount >= 0 else 0
+                    total_affected += aff
+
+                    upper_stmt = stmt_clean.upper()
+                    stmt_type = upper_stmt.split()[0] if upper_stmt.split() else "SQL"
+                    is_select_like = upper_stmt.startswith(("SELECT", "SHOW", "DESCRIBE", "EXPLAIN"))
+
+                    stmt_record = {
+                        "statement": stmt_clean,
+                        "type": stmt_type,
+                        "status": "success",
+                        "affected_rows": aff,
+                        "columns": [],
+                        "rows": [],
+                        "row_count": 0
+                    }
+
+                    if is_select_like and cursor.description:
+                        cols = [c[0] for c in cursor.description]
+                        raw_rows = cursor.fetchmany(max_rows)
+                        serialized_rows = []
+                        for r in raw_rows:
+                            serialized_rows.append({k: serialize_value(v) for k, v in r.items()})
+
+                        last_query_result = {
+                            "columns": cols,
+                            "rows": serialized_rows,
+                            "row_count": len(serialized_rows)
+                        }
+                        stmt_record["columns"] = cols
+                        stmt_record["rows"] = serialized_rows
+                        stmt_record["row_count"] = len(serialized_rows)
+                        messages.append(f"Statement {idx + 1}: Fetched {len(serialized_rows)} row(s).")
+                    elif upper_stmt.startswith("CREATE"):
+                        messages.append(f"Statement {idx + 1}: Object created successfully.")
+                    elif upper_stmt.startswith("DROP"):
+                        messages.append(f"Statement {idx + 1}: Object dropped successfully.")
+                    elif upper_stmt.startswith("ALTER"):
+                        messages.append(f"Statement {idx + 1}: Object altered successfully.")
+                    else:
+                        messages.append(f"Statement {idx + 1}: Executed ({aff} row(s) affected).")
+
+                    executed_statements.append(stmt_record)
+
+                except Exception as stmt_err:
+                    elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+                    return {
+                        "success": False,
+                        "error": str(stmt_err),
+                        "failed_statement": stmt_clean,
+                        "failed_statement_index": idx + 1,
+                        "statements_executed": executed_count,
+                        "total_statements": len(statements),
+                        "columns": [],
+                        "rows": [],
+                        "affected_rows": total_affected,
+                        "execution_time_ms": elapsed_ms,
+                        "messages": messages,
+                        "statements": executed_statements,
+                        "workspace": clean_ws
+                    }
+
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        return {
+            "success": True,
+            "statements_executed": executed_count,
+            "total_statements": len(statements),
+            "affected_rows": total_affected,
+            "execution_time_ms": elapsed_ms,
+            "is_query": bool(last_query_result),
+            "columns": last_query_result["columns"] if last_query_result else [],
+            "rows": last_query_result["rows"] if last_query_result else [],
+            "row_count": last_query_result["row_count"] if last_query_result else 0,
+            "messages": messages,
+            "statements": executed_statements,
+            "workspace": clean_ws,
+            "error": None
+        }
+
+    except Exception as e:
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        return {
+            "success": False,
+            "error": f"Database execution error: {str(e)}",
+            "columns": [],
+            "rows": [],
+            "affected_rows": total_affected,
+            "execution_time_ms": elapsed_ms,
+            "statements": executed_statements,
+            "workspace": clean_ws
+        }
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+# ====================================================================
+# PRACTICAL LAB RECORDS PERSISTENCE
+# ====================================================================
+
+def ensure_practical_records_table():
+    """Ensure practical_lab_records table exists in dbms_learn_run."""
+    try:
+        conn = get_connection(use_database=True, database=Config.MYSQL_DATABASE)
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS practical_lab_records (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    practical_name VARCHAR(255) NOT NULL,
+                    practical_number VARCHAR(50),
+                    topic VARCHAR(100),
+                    task_description TEXT NOT NULL,
+                    sql_source MEDIUMTEXT,
+                    workspace_db VARCHAR(100),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            """)
+        conn.close()
+    except Exception as e:
+        print(f"Notice: Could not ensure practical_lab_records table: {e}")
+
+def save_practical_record(practical_name, task_description, sql_source="", practical_number=None, topic=None, workspace_db=None, practical_id=None, workspace_name=None, sql_script=None, record_id=None):
+    """Save or update a student practical record."""
+    ensure_practical_records_table()
+
+    if not practical_name or not str(practical_name).strip():
+        return {"success": False, "error": "Practical Name is required."}
+    if not task_description or not str(task_description).strip():
+        return {"success": False, "error": "Task Description is required."}
+
+    name = str(practical_name).strip()
+    task = str(task_description).strip()
+    sql = sql_script if sql_script is not None else (sql_source or "")
+    num = (practical_number or "").strip()
+    top = (topic or "").strip()
+    ws = (workspace_name or workspace_db or "college_practical").strip()
+    pid = record_id if record_id is not None else practical_id
+
+    try:
+        conn = get_connection(use_database=True, database=Config.MYSQL_DATABASE)
+        with conn.cursor() as cursor:
+            if pid:
+                cursor.execute("""
+                    UPDATE practical_lab_records
+                    SET practical_name = %s, practical_number = %s, topic = %s,
+                        task_description = %s, sql_source = %s, workspace_db = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s;
+                """, (name, num, top, task, sql, ws, pid))
+                rec_id = int(pid)
+            else:
+                cursor.execute("""
+                    INSERT INTO practical_lab_records 
+                    (practical_name, practical_number, topic, task_description, sql_source, workspace_db)
+                    VALUES (%s, %s, %s, %s, %s, %s);
+                """, (name, num, top, task, sql, ws))
+                rec_id = cursor.lastrowid
+        conn.close()
+        return {
+            "success": True,
+            "id": rec_id,
+            "message": f"Practical '{name}' saved successfully to local MySQL database."
+        }
+    except Exception as e:
+        return {"success": False, "error": f"Failed to save practical: {str(e)}"}
+
+def list_practical_records(search=None):
+    """List all saved practical records with optional search filter."""
+    ensure_practical_records_table()
+    try:
+        conn = get_connection(use_database=True, database=Config.MYSQL_DATABASE)
+        with conn.cursor() as cursor:
+            if search and str(search).strip():
+                term = f"%{str(search).strip()}%"
+                cursor.execute("""
+                    SELECT id, practical_name, practical_number, topic, task_description,
+                           workspace_db, created_at, updated_at
+                    FROM practical_lab_records
+                    WHERE practical_name LIKE %s OR topic LIKE %s OR practical_number LIKE %s
+                    ORDER BY updated_at DESC;
+                """, (term, term, term))
+            else:
+                cursor.execute("""
+                    SELECT id, practical_name, practical_number, topic, task_description,
+                           workspace_db, created_at, updated_at
+                    FROM practical_lab_records
+                    ORDER BY updated_at DESC;
+                """)
+            rows = cursor.fetchall()
+            practicals = []
+            for r in rows:
+                practicals.append({
+                    "id": r["id"],
+                    "practical_name": r["practical_name"],
+                    "practical_number": r["practical_number"],
+                    "topic": r["topic"],
+                    "task_description": r["task_description"],
+                    "workspace_db": r["workspace_db"],
+                    "workspace_name": r["workspace_db"],
+                    "created_at": serialize_value(r.get("created_at")),
+                    "updated_at": serialize_value(r.get("updated_at"))
+                })
+        conn.close()
+        return {"success": True, "practicals": practicals}
+    except Exception as e:
+        return {"success": False, "error": str(e), "practicals": []}
+
+def get_practical_record(practical_id):
+    """Retrieve full details of a saved practical including SQL source."""
+    ensure_practical_records_table()
+    try:
+        conn = get_connection(use_database=True, database=Config.MYSQL_DATABASE)
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, practical_name, practical_number, topic, task_description,
+                       sql_source, workspace_db, created_at, updated_at
+                FROM practical_lab_records
+                WHERE id = %s;
+            """, (practical_id,))
+            row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            return {"success": False, "error": f"Practical with ID {practical_id} not found."}
+
+        return {
+            "success": True,
+            "practical": {
+                "id": row["id"],
+                "practical_name": row["practical_name"],
+                "practical_number": row["practical_number"],
+                "topic": row["topic"],
+                "task_description": row["task_description"],
+                "sql_source": row["sql_source"],
+                "sql_script": row["sql_source"],
+                "workspace_db": row["workspace_db"],
+                "workspace_name": row["workspace_db"],
+                "created_at": serialize_value(row.get("created_at")),
+                "updated_at": serialize_value(row.get("updated_at"))
+            }
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def delete_practical_record(practical_id):
+    """Delete a saved practical record."""
+    ensure_practical_records_table()
+    try:
+        conn = get_connection(use_database=True, database=Config.MYSQL_DATABASE)
+        with conn.cursor() as cursor:
+            cursor.execute("DELETE FROM practical_lab_records WHERE id = %s;", (practical_id,))
+        conn.close()
+        return {"success": True, "message": "Practical deleted successfully."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 
 
 

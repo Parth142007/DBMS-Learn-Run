@@ -1,0 +1,80 @@
+# ==========================================
+# DBMS Learn & Run - Secure .gitignore
+# ==========================================
+
+# --- Environment Variables & Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Python Bytecode & Cache ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+pip-wheel-metadata/
+
+# --- Virtual Environments ---
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# --- IDE & Editor Artifacts ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# --- Operating System Files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- Logs & Temporary Files ---
+*.log
+logs/
+tmp/
+temp/
+
+# --- Testing & Coverage Artifacts ---
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# --- Build & Distribution Artifacts ---
+build/
+dist/
+*.egg-info/
+*.egg
+node_modules/
+.npm/
+
+# --- Local Databases & Backups (excluding tracked SQL scripts in database/) ---
+*.sqlite
+*.sqlite3
+*.db
+*.sql.bak
+*.dump
+
+# Explicitly ensure tracked database schemas and documentation are never ignored
+!database/
+!database/*.sql
+!.env.example

@@ -23,3 +23,9 @@ class Config:
         "SHUTDOWN", "DROP DATABASE", "ALTER USER", "CREATE USER",
         "GRANT ALL", "FLUSH PRIVILEGES", "LOAD DATA INFILE"
     ]
+
+    # AI Configuration (supports direct Gemini API key or OpenRouter API key)
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+

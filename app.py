@@ -7,6 +7,8 @@ import os
 from flask import Flask, render_template, request, jsonify
 from config import Config
 import db
+from services import gemini_service
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -183,8 +185,15 @@ def phase_7():
     if canonical_topic not in ["topic1", "topic2", "topic3", "topic4", "topic5", "topic6", "topic7", "topic8", "topic9", "topic10"]:
         canonical_topic = default_topic
     return render_template("phase7.html", active_page="phase7", current_topic=canonical_topic)
-
-
+    
+@app.route("/practical-lab")
+def practical_lab():
+    """
+    AI-Powered DBMS Practical Lab using Google Gemini 2.5 Flash.
+    Provides isolated MySQL database workspaces, multi-statement SQL execution,
+    and pedagogical AI assistance for college practical assignments.
+    """
+    return render_template("practical_lab.html", active_page="practical_lab")
 
 # ====================================================================
 # REST API ENDPOINTS
@@ -526,6 +535,30 @@ def api_apply_connection():
         }
     })
 
+@app.route("/api/connection/databases", methods=["GET", "POST"])
+def api_connection_databases():
+    """List databases available on the connected MySQL server."""
+    data = request.get_json(silent=True) or {}
+    host = data.get("host")
+    port = data.get("port")
+    user = data.get("user")
+    password = data.get("password")
+    res = db.list_server_databases(host=host, port=port, user=user, password=password)
+    status_code = 200 if res.get("success") else 400
+    return jsonify(res), status_code
+
+@app.route("/api/connection/revert", methods=["POST"])
+def api_connection_revert():
+    """Revert active database connection settings back to .env configuration."""
+    cfg = db.revert_to_default_config()
+    test_res = db.test_connection()
+    return jsonify({
+        "success": True,
+        "message": "Connection reverted to default .env configuration.",
+        "config": cfg,
+        "status": test_res
+    })
+
 @app.route("/api/procedure/call", methods=["POST"])
 def api_call_procedure():
     """Execute a whitelisted stored procedure with safe parameterized inputs."""
@@ -571,7 +604,162 @@ def api_test_trigger():
     status_code = 200 if res.get("success", False) else 400
     return jsonify(res), status_code
 
+# ====================================================================
+# PRACTICAL LAB & GEMINI 2.5 FLASH REST API ENDPOINTS
+# ====================================================================
+
+@app.route("/api/practical-lab/workspaces", methods=["GET"])
+def api_practical_workspaces():
+    """List available practical database workspaces."""
+    res = db.list_practice_workspaces()
+    active_cfg = db.get_active_config()
+    return jsonify({
+        "success": True,
+        "workspaces": res.get("workspaces", []),
+        "active_database": active_cfg.get("database"),
+        "default_workspace": "college_practical"
+    })
+
+@app.route("/api/practical-lab/workspaces/create", methods=["POST"])
+def api_practical_create_workspace():
+    """Create a new isolated database workspace."""
+    data = request.get_json() or {}
+    name = data.get("workspace_name", "").strip()
+    if not name:
+        return jsonify({"success": False, "error": "Workspace name cannot be empty."}), 400
+    res = db.create_practice_workspace(name)
+    status_code = 200 if res.get("success") else 400
+    return jsonify(res), status_code
+
+@app.route("/api/practical-lab/workspaces/reset", methods=["POST"])
+def api_practical_reset_workspace():
+    """Reset (drop and recreate) a practice database workspace with explicit confirmation."""
+    data = request.get_json() or {}
+    name = data.get("workspace_name", "").strip()
+    confirm = data.get("confirm", False)
+    if not confirm:
+        return jsonify({"success": False, "error": "Explicit confirmation (confirm=True) is required to reset a database."}), 400
+    res = db.reset_practice_workspace(name)
+    status_code = 200 if res.get("success") else 400
+    return jsonify(res), status_code
+
+@app.route("/api/practical-lab/workspaces/<workspace_name>/tables", methods=["GET"])
+def api_practical_tables(workspace_name):
+    """List tables and views in a specific workspace."""
+    res = db.get_workspace_tables(workspace_name)
+    status_code = 200 if res.get("success") else 400
+    return jsonify(res), status_code
+
+@app.route("/api/practical-lab/workspaces/<workspace_name>/tables/<table_name>/schema", methods=["GET"])
+def api_practical_table_schema(workspace_name, table_name):
+    """Inspect columns, constraints, and sample data for a table in a workspace."""
+    res = db.get_workspace_table_schema(workspace_name, table_name)
+    status_code = 200 if res.get("success") else 400
+    return jsonify(res), status_code
+
+@app.route("/api/practical-lab/execute", methods=["POST"])
+def api_practical_execute():
+    """Execute student SQL script in an isolated database workspace."""
+    data = request.get_json() or {}
+    workspace = data.get("workspace_name", "college_practical").strip()
+    sql_script = data.get("sql_script", "").strip()
+    if not sql_script:
+        return jsonify({"success": False, "error": "SQL script cannot be empty."}), 400
+    res = db.execute_practical_sql(workspace, sql_script)
+    status_code = 200 if res.get("success") else 400
+    return jsonify(res), status_code
+
+@app.route("/api/practical-lab/practicals", methods=["GET"])
+def api_practical_list():
+    """List saved practical lab records."""
+    search = request.args.get("search", "")
+    res = db.list_practical_records(search=search)
+    status_code = 200 if res.get("success") else 400
+    return jsonify(res), status_code
+
+@app.route("/api/practical-lab/practicals/<int:record_id>", methods=["GET"])
+def api_practical_get(record_id):
+    """Retrieve details of a saved practical."""
+    res = db.get_practical_record(record_id)
+    status_code = 200 if res.get("success") else 404
+    return jsonify(res), status_code
+
+@app.route("/api/practical-lab/practicals/save", methods=["POST"])
+def api_practical_save():
+    """Save or update a practical lab record without password."""
+    data = request.get_json() or {}
+    res = db.save_practical_record(
+        practical_name=data.get("practical_name", ""),
+        task_description=data.get("task_description", ""),
+        practical_number=data.get("practical_number", ""),
+        topic=data.get("topic", ""),
+        workspace_name=data.get("workspace_name", "college_practical"),
+        sql_script=data.get("sql_script", ""),
+        record_id=data.get("id")
+    )
+    status_code = 200 if res.get("success") else 400
+    return jsonify(res), status_code
+
+@app.route("/api/practical-lab/practicals/<int:record_id>", methods=["DELETE"])
+def api_practical_delete(record_id):
+    """Delete a saved practical record."""
+    res = db.delete_practical_record(record_id)
+    status_code = 200 if res.get("success") else 400
+    return jsonify(res), status_code
+
+@app.route("/api/practical-lab/ai/status", methods=["GET"])
+def api_practical_ai_status():
+    """Check whether Gemini 2.5 Flash is configured and available."""
+    configured = gemini_service.is_gemini_configured()
+    return jsonify({
+        "success": True,
+        "configured": configured,
+        "model": Config.GEMINI_MODEL or "gemini-2.5-flash"
+    })
+
+@app.route("/api/practical-lab/ai/analyze", methods=["POST"])
+def api_practical_ai_analyze():
+    """
+    Handle educational AI features with Gemini 2.5 Flash:
+    - check: Check My SQL against task and schema
+    - explain: Plain-English pedagogical walkthrough of the program
+    - errors: Pinpoint compilation, execution, or logical errors
+    - suggest: Suggest corrected SQL (never auto-executed)
+    - generate: Generate SQL solution for natural language task
+    - explain_output: Interpret query result rows and columns
+    """
+    data = request.get_json() or {}
+    action = data.get("action", "").strip()
+    if not action:
+        return jsonify({"success": False, "error": "AI action parameter is required."}), 400
+
+    data_dict, err = gemini_service.analyze_sql_with_gemini(
+        action=action,
+        practical_name=data.get("practical_name", ""),
+        task_description=data.get("task_description", ""),
+        sql=data.get("sql_code", ""),
+        schema_context=data.get("schema_context", ""),
+        execution_result=data.get("execution_result"),
+        execution_error=data.get("execution_error", ""),
+        workspace_name=data.get("workspace_name", "")
+    )
+
+    if err:
+        return jsonify({
+            "success": False,
+            "error": err,
+            "is_gemini_configured": gemini_service.is_gemini_configured()
+        }), 400
+
+    return jsonify({
+        "success": True,
+        "action": action,
+        "model": Config.GEMINI_MODEL or "gemini-2.5-flash",
+        "data": data_dict
+    })
+
 if __name__ == "__main__":
+
     port = int(os.getenv("PORT", 5000))
     print(f" * Starting DBMS Learn & Run on http://localhost:{port}")
     app.run(host="0.0.0.0", port=port, debug=True)

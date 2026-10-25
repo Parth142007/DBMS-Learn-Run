@@ -23,10 +23,13 @@ Project/
 ├── config.py                   # Centralized configuration and security policies
 ├── db.py                       # Database connection helper & query execution engine
 ├── init_db.py                  # Automated database setup script for Windows
-├── requirements.txt            # Python dependencies
+├── requirements.txt            # Python dependencies (includes google-genai)
 ├── .env.example                # Environment variables template
-├── .env                        # Local MySQL credentials
+├── .env                        # Local MySQL credentials & GEMINI_API_KEY
 ├── README.md                   # Complete documentation and setup guide
+│
+├── services/                   # Modular backend service layer
+│   └── gemini_service.py       # Google Gemini 2.5 Flash advisory service (google-genai SDK)
 │
 ├── database/                   # Structured SQL scripts
 │   ├── 01_create_database.sql  # Database creation (dbms_learn_run)
@@ -42,9 +45,10 @@ Project/
 │   └── 11_phase7_progress.sql  # Phase 7 progress tracking table
 │
 ├── templates/                  # Jinja2 Templates
-│   ├── base.html               # Main layout with 16-topic syllabus sidebar & Phase 7 navigation
+│   ├── base.html               # Main layout with 16-topic syllabus sidebar & AI Practical Lab navigation
 │   ├── index.html              # Live dashboard, syllabus roadmap & interactive SQL runner
 │   ├── schema.html             # Relational schema inspector (8 tables)
+│   ├── practical_lab.html      # AI-Powered DBMS Practical Lab interface
 │   ├── phase2.html             # Phase 2 Learning Module container
 │   ├── phase2/                 # Modular Phase 2 topic partials (Topics 1-4)
 │   ├── phase3.html             # Phase 3 Learning Dashboard & SQL Lab container
@@ -62,6 +66,7 @@ Project/
 │   ├── css/style.css           # Styling for tabs, diagrams, role cards & code snippets
 │   └── js/
 │       ├── app.js              # Dynamic query execution & output rendering
+│       ├── practical_lab.js    # AI Practical Lab workspace & Gemini integration
 │       ├── phase2.js           # Phase 2 progress, quizzes & simulator
 │       ├── phase3.js           # Phase 3 SQL Lab, tab routing, quizzes & table reset
 │       ├── phase4.js           # Phase 4 laboratories, procedure runner, RBAC simulator & progress
@@ -69,9 +74,11 @@ Project/
 │       ├── phase6.js           # Phase 6 relational algebra engine & ER diagram builder
 │       └── phase7.js           # Phase 7 transaction simulator, schedule analyzer, 2PL, WFG & recovery
 │
-└── tests/                      # Automated test suite (83 tests passing)
+└── tests/                      # Automated test suite (102 tests passing)
     ├── test_database.py        # Database helper & serialization tests
     ├── test_sql_lab.py         # SQL parsing & safety tests
+    ├── test_navigation_and_connection.py # Dashboard, header, and MySQL connection verification
+    ├── test_practical_lab.py   # AI Practical Lab, workspace isolation & Gemini advisory tests
     ├── test_phase2.py          # Phase 2 routes, topics, quizzes, and regression tests
     ├── test_phase3.py          # Phase 3 routes, 10 topics, joins, aggregates, subqueries, safeguards
     ├── test_phase4.py          # Phase 4 routes, views, triggers, constraints, procedures & security
@@ -79,6 +86,42 @@ Project/
     ├── test_phase6.py          # Phase 6 routes, relational algebra, ER builder, integrity constraints
     └── test_phase7.py          # Phase 7 routes, schedule analyzer, WAL recovery, progress API, ACID
 ```
+
+---
+
+## AI-Powered DBMS Practical Lab (Powered by Google Gemini 2.5 Flash)
+
+The platform includes a dedicated standalone laboratory accessible via `/practical-lab` and prominently linked in the sidebar under **Core DBMS Concepts**.
+
+### Key Capabilities
+
+1. **Practical Details & Persistent Records:**
+   - Fields for **Practical/Program Name** (required), **Practical Number**, **Topic**, and **Task Description** (the problem statement given by the teacher).
+   - Instant saving and loading of practicals without requiring a password (`practical_lab_records` in local MySQL).
+   - Search filter to locate past lab exercises.
+
+2. **Isolated Database Workspaces (Local MySQL 8.0 Server):**
+   - **Mode A (Default):** Dedicated student workspace databases (default `college_practical` or user-created `dbms_practice_*`).
+   - Tables created, constraints, rows inserted, and queries executed persist directly on the student's local MySQL server (`localhost:3306`).
+   - **Workspace Isolation:** Access to the core platform database `dbms_learn_run` and system databases (`mysql`, `information_schema`, etc.) is strictly guarded and blocked against student modification or cross-database escapes.
+   - **Reset Confirmation:** A dedicated modal requires explicit confirmation before dropping and recreating a clean workspace.
+
+3. **Interactive Multi-Statement SQL Execution Engine:**
+   - Execute multi-statement MySQL 8 scripts separated by semicolons (`CREATE TABLE`, `INSERT`, `ALTER`, `SELECT`, etc.) via `Ctrl+Enter`.
+   - Comprehensive execution output with per-statement status, affected rows, execution latency, and interactive tabular rendering for query results.
+   - Authoritative MySQL error handling with line numbers and failure statement reporting.
+
+4. **Educational Advisory Engine with Google Gemini 2.5 Flash:**
+   - **Model:** `gemini-2.5-flash` configured via environment variable `GEMINI_MODEL`.
+   - **Check My SQL:** Compares SQL code against the teacher's task and workspace schema, flagging missing constraints, syntax errors, or logical issues.
+   - **Explain My Program:** Step-by-step plain English walkthrough of the statements, highlighting relational concepts (PKs, FKs, Normalization, Filtering).
+   - **Find Errors:** Pinpoints compile-time typos, syntax errors, and foreign key constraint violations.
+   - **Suggest Correction:** Provides suggested SQL with a side-by-side **Compare Diff** modal, **Copy SQL**, and **Insert into Editor** buttons. *Crucial rule: Gemini suggestions are never automatically executed.*
+   - **Generate SQL for My Task:** Converts natural language teacher prompts into working MySQL 8 solutions.
+   - **Explain Query Output:** Translates returned rows, columns, or affected count into pedagogical takeaways.
+
+5. **Graceful Degradation:**
+   - When `GEMINI_API_KEY` is not configured, the SQL editor, table inspector, local MySQL execution, and practical saving continue to work at 100% capacity with an informative banner explaining how to add an API key.
 
 ---
 

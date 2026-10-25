@@ -66,6 +66,9 @@
             <a href="/schema" class="sidebar-nav-link {% if active_page == 'schema' %}active{% endif %}">
                 <i class="bi bi-table"></i> Database Schema (8 Tables)
             </a>
+            <a href="/practical-lab" class="sidebar-nav-link {% if active_page == 'practical_lab' %}active{% endif %}" id="nav-practical-lab">
+                <i class="bi bi-stars text-warning"></i> AI Practical Lab <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-auto" style="font-size: 0.65rem;">Gemini 2.5</span>
+            </a>
 
             <div class="sidebar-header">Module 1: Foundations (Phase 2)</div>
             <a href="/phase-2?topic=architecture" class="sidebar-nav-link {% if active_page == 'phase2' and current_topic == 'architecture' %}active{% endif %}">
@@ -259,52 +262,98 @@
     <!-- MySQL Connection Settings Modal -->
     <div class="modal fade" id="dbConfigModal" tabindex="-1" aria-labelledby="dbConfigModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-light py-3">
                     <h5 class="modal-title fw-bold" id="dbConfigModalLabel">
-                        <i class="bi bi-database me-2 text-primary"></i>MySQL Connection Configuration
+                        <i class="bi bi-database me-2 text-primary"></i>MySQL Connection Manager
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <p class="text-muted small">
-                        This platform communicates with your local <strong>MySQL 8.0 Server</strong>. You can verify or update your connection parameters below.
-                    </p>
+                <div class="modal-body p-3">
+                    <!-- Live Connection Status Banner -->
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-light border mb-3 small" id="modal-conn-status-bar">
+                        <div class="d-flex align-items-center">
+                            <span class="badge {% if db_status.connected and db_status.database_exists %}bg-success{% elif db_status.connected %}bg-warning text-dark{% else %}bg-danger{% endif %} me-2" id="modal-status-badge">
+                                {% if db_status.connected and db_status.database_exists %}Connected{% elif db_status.connected %}DB Missing{% else %}Disconnected{% endif %}
+                            </span>
+                            <span class="font-monospace text-secondary" id="modal-status-target">{{ db_status.host }}:{{ db_status.port }}/{{ db_status.database }}</span>
+                        </div>
+                        <span class="text-muted small" id="modal-status-ver">{% if db_status.connected %}MySQL {{ db_status.mysql_version }}{% endif %}</span>
+                    </div>
+
                     <form id="form-test-connection">
+                        <!-- Connection Profile -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold mb-1">Connection Profile</label>
+                            <select id="modal-conn-profile" class="form-select form-select-sm">
+                                <option value="default" selected>Default (.env configuration)</option>
+                                <option value="localhost">Localhost MySQL 8 (Standard)</option>
+                                <option value="custom">Custom Connection Profile</option>
+                            </select>
+                        </div>
+
                         <div class="row g-2 mb-2">
                             <div class="col-8">
-                                <label class="form-label small fw-semibold">Host</label>
-                                <input type="text" id="modal-mysql-host" class="form-control form-control-sm" value="{{ db_status.host }}">
+                                <label class="form-label small fw-semibold mb-1">Host</label>
+                                <input type="text" id="modal-mysql-host" class="form-control form-control-sm font-monospace" value="{{ db_status.host }}">
+                                <div class="form-text text-muted mt-1" style="font-size: 0.72rem;">
+                                    <i class="bi bi-info-circle me-1"></i><code>localhost</code> refers to the machine running the Flask server.
+                                </div>
                             </div>
                             <div class="col-4">
-                                <label class="form-label small fw-semibold">Port</label>
-                                <input type="number" id="modal-mysql-port" class="form-control form-control-sm" value="{{ db_status.port }}">
+                                <label class="form-label small fw-semibold mb-1">Port</label>
+                                <input type="number" id="modal-mysql-port" class="form-control form-control-sm font-monospace" value="{{ db_status.port }}">
                             </div>
                         </div>
+
                         <div class="row g-2 mb-2">
                             <div class="col-6">
-                                <label class="form-label small fw-semibold">User</label>
-                                <input type="text" id="modal-mysql-user" class="form-control form-control-sm" value="{{ db_status.user }}">
+                                <label class="form-label small fw-semibold mb-1">User</label>
+                                <input type="text" id="modal-mysql-user" class="form-control form-control-sm font-monospace" value="{{ db_status.user }}">
                             </div>
                             <div class="col-6">
-                                <label class="form-label small fw-semibold">Password</label>
-                                <input type="password" id="modal-mysql-password" class="form-control form-control-sm" placeholder="Your MySQL root password">
+                                <label class="form-label small fw-semibold mb-1">Password</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="password" id="modal-mysql-password" class="form-control form-control-sm font-monospace" placeholder="Keep active password">
+                                    <button class="btn btn-outline-secondary" type="button" id="btn-toggle-password" title="Show/Hide password">
+                                        <i class="bi bi-eye" id="toggle-password-icon"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Database Selection with Fetch -->
                         <div class="mb-2">
-                            <label class="form-label small fw-semibold">Database Schema</label>
-                            <input type="text" id="modal-mysql-database" class="form-control form-control-sm" value="{{ db_status.database }}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small fw-semibold mb-0">Database Schema</label>
+                                <button type="button" class="btn btn-link p-0 text-decoration-none small" id="btn-fetch-databases" style="font-size: 0.78rem;">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Fetch Databases
+                                </button>
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="modal-mysql-database" class="form-control form-control-sm font-monospace" value="{{ db_status.database }}">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" id="btn-dropdown-databases" title="Pick from discovered databases">
+                                    <i class="bi bi-list-ul"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end small shadow-sm" id="list-server-databases" style="max-height: 200px; overflow-y: auto;">
+                                    <li><span class="dropdown-item-text text-muted small">Click 'Fetch Databases' to discover</span></li>
+                                </ul>
+                            </div>
                         </div>
                     </form>
                     <div id="test-conn-feedback"></div>
                 </div>
-                <div class="modal-footer d-flex justify-content-between">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                <div class="modal-footer bg-light py-2 px-3 d-flex justify-content-between">
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-revert-conn-submit" title="Reset active configuration to .env values">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Revert to Default
+                        </button>
+                    </div>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="btn-test-conn-submit" title="Verify connection without changing active configuration">
+                        <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" id="btn-test-conn-submit" title="Verify connection without altering runtime settings">
                             <i class="bi bi-plug me-1"></i> Test Connection
                         </button>
-                        <button type="button" class="btn btn-success btn-sm" id="btn-apply-conn-submit" title="Apply these parameters as the active database connection">
+                        <button type="button" class="btn btn-success btn-sm fw-semibold" id="btn-apply-conn-submit" title="Switch active database connection for all queries">
                             <i class="bi bi-check2-circle me-1"></i> Apply Connection
                         </button>
                     </div>

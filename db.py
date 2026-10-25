@@ -1,3 +1,4 @@
+import os
 import time
 from datetime import date, datetime
 from decimal import Decimal
@@ -17,45 +18,76 @@ def serialize_value(val):
         return val.decode("utf-8", errors="replace")
     return val
 
-def get_connection(use_database=True, password=None, user=None, host=None, port=None):
+def get_connection(use_database=True, password=None, user=None, host=None, port=None, database=None, connect_timeout=None):
     """
     Establish a connection to the MySQL server using PyMySQL.
     Supports overriding credentials (useful for interactive test connection).
     """
-    db_name = Config.MYSQL_DATABASE if use_database else None
+    target_db = database if database is not None else Config.MYSQL_DATABASE
+    db_name = target_db if use_database else None
+    timeout = connect_timeout if connect_timeout is not None else Config.QUERY_TIMEOUT_SECONDS
     return pymysql.connect(
         host=host or Config.MYSQL_HOST,
-        port=port or Config.MYSQL_PORT,
+        port=int(port) if port is not None else Config.MYSQL_PORT,
         user=user or Config.MYSQL_USER,
         password=password if password is not None else Config.MYSQL_PASSWORD,
         database=db_name,
         charset="utf8mb4",
         cursorclass=DictCursor,
-        connect_timeout=Config.QUERY_TIMEOUT_SECONDS,
+        connect_timeout=timeout,
         autocommit=True
     )
 
-def test_connection(password=None, user=None, host=None, port=None):
+def test_connection(password=None, user=None, host=None, port=None, database=None, timeout=3):
     """
     Verify MySQL connectivity, fetch server version, database existence,
     and list of tables with row counts.
+    Ensures safe error messages and reliable connection closing.
     """
+    target_host = host or Config.MYSQL_HOST
+    try:
+        target_port = int(port) if port is not None else Config.MYSQL_PORT
+    except (ValueError, TypeError):
+        return {
+            "connected": False,
+            "database_exists": False,
+            "mysql_version": "Unknown",
+            "database": database or Config.MYSQL_DATABASE,
+            "host": target_host,
+            "port": port,
+            "user": user or Config.MYSQL_USER,
+            "tables": [],
+            "table_count": 0,
+            "error": "Invalid port number. Port must be an integer between 1 and 65535."
+        }
+
+    target_user = user or Config.MYSQL_USER
+    target_database = database or Config.MYSQL_DATABASE
+
     result = {
         "connected": False,
         "database_exists": False,
         "mysql_version": "Unknown",
-        "database": Config.MYSQL_DATABASE,
-        "host": host or Config.MYSQL_HOST,
-        "port": port or Config.MYSQL_PORT,
-        "user": user or Config.MYSQL_USER,
+        "database": target_database,
+        "host": target_host,
+        "port": target_port,
+        "user": target_user,
         "tables": [],
         "table_count": 0,
         "error": None
     }
     
     # Step 1: Connect to MySQL server without selecting database
+    conn = None
     try:
-        conn = get_connection(use_database=False, password=password, user=user, host=host, port=port)
+        conn = get_connection(
+            use_database=False,
+            password=password,
+            user=target_user,
+            host=target_host,
+            port=target_port,
+            connect_timeout=timeout
+        )
         with conn.cursor() as cursor:
             cursor.execute("SELECT VERSION() AS ver;")
             row = cursor.fetchone()
@@ -63,26 +95,50 @@ def test_connection(password=None, user=None, host=None, port=None):
                 result["mysql_version"] = row.get("ver", "8.x")
             
             # Check if target database exists
-            cursor.execute("SHOW DATABASES LIKE %s;", (Config.MYSQL_DATABASE,))
+            cursor.execute("SHOW DATABASES LIKE %s;", (target_database,))
             db_row = cursor.fetchone()
             if db_row:
                 result["database_exists"] = True
-        conn.close()
-    except Exception as e:
-        result["error"] = str(e)
+    except pymysql.err.OperationalError as e:
+        code = e.args[0] if len(e.args) > 0 else 0
+        msg = e.args[1] if len(e.args) > 1 else str(e)
+        if code == 2003:
+            result["error"] = f"Cannot reach MySQL server at {target_host}:{target_port}. Verify that the MySQL service is running."
+        elif code == 1045:
+            result["error"] = f"Authentication failed: Access denied for user '{target_user}'. Please verify your credentials."
+        else:
+            result["error"] = f"MySQL Operational Error ({code}): {msg}"
         return result
+    except Exception as e:
+        result["error"] = f"Connection error: {str(e)}"
+        return result
+    finally:
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
     # Step 2: If database exists, connect to it and get table statistics
     if result["database_exists"]:
+        db_conn = None
         try:
-            conn = get_connection(use_database=True, password=password, user=user, host=host, port=port)
-            with conn.cursor() as cursor:
+            db_conn = get_connection(
+                use_database=True,
+                password=password,
+                user=target_user,
+                host=target_host,
+                port=target_port,
+                database=target_database,
+                connect_timeout=timeout
+            )
+            with db_conn.cursor() as cursor:
                 cursor.execute("""
                     SELECT TABLE_NAME AS tbl_name, TABLE_ROWS AS tbl_rows 
                     FROM information_schema.tables 
                     WHERE table_schema = %s 
                     ORDER BY TABLE_NAME;
-                """, (Config.MYSQL_DATABASE,))
+                """, (target_database,))
                 rows = cursor.fetchall()
                 
                 # Fetch exact counts for accuracy since information_schema can be approximate
@@ -106,15 +162,67 @@ def test_connection(password=None, user=None, host=None, port=None):
                 result["table_count"] = len(table_list)
                 result["connected"] = True
                 result["error"] = None
-            conn.close()
         except Exception as e:
             result["connected"] = False
-            result["error"] = f"Connected to server, but database access failed: {e}"
+            result["error"] = f"Connected to server, but database '{target_database}' access failed: {e}"
+        finally:
+            if db_conn:
+                try:
+                    db_conn.close()
+                except Exception:
+                    pass
     else:
         result["connected"] = True  # Server is reachable, but DB needs to be created
-        result["error"] = f"MySQL server connected, but database '{Config.MYSQL_DATABASE}' does not exist yet. Run init_db.py to create it."
+        result["error"] = f"MySQL server connected, but database '{target_database}' does not exist yet. Run init_db.py to create it."
 
     return result
+
+def update_active_config(host=None, port=None, user=None, password=None, database=None, persist=True):
+    """
+    Safely update the active in-memory configuration used by all database functions.
+    Optionally persist the updated configuration to the .env file.
+    """
+    if host:
+        Config.MYSQL_HOST = host.strip()
+    if port:
+        Config.MYSQL_PORT = int(port)
+    if user:
+        Config.MYSQL_USER = user.strip()
+    if password is not None and password != "":
+        Config.MYSQL_PASSWORD = password
+    if database:
+        Config.MYSQL_DATABASE = database.strip()
+
+    if persist:
+        try:
+            env_path = os.path.join(os.path.dirname(__file__), ".env")
+            if os.path.exists(env_path):
+                with open(env_path, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                new_lines = []
+                for line in lines:
+                    key_val = line.strip().split("=", 1)
+                    if len(key_val) == 2 and key_val[0].strip() in ["MYSQL_HOST", "MYSQL_PORT", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DATABASE"]:
+                        k = key_val[0].strip()
+                        if k == "MYSQL_HOST":
+                            new_lines.append(f"MYSQL_HOST={Config.MYSQL_HOST}\n")
+                        elif k == "MYSQL_PORT":
+                            new_lines.append(f"MYSQL_PORT={Config.MYSQL_PORT}\n")
+                        elif k == "MYSQL_USER":
+                            new_lines.append(f"MYSQL_USER={Config.MYSQL_USER}\n")
+                        elif k == "MYSQL_PASSWORD" and password is not None and password != "":
+                            new_lines.append(f"MYSQL_PASSWORD={Config.MYSQL_PASSWORD}\n")
+                        elif k == "MYSQL_DATABASE":
+                            new_lines.append(f"MYSQL_DATABASE={Config.MYSQL_DATABASE}\n")
+                        else:
+                            new_lines.append(line)
+                    else:
+                        new_lines.append(line)
+                with open(env_path, "w", encoding="utf-8") as f:
+                    f.writelines(new_lines)
+        except Exception as e:
+            # Non-fatal error during persistence
+            print(f"Notice: Could not persist configuration to .env: {e}")
 
 CORE_TABLES = [
     "departments", "students", "courses", "events",

@@ -356,12 +356,18 @@ def api_simulate_recovery():
 def api_health():
     """Health check endpoint reporting Flask status and MySQL connectivity."""
     status = db.test_connection()
+    is_healthy = status.get("connected") and status.get("database_exists")
     return jsonify({
-        "status": "healthy" if status["connected"] else "degraded",
-        "database_connected": status["connected"],
-        "database_exists": status["database_exists"],
-        "mysql_version": status["mysql_version"],
-        "table_count": status["table_count"]
+        "status": "healthy" if is_healthy else ("degraded" if status.get("connected") else "disconnected"),
+        "database_connected": status.get("connected", False),
+        "database_exists": status.get("database_exists", False),
+        "mysql_version": status.get("mysql_version", "Unknown"),
+        "table_count": status.get("table_count", 0),
+        "database": status.get("database", Config.MYSQL_DATABASE),
+        "host": status.get("host", Config.MYSQL_HOST),
+        "port": status.get("port", Config.MYSQL_PORT),
+        "user": status.get("user", Config.MYSQL_USER),
+        "error": status.get("error")
     })
 
 @app.route("/api/tables", methods=["GET"])
@@ -405,15 +411,120 @@ def api_query():
 
 @app.route("/api/test-connection", methods=["POST"])
 def api_test_connection():
-    """Test MySQL connection credentials dynamically from the UI modal."""
+    """
+    Test MySQL connection credentials dynamically without altering active configuration.
+    Performs real PyMySQL connection and executes SELECT VERSION().
+    """
     data = request.get_json() or {}
-    user = data.get("user", Config.MYSQL_USER)
-    password = data.get("password", Config.MYSQL_PASSWORD)
-    host = data.get("host", Config.MYSQL_HOST)
-    port = int(data.get("port", Config.MYSQL_PORT))
+    user = (data.get("user") or "").strip() or Config.MYSQL_USER
+    host = (data.get("host") or "").strip() or Config.MYSQL_HOST
+    database = (data.get("database") or "").strip() or Config.MYSQL_DATABASE
+    port_val = data.get("port", Config.MYSQL_PORT)
 
-    res = db.test_connection(password=password, user=user, host=host, port=port)
-    return jsonify(res)
+    try:
+        port = int(port_val)
+        if not (1 <= port <= 65535):
+            raise ValueError()
+    except (ValueError, TypeError):
+        return jsonify({
+            "connected": False,
+            "database_exists": False,
+            "mysql_version": "Unknown",
+            "database": database,
+            "host": host,
+            "port": port_val,
+            "user": user,
+            "table_count": 0,
+            "tables": [],
+            "error": "Port must be a valid integer between 1 and 65535."
+        }), 400
+
+    password = data.get("password")
+    # If password was omitted or empty, and targeting active host/user, fallback to active password
+    if password is None or password == "":
+        if host == Config.MYSQL_HOST and user == Config.MYSQL_USER:
+            password = Config.MYSQL_PASSWORD
+
+    res = db.test_connection(password=password, user=user, host=host, port=port, database=database)
+    # Ensure no secrets leak in API response
+    return jsonify({
+        "connected": res.get("connected", False),
+        "database_exists": res.get("database_exists", False),
+        "mysql_version": res.get("mysql_version", "Unknown"),
+        "database": res.get("database"),
+        "host": res.get("host"),
+        "port": res.get("port"),
+        "user": res.get("user"),
+        "table_count": res.get("table_count", 0),
+        "tables": res.get("tables", []),
+        "error": res.get("error")
+    })
+
+@app.route("/api/apply-connection", methods=["POST"])
+def api_apply_connection():
+    """
+    Explicitly validate and apply new database connection settings.
+    Requires successful verification before switching active runtime config.
+    """
+    data = request.get_json() or {}
+    user = (data.get("user") or "").strip() or Config.MYSQL_USER
+    host = (data.get("host") or "").strip() or Config.MYSQL_HOST
+    database = (data.get("database") or "").strip() or Config.MYSQL_DATABASE
+    port_val = data.get("port", Config.MYSQL_PORT)
+
+    try:
+        port = int(port_val)
+        if not (1 <= port <= 65535):
+            raise ValueError()
+    except (ValueError, TypeError):
+        return jsonify({
+            "success": False,
+            "error": "Port must be a valid integer between 1 and 65535."
+        }), 400
+
+    password = data.get("password")
+    if password is None or password == "":
+        if host == Config.MYSQL_HOST and user == Config.MYSQL_USER:
+            password = Config.MYSQL_PASSWORD
+        else:
+            password = ""
+
+    # 1. Verify credentials against MySQL server before switching
+    test_res = db.test_connection(password=password, user=user, host=host, port=port, database=database)
+    if not test_res.get("connected"):
+        return jsonify({
+            "success": False,
+            "error": f"Cannot apply settings: Connection failed ({test_res.get('error')})"
+        }), 400
+
+    if not test_res.get("database_exists"):
+        return jsonify({
+            "success": False,
+            "error": f"Cannot apply settings: Connected to MySQL server, but database '{database}' was not found. Please verify the schema name or run init_db.py."
+        }), 400
+
+    # 2. Update active configuration safely
+    db.update_active_config(
+        host=host,
+        port=port,
+        user=user,
+        password=password,
+        database=database,
+        persist=True
+    )
+
+    return jsonify({
+        "success": True,
+        "message": f"Successfully connected to MySQL {test_res.get('mysql_version')} and applied '{database}' as the active database.",
+        "status": {
+            "host": host,
+            "port": port,
+            "user": user,
+            "database": database,
+            "mysql_version": test_res.get("mysql_version"),
+            "table_count": test_res.get("table_count")
+        }
+    })
 
 @app.route("/api/procedure/call", methods=["POST"])
 def api_call_procedure():

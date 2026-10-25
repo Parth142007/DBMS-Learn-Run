@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initQueryRunner();
     initConnectionTester();
     initQuickTableLoaders();
+    initHeaderConnectionStatus();
 });
 
 /**
@@ -178,60 +179,175 @@ function initQuickTableLoaders() {
 function initConnectionTester() {
     const testForm = document.getElementById("form-test-connection");
     const testBtn = document.getElementById("btn-test-conn-submit");
+    const applyBtn = document.getElementById("btn-apply-conn-submit");
     const testFeedback = document.getElementById("test-conn-feedback");
 
-    if (!testForm || !testBtn) return;
+    if (!testForm) return;
 
-    testBtn.addEventListener("click", () => {
+    function getFormData() {
         const passwordInput = document.getElementById("modal-mysql-password");
         const userInput = document.getElementById("modal-mysql-user");
         const hostInput = document.getElementById("modal-mysql-host");
         const portInput = document.getElementById("modal-mysql-port");
+        const dbInput = document.getElementById("modal-mysql-database");
 
-        testBtn.disabled = true;
-        testBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Testing...`;
-        testFeedback.innerHTML = "";
+        return {
+            user: userInput ? userInput.value.trim() : "root",
+            password: passwordInput ? passwordInput.value : "",
+            host: hostInput ? hostInput.value.trim() : "localhost",
+            port: portInput ? parseInt(portInput.value.trim()) || 3306 : 3306,
+            database: dbInput ? dbInput.value.trim() : "dbms_learn_run"
+        };
+    }
 
-        fetch("/api/test-connection", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                user: userInput ? userInput.value : "root",
-                password: passwordInput ? passwordInput.value : "",
-                host: hostInput ? hostInput.value : "localhost",
-                port: portInput ? parseInt(portInput.value) : 3306
+    // 1. Test Connection: Only verifies credentials without altering active configuration
+    if (testBtn) {
+        testBtn.addEventListener("click", () => {
+            const payload = getFormData();
+            testBtn.disabled = true;
+            testBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Testing...`;
+            testFeedback.innerHTML = "";
+
+            fetch("/api/test-connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
             })
-        })
-        .then(r => r.json())
-        .then(data => {
-            testBtn.disabled = false;
-            testBtn.innerHTML = `Test Connection`;
+            .then(r => r.json())
+            .then(data => {
+                testBtn.disabled = false;
+                testBtn.innerHTML = `<i class="bi bi-plug me-1"></i> Test Connection`;
 
-            if (data.connected && data.database_exists) {
-                testFeedback.innerHTML = `
-                    <div class="alert alert-success mt-3 mb-0 py-2">
-                        <i class="bi bi-check-circle-fill me-1"></i> Connected to MySQL ${escapeHtml(data.mysql_version)}! Found ${data.table_count} tables in '${data.database}'.
-                    </div>`;
-                // Reload page after 1.5s to refresh connection badge
-                setTimeout(() => window.location.reload(), 1500);
-            } else if (data.connected && !data.database_exists) {
-                testFeedback.innerHTML = `
-                    <div class="alert alert-warning mt-3 mb-0 py-2">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Connected to MySQL server, but '${data.database}' does not exist. Run <code>python init_db.py</code> in your terminal.
-                    </div>`;
+                if (data.connected && data.database_exists) {
+                    testFeedback.innerHTML = `
+                        <div class="alert alert-success mt-3 mb-0 py-2">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+                                <strong>Connection Successful!</strong>
+                            </div>
+                            <div class="small">
+                                Connected to <strong>MySQL ${escapeHtml(data.mysql_version)}</strong> at <code>${escapeHtml(data.host)}:${data.port}</code>.<br>
+                                Database <code>${escapeHtml(data.database)}</code> verified (${data.table_count} tables detected).
+                            </div>
+                            <div class="small text-muted mt-2 border-top pt-1">
+                                <i class="bi bi-info-circle me-1"></i> Active app connection has <em>not</em> changed. Click <strong>Apply Connection</strong> to switch active runtime database.
+                            </div>
+                        </div>`;
+                } else if (data.connected && !data.database_exists) {
+                    testFeedback.innerHTML = `
+                        <div class="alert alert-warning mt-3 mb-0 py-2">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-exclamation-triangle-fill fs-5 me-2 text-warning"></i>
+                                <strong>Server Reachable, Database Missing</strong>
+                            </div>
+                            <div class="small">
+                                Connected to MySQL server ${escapeHtml(data.mysql_version)}, but database <code>${escapeHtml(data.database)}</code> was not found.<br>
+                                Please initialize the schema using <code>python init_db.py</code> or specify an existing database.
+                            </div>
+                        </div>`;
+                } else {
+                    testFeedback.innerHTML = `
+                        <div class="alert alert-danger mt-3 mb-0 py-2">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-x-circle-fill fs-5 me-2 text-danger"></i>
+                                <strong>Connection Test Failed</strong>
+                            </div>
+                            <div class="small">${escapeHtml(data.error || "Unable to connect to MySQL server. Please verify your host, port, and credentials.")}</div>
+                        </div>`;
+                }
+            })
+            .catch(err => {
+                testBtn.disabled = false;
+                testBtn.innerHTML = `<i class="bi bi-plug me-1"></i> Test Connection`;
+                testFeedback.innerHTML = `<div class="alert alert-danger mt-3 mb-0 py-2"><i class="bi bi-x-circle-fill me-1"></i> Network error: ${escapeHtml(err.message)}</div>`;
+            });
+        });
+    }
+
+    // 2. Apply Connection: Validates and updates the backend runtime configuration
+    if (applyBtn) {
+        applyBtn.addEventListener("click", () => {
+            const payload = getFormData();
+            applyBtn.disabled = true;
+            applyBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Applying...`;
+            testFeedback.innerHTML = "";
+
+            fetch("/api/apply-connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                applyBtn.disabled = false;
+                applyBtn.innerHTML = `<i class="bi bi-check2-circle me-1"></i> Apply Connection`;
+
+                if (data.success) {
+                    testFeedback.innerHTML = `
+                        <div class="alert alert-success mt-3 mb-0 py-2">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-patch-check-fill fs-5 me-2 text-success"></i>
+                                <strong>Connection Settings Applied!</strong>
+                            </div>
+                            <div class="small">
+                                ${escapeHtml(data.message)}<br>
+                                Reloading application view to update schema and tables...
+                            </div>
+                        </div>`;
+                    initHeaderConnectionStatus();
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    testFeedback.innerHTML = `
+                        <div class="alert alert-danger mt-3 mb-0 py-2">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-x-circle-fill fs-5 me-2 text-danger"></i>
+                                <strong>Failed to Apply Settings</strong>
+                            </div>
+                            <div class="small">${escapeHtml(data.error || "Could not apply new settings.")}</div>
+                        </div>`;
+                }
+            })
+            .catch(err => {
+                applyBtn.disabled = false;
+                applyBtn.innerHTML = `<i class="bi bi-check2-circle me-1"></i> Apply Connection`;
+                testFeedback.innerHTML = `<div class="alert alert-danger mt-3 mb-0 py-2"><i class="bi bi-x-circle-fill me-1"></i> Network error: ${escapeHtml(err.message)}</div>`;
+            });
+        });
+    }
+}
+
+/**
+ * Periodically or on load queries /api/health to truthfully reflect the database status
+ */
+function initHeaderConnectionStatus() {
+    const statusBtn = document.getElementById("btn-header-mysql-status");
+    const statusText = document.getElementById("header-mysql-status-text");
+    const spinner = document.getElementById("header-mysql-status-spinner");
+
+    if (!statusBtn || !statusText) return;
+
+    fetch("/api/health")
+        .then(res => res.json())
+        .then(data => {
+            if (data.database_connected && data.database_exists) {
+                statusBtn.className = "btn btn-sm btn-outline-success rounded-pill px-3 py-1 d-flex align-items-center shadow-sm";
+                if (spinner) spinner.className = "spinner-grow spinner-grow-sm me-2 text-success";
+                statusText.innerHTML = `MySQL 8.0: <strong>Connected</strong> <span class="d-none d-md-inline">(${data.table_count} tables)</span>`;
+            } else if (data.database_connected && !data.database_exists) {
+                statusBtn.className = "btn btn-sm btn-outline-warning rounded-pill px-3 py-1 d-flex align-items-center shadow-sm";
+                if (spinner) spinner.className = "spinner-grow spinner-grow-sm me-2 text-warning";
+                statusText.innerHTML = `MySQL 8.0: <strong>DB Setup Needed</strong>`;
             } else {
-                testFeedback.innerHTML = `
-                    <div class="alert alert-danger mt-3 mb-0 py-2">
-                        <i class="bi bi-x-circle-fill me-1"></i> Connection failed: ${escapeHtml(data.error || "Access denied.")}
-                    </div>`;
+                statusBtn.className = "btn btn-sm btn-outline-danger rounded-pill px-3 py-1 d-flex align-items-center shadow-sm";
+                if (spinner) spinner.className = "spinner-grow spinner-grow-sm me-2 text-danger";
+                statusText.innerHTML = `MySQL 8.0: <strong>Disconnected</strong>`;
             }
         })
-        .catch(err => {
-            testBtn.disabled = false;
-            testBtn.innerHTML = `Test Connection`;
-            testFeedback.innerHTML = `<div class="alert alert-danger mt-3 mb-0 py-2">Error: ${err.message}</div>`;
+        .catch(() => {
+            statusBtn.className = "btn btn-sm btn-outline-danger rounded-pill px-3 py-1 d-flex align-items-center shadow-sm";
+            if (spinner) spinner.className = "spinner-grow spinner-grow-sm me-2 text-danger";
+            statusText.innerHTML = `MySQL 8.0: <strong>Disconnected</strong>`;
         });
-    });
 }
 
 /**

@@ -19,74 +19,38 @@
 <body>
 
     <!-- Top Navigation Bar -->
-    <nav class="navbar navbar-expand-lg top-navbar px-3 px-lg-4">
-        <div class="container-fluid px-0">
-            <a class="navbar-brand d-flex align-items-center" href="/">
+    <nav class="navbar top-navbar px-3 px-lg-4">
+        <div class="container-fluid px-0 d-flex justify-content-between align-items-center">
+            <a class="navbar-brand d-flex align-items-center mb-0 text-decoration-none" href="/" title="DBMS Learn & Run Dashboard">
                 <i class="bi bi-database-fill-gear me-2"></i>
                 <span>DBMS Learn & Run</span>
-                <span class="brand-badge d-none d-sm-inline">NEPC42 Syllabus</span>
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNavContent">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <!-- ER Diagram Builder Shortcut Button -->
+                <a href="/phase-6?topic=topic10&tool=builder#interactive-er-builder-section"
+                   id="btn-header-open-builder"
+                   class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 px-3 py-1 fw-semibold shadow-sm"
+                   title="Open Interactive ER Diagram Builder">
+                    <i class="bi bi-bounding-box-circles me-1"></i>
+                    <span>ER Builder</span>
+                </a>
 
-            <div class="collapse navbar-collapse" id="topNavContent">
-                <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'dashboard' %}active fw-semibold text-success{% endif %}" href="/">
-                            <i class="bi bi-grid-fill me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'phase2' %}active fw-semibold text-success{% endif %}" href="/phase-2">
-                            <i class="bi bi-journal-richtext me-1"></i> Phase 2: Intro
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'phase3' %}active fw-semibold text-success{% endif %}" href="/phase-3">
-                            <i class="bi bi-terminal-split me-1"></i> Phase 3: SQL Lab
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'phase4' %}active fw-semibold text-success{% endif %}" href="/phase-4">
-                            <i class="bi bi-shield-lock-fill me-1"></i> Phase 4: Views &amp; Security
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'phase5' %}active fw-semibold text-success{% endif %}" href="/phase-5">
-                            <i class="bi bi-diagram-2-fill me-1"></i> Phase 5: Normalization
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'phase6' %}active fw-semibold text-success{% endif %}" href="/phase-6">
-                            <i class="bi bi-bounding-box me-1"></i> Phase 6: ER &amp; Relational
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'phase7' %}active fw-semibold text-success{% endif %}" href="/phase-7">
-                            <i class="bi bi-arrow-repeat me-1"></i> Phase 7: Transactions
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if active_page == 'schema' %}active fw-semibold text-success{% endif %}" href="/schema">
-                            <i class="bi bi-diagram-3-fill me-1"></i> Schema Inspector
-                        </a>
-                    </li>
-
-                    <!-- Live Database Connection Status Pill -->
-                    <li class="nav-item ms-lg-2">
-                        <button class="btn btn-sm {% if db_status.connected and db_status.database_exists %}btn-outline-success{% else %}btn-outline-danger{% endif %} rounded-pill px-3 py-1"
-                                data-bs-toggle="modal" data-bs-target="#dbConfigModal" title="Click to view/test MySQL connection">
-                            <span class="spinner-grow spinner-grow-sm me-1" style="width: 0.5rem; height: 0.5rem;" role="status"></span>
-                            {% if db_status.connected and db_status.database_exists %}
-                                <i class="bi bi-check-circle me-1"></i> MySQL 8.0: <strong>Connected</strong> ({{ db_status.table_count }} tables)
-                            {% else %}
-                                <i class="bi bi-exclamation-triangle me-1"></i> MySQL: <strong>Action Needed</strong>
-                            {% endif %}
-                        </button>
-                    </li>
-                </ul>
+                <!-- Live MySQL 8.0 Connection Status Button -->
+                <button class="btn btn-sm {% if db_status.connected and db_status.database_exists %}btn-outline-success{% elif db_status.connected %}btn-outline-warning{% else %}btn-outline-danger{% endif %} rounded-pill px-3 py-1 d-flex align-items-center shadow-sm"
+                        id="btn-header-mysql-status"
+                        data-bs-toggle="modal" data-bs-target="#dbConfigModal" title="Click to view/test MySQL connection">
+                    <span class="spinner-grow spinner-grow-sm me-2 {% if db_status.connected and db_status.database_exists %}text-success{% elif db_status.connected %}text-warning{% else %}text-danger{% endif %}" id="header-mysql-status-spinner" style="width: 0.5rem; height: 0.5rem;" role="status"></span>
+                    <span id="header-mysql-status-text">
+                        {% if db_status.connected and db_status.database_exists %}
+                            MySQL 8.0: <strong>Connected</strong> <span class="d-none d-md-inline">({{ db_status.table_count }} tables)</span>
+                        {% elif db_status.connected %}
+                            MySQL 8.0: <strong>DB Setup Needed</strong>
+                        {% else %}
+                            MySQL 8.0: <strong>Disconnected</strong>
+                        {% endif %}
+                    </span>
+                </button>
             </div>
         </div>
     </nav>
@@ -118,9 +82,6 @@
             </a>
 
             <div class="sidebar-header">Module 2: Modeling & Algebra</div>
-            <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4/5">
-                <i class="bi bi-bounding-box"></i> ER Model & Schemas
-            </a>
             <a href="#" class="sidebar-nav-link text-muted" title="Coming in Phase 4/5">
                 <i class="bi bi-layers"></i> Relational Model
             </a>
@@ -332,16 +293,21 @@
                         </div>
                         <div class="mb-2">
                             <label class="form-label small fw-semibold">Database Schema</label>
-                            <input type="text" class="form-control form-control-sm" value="{{ db_status.database }}" readonly>
+                            <input type="text" id="modal-mysql-database" class="form-control form-control-sm" value="{{ db_status.database }}">
                         </div>
                     </form>
                     <div id="test-conn-feedback"></div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer d-flex justify-content-between">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-success btn-sm" id="btn-test-conn-submit">
-                        <i class="bi bi-plug-fill me-1"></i> Test Connection
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="btn-test-conn-submit" title="Verify connection without changing active configuration">
+                            <i class="bi bi-plug me-1"></i> Test Connection
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm" id="btn-apply-conn-submit" title="Apply these parameters as the active database connection">
+                            <i class="bi bi-check2-circle me-1"></i> Apply Connection
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -185,6 +185,13 @@ class ConnectorRequestHandler(BaseHTTPRequestHandler):
             self._serve_companion_ui()
             return
 
+        # Favicon bypass
+        if path == "/favicon.ico":
+            self.send_response(204)
+            self._send_cors_headers()
+            self.end_headers()
+            return
+
         # 2. Public health / info endpoint (no secret revealed)
         if path == "/api/info":
             status = state.test_connection()
@@ -707,17 +714,34 @@ class ConnectorRequestHandler(BaseHTTPRequestHandler):
 
 def start_connector(port=5005, host="127.0.0.1"):
     """Launch the threaded loopback connector service."""
+    if sys.platform == "win32":
+        try:
+            if hasattr(sys.stdout, "reconfigure"):
+                sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+            if hasattr(sys.stderr, "reconfigure"):
+                sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
     server_address = (host, port)
     httpd = ThreadedHTTPServer(server_address, ConnectorRequestHandler)
 
+    # Persist token to local .connector_token for local tooling / auto-connect
+    try:
+        token_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".connector_token")
+        with open(token_path, "w", encoding="utf-8") as f:
+            f.write(state.token.strip())
+    except Exception:
+        pass
+
     print("=" * 64)
-    print("🚀 DBMS Learn & Run — Secure Local MySQL Connector Service")
+    print(">> DBMS Learn & Run - Secure Local MySQL Connector Service")
     print("=" * 64)
     print(f" Status:        ACTIVE on http://{host}:{port}")
     print(f" Pairing Token: {state.token}")
     print(f" Local MySQL:   {state.user}@{state.host}:{state.port}")
     print("=" * 64)
-    print(" 📋 Instructions:")
+    print(" [Instructions]:")
     print(" 1. In Practical Lab, select 'Mode B: My Local MySQL'.")
     print(f" 2. Paste the Pairing Token above: {state.token}")
     print(f" 3. Or visit the Companion UI directly at: http://{host}:{port}")

@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 410" width="100%" height="410" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="termBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16" />
+      <stop offset="50%" stop-color="#0e1422" />
+      <stop offset="100%" stop-color="#070a12" />
+    </linearGradient>
+
+    <!-- Header Gradient -->
+    <linearGradient id="termHeader" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <!-- Terminal Shadow -->
+    <filter id="termDropShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+
+    <filter id="emeraldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <style>
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    /* Terminal Step 1: Query Fade & Slide */
+    @keyframes typeLine1 {
+      0% { opacity: 0; clip-path: inset(0 100% 0 0); }
+      5% { opacity: 1; clip-path: inset(0 100% 0 0); }
+      25% { opacity: 1; clip-path: inset(0 0% 0 0); }
+      92% { opacity: 1; }
+      98%, 100% { opacity: 0; }
+    }
+
+    @keyframes typeLine2 {
+      0%, 24% { opacity: 0; clip-path: inset(0 100% 0 0); }
+      25% { opacity: 1; clip-path: inset(0 100% 0 0); }
+      40% { opacity: 1; clip-path: inset(0 0% 0 0); }
+      92% { opacity: 1; }
+      98%, 100% { opacity: 0; }
+    }
+
+    /* Terminal Step 2: Execution Status Pill */
+    @keyframes execStatus {
+      0%, 42% { opacity: 0; transform: translateY(4px); }
+      45%, 92% { opacity: 1; transform: translateY(0); }
+      98%, 100% { opacity: 0; }
+    }
+
+    /* Terminal Step 3: Tabular Results Grid */
+    @keyframes resultGrid {
+      0%, 50% { opacity: 0; transform: translateY(6px); }
+      54%, 92% { opacity: 1; transform: translateY(0); }
+      98%, 100% { opacity: 0; }
+    }
+
+    .cursor {
+      animation: blink 0.8s infinite;
+    }
+    .anim-line1 {
+      animation: typeLine1 10s infinite;
+    }
+    .anim-line2 {
+      animation: typeLine2 10s infinite;
+    }
+    .anim-status {
+      animation: execStatus 10s infinite;
+    }
+    .anim-results {
+      animation: resultGrid 10s infinite;
+    }
+  </style>
+
+  <!-- Main Terminal Window Container -->
+  <g filter="url(#termDropShadow)">
+    <rect x="15" y="15" width="820" height="380" rx="12" fill="url(#termBg)" stroke="#334155" stroke-width="1.5" />
+    
+    <!-- Terminal Titlebar -->
+    <rect x="15" y="15" width="820" height="36" rx="12" fill="url(#termHeader)" />
+    <!-- Clean flat bottom for header -->
+    <rect x="15" y="39" width="820" height="12" fill="#0f172a" />
+    <line x1="15" y1="51" x2="835" y2="51" stroke="#1e293b" stroke-width="1.5" />
+
+    <!-- Window Controls (Red, Yellow, Green) -->
+    <circle cx="36" cy="33" r="6" fill="#ef4444" />
+    <circle cx="56" cy="33" r="6" fill="#f59e0b" />
+    <circle cx="76" cy="33" r="6" fill="#10b981" />
+
+    <!-- Title and Host Badge -->
+    <text x="425" y="37" text-anchor="middle" fill="#94a3b8" font-family="'Fira Code', 'Cascadia Code', Consolas, monospace" font-size="11.5" font-weight="600">mysql&gt; interactive_query_runner &mdash; dbms_learn_run@localhost:3306</text>
+
+    <!-- Execution Timing Badge (Top Right) -->
+    <g transform="translate(685, 23)" class="anim-status">
+      <rect x="0" y="0" width="135" height="20" rx="10" fill="#064e3b" stroke="#10b981" stroke-width="0.8" />
+      <circle cx="10" cy="10" r="3.5" fill="#34d399" />
+      <text x="20" y="14" fill="#a7f3d0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="9" font-weight="700">8.2ms &bull; 3 ROWS</text>
+    </g>
+  </g>
+
+  <!-- Terminal Content Area -->
+  <g transform="translate(40, 80)" font-family="'Fira Code', 'Cascadia Code', Consolas, monospace" font-size="12.5">
+    
+    <!-- Prompt & Input Query Line 1 -->
+    <g class="anim-line1">
+      <text x="0" y="0">
+        <tspan fill="#10b981" font-weight="700">mysql&gt; </tspan>
+        <tspan fill="#38bdf8" font-weight="600">SELECT </tspan>
+        <tspan fill="#e2e8f0">s.roll_no, s.first_name, d.department_name, s.gpa</tspan>
+      </text>
+    </g>
+
+    <!-- Input Query Line 2 -->
+    <g class="anim-line2">
+      <text x="0" y="22">
+        <tspan fill="#10b981" font-weight="700">&nbsp;&nbsp;&nbsp;&nbsp;-&gt; </tspan>
+        <tspan fill="#38bdf8" font-weight="600">FROM </tspan>
+        <tspan fill="#e2e8f0">students s </tspan>
+        <tspan fill="#a855f7" font-weight="600">INNER JOIN </tspan>
+        <tspan fill="#e2e8f0">departments d </tspan>
+        <tspan fill="#38bdf8" font-weight="600">ON </tspan>
+        <tspan fill="#e2e8f0">s.department_id = d.department_id</tspan>
+      </text>
+      <text x="0" y="44">
+        <tspan fill="#10b981" font-weight="700">&nbsp;&nbsp;&nbsp;&nbsp;-&gt; </tspan>
+        <tspan fill="#38bdf8" font-weight="600">WHERE </tspan>
+        <tspan fill="#e2e8f0">s.gpa &gt;= </tspan>
+        <tspan fill="#f59e0b">3.80 </tspan>
+        <tspan fill="#38bdf8" font-weight="600">ORDER BY </tspan>
+        <tspan fill="#e2e8f0">s.gpa </tspan>
+        <tspan fill="#38bdf8" font-weight="600">DESC LIMIT </tspan>
+        <tspan fill="#f59e0b">3</tspan>
+        <tspan fill="#e2e8f0">;</tspan>
+      </text>
+    </g>
+
+    <!-- Blinking Cursor Anchor -->
+    <rect x="525" y="32" width="7.5" height="15" fill="#38bdf8" class="cursor" />
+
+    <!-- Query Execution Status Output -->
+    <g class="anim-status" transform="translate(0, 72)">
+      <text x="0" y="0" fill="#6ee7b7" font-size="11.5" font-weight="600">
+        &gt; Executing in InnoDB Buffer Pool... Query OK, 3 rows in set (0.0082 sec)
+      </text>
+    </g>
+
+    <!-- Tabular Query Result -->
+    <g class="anim-results" transform="translate(0, 96)">
+      <!-- Table Border Top -->
+      <text x="0" y="0" fill="#475569">+---------+------------+----------------------------------+-------+</text>
+      
+      <!-- Table Header -->
+      <text x="0" y="18">
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#38bdf8" font-weight="700">roll_no </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#38bdf8" font-weight="700">first_name </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#38bdf8" font-weight="700">department_name                  </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#38bdf8" font-weight="700">gpa   </tspan>
+        <tspan fill="#475569">|</tspan>
+      </text>
+      
+      <!-- Table Separator -->
+      <text x="0" y="36" fill="#475569">+---------+------------+----------------------------------+-------+</text>
+
+      <!-- Row 1 -->
+      <text x="0" y="54">
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#f1f5f9">CS101   </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#f1f5f9">Aarav      </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#94a3b8">Computer Science &amp; Engineering   </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#34d399" font-weight="700">3.95  </tspan>
+        <tspan fill="#475569">|</tspan>
+      </text>
+
+      <!-- Row 2 -->
+      <text x="0" y="72">
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#f1f5f9">EC204   </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#f1f5f9">Diya       </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#94a3b8">Electronics &amp; Communication Eng  </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#34d399" font-weight="700">3.88  </tspan>
+        <tspan fill="#475569">|</tspan>
+      </text>
+
+      <!-- Row 3 -->
+      <text x="0" y="90">
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#f1f5f9">CS105   </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#f1f5f9">Rohan      </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#94a3b8">Computer Science &amp; Engineering   </tspan>
+        <tspan fill="#475569">| </tspan>
+        <tspan fill="#34d399" font-weight="700">3.82  </tspan>
+        <tspan fill="#475569">|</tspan>
+      </text>
+
+      <!-- Table Border Bottom -->
+      <text x="0" y="108" fill="#475569">+---------+------------+----------------------------------+-------+</text>
+      
+      <!-- Summary Line -->
+      <text x="0" y="128" fill="#a7f3d0" font-size="11.5">
+        &gt; 3 rows in set (0.008 sec) &bull; Verified in dbms_learn_run schema
+      </text>
+    </g>
+
+  </g>
+</svg>

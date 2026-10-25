@@ -16,7 +16,15 @@ document.addEventListener("DOMContentLoaded", () => {
         lastExecutionError: "",
         suggestedSQL: "",
         isGeminiConfigured: true,
-        tablesInWorkspace: []
+        tablesInWorkspace: [],
+        connectionMode: "online", // "online" (Mode A) or "local" (Mode B)
+        localConnectorToken: sessionStorage.getItem("dbms_local_token") || "",
+        localConnectorConnected: false,
+        userAIConfig: {
+            provider: sessionStorage.getItem("dbms_ai_provider") || "gemini",
+            model: sessionStorage.getItem("dbms_ai_model") || "gemini-2.5-flash",
+            key: sessionStorage.getItem("dbms_ai_key") || ""
+        }
     };
 
     // ====================================================================
@@ -28,6 +36,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const practicalTaskTextarea = document.getElementById("practical-task");
     const practicalRecordIdInput = document.getElementById("practical-record-id");
     const practicalStatusBadge = document.getElementById("active-practical-status");
+
+    // Mode A vs Mode B DOM references
+    const modeOnline = document.getElementById("mode-online");
+    const modeLocal = document.getElementById("mode-local");
+    const dbModeIndicatorBadge = document.getElementById("db-mode-indicator-badge");
+    const localConnectorPanel = document.getElementById("local-connector-panel");
+    const localPairingTokenInput = document.getElementById("local-pairing-token");
+    const btnPairConnector = document.getElementById("btn-pair-connector");
+    const localConnectorStatus = document.getElementById("local-connector-status");
 
     const workspaceSelect = document.getElementById("workspace-select");
     const workspaceTableCount = document.getElementById("workspace-table-count");
@@ -66,6 +83,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnAiExplain = document.getElementById("btn-ai-explain");
     const btnAiErrors = document.getElementById("btn-ai-errors");
     const btnAiSuggest = document.getElementById("btn-ai-suggest");
+    const btnAiOptimize = document.getElementById("btn-ai-optimize");
+    const btnAiSchema = document.getElementById("btn-ai-schema");
+
+    // BYO-AI Settings Elements
+    const activeAiBadge = document.getElementById("active-ai-badge");
+    const aiProviderSelect = document.getElementById("ai-provider-select");
+    const aiModelSelect = document.getElementById("ai-model-select");
+    const customModelGroup = document.getElementById("custom-model-group");
+    const aiCustomModelInput = document.getElementById("ai-custom-model-input");
+    const aiApiKeyInput = document.getElementById("ai-api-key-input");
+    const btnToggleKeyVisibility = document.getElementById("btn-toggle-key-visibility");
+    const toggleKeyEyeIcon = document.getElementById("toggle-key-eye-icon");
+    const aiKeyStatusText = document.getElementById("ai-key-status-text");
+    const aiTestResult = document.getElementById("ai-test-result");
+    const btnClearAiSettings = document.getElementById("btn-clear-ai-settings");
+    const btnTestAiKey = document.getElementById("btn-test-ai-key");
+    const btnSaveAiSettings = document.getElementById("btn-save-ai-settings");
 
     const btnSavePractical = document.getElementById("btn-save-practical");
     const btnSaveAsCopy = document.getElementById("btn-save-as-copy");
@@ -87,9 +121,146 @@ document.addEventListener("DOMContentLoaded", () => {
     // INITIALIZATION
     // ====================================================================
     function init() {
+        initAiSettings();
+        initConnectionMode();
         checkAiStatus();
         loadWorkspaces();
         setupEventListeners();
+    }
+
+    // Initialize BYO-AI Settings from state / sessionStorage
+    function initAiSettings() {
+        if (aiProviderSelect) {
+            aiProviderSelect.value = state.userAIConfig.provider || "gemini";
+            updateModelDropdown(state.userAIConfig.provider, state.userAIConfig.model);
+        }
+        if (aiApiKeyInput && state.userAIConfig.key) {
+            aiApiKeyInput.value = state.userAIConfig.key;
+            if (aiKeyStatusText) {
+                aiKeyStatusText.textContent = `Custom key set (${state.userAIConfig.provider.toUpperCase()} active)`;
+                aiKeyStatusText.className = "text-success small fw-semibold";
+            }
+        }
+        updateAiBadge();
+    }
+
+    function updateAiBadge() {
+        if (!activeAiBadge) return;
+        const prov = (state.userAIConfig.provider || "gemini").toLowerCase();
+        const mod = state.userAIConfig.model || "gemini-2.5-flash";
+        const hasKey = Boolean(state.userAIConfig.key);
+
+        if (prov === "openrouter") {
+            activeAiBadge.className = "badge bg-dark border border-secondary rounded-pill px-2 py-1 small text-info";
+            activeAiBadge.innerHTML = `<i class="bi bi-router"></i> OpenRouter: ${escapeHtml(mod.split("/").pop() || mod)}`;
+        } else {
+            activeAiBadge.className = "badge gemini-badge rounded-pill px-2 py-1 small";
+            activeAiBadge.innerHTML = `<i class="bi bi-stars"></i> ${escapeHtml(mod)}${hasKey ? ' (BYO)' : ''}`;
+        }
+    }
+
+    function getAiHeaders() {
+        const headers = { "Content-Type": "application/json" };
+        if (state.userAIConfig && state.userAIConfig.key) {
+            headers["X-AI-Key"] = state.userAIConfig.key;
+        }
+        if (state.userAIConfig && state.userAIConfig.provider) {
+            headers["X-AI-Provider"] = state.userAIConfig.provider;
+        }
+        if (state.userAIConfig && state.userAIConfig.model) {
+            headers["X-AI-Model"] = state.userAIConfig.model;
+        }
+        return headers;
+    }
+
+    // Initialize Connection Mode (Online Mode A vs Local Mode B)
+    function initConnectionMode() {
+        if (localPairingTokenInput && state.localConnectorToken) {
+            localPairingTokenInput.value = state.localConnectorToken;
+        }
+        // Restore connection mode from sessionStorage if available
+        const savedMode = sessionStorage.getItem("dbms_connection_mode") || "online";
+        setConnectionMode(savedMode);
+    }
+
+    function setConnectionMode(mode) {
+        state.connectionMode = mode;
+        sessionStorage.setItem("dbms_connection_mode", mode);
+
+        if (mode === "local") {
+            if (modeLocal) modeLocal.checked = true;
+            if (localConnectorPanel) localConnectorPanel.classList.remove("d-none");
+            if (dbModeIndicatorBadge) {
+                dbModeIndicatorBadge.className = "badge bg-info-subtle text-info border border-info-subtle";
+                dbModeIndicatorBadge.textContent = "Mode B: My Local MySQL";
+            }
+            if (state.localConnectorToken) {
+                testLocalConnector(false);
+            }
+        } else {
+            if (modeOnline) modeOnline.checked = true;
+            if (localConnectorPanel) localConnectorPanel.classList.add("d-none");
+            if (dbModeIndicatorBadge) {
+                dbModeIndicatorBadge.className = "badge bg-primary-subtle text-primary border border-primary-subtle";
+                dbModeIndicatorBadge.textContent = "Mode A: Online Practice DB";
+            }
+        }
+    }
+
+    async function testLocalConnector(showAlert = true) {
+        const token = localPairingTokenInput ? localPairingTokenInput.value.trim() : state.localConnectorToken;
+        if (!token) {
+            if (showAlert) alert("Please enter the 32-character pairing token from your local connector terminal.");
+            return;
+        }
+
+        state.localConnectorToken = token;
+        sessionStorage.setItem("dbms_local_token", token);
+
+        if (localConnectorStatus) {
+            localConnectorStatus.innerHTML = '<span class="text-warning"><i class="bi bi-hourglass-split me-1"></i> Connecting to 127.0.0.1:5005...</span>';
+        }
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+            const res = await fetch("http://127.0.0.1:5005/api/health", {
+                method: "GET",
+                headers: { "X-Connector-Token": token },
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            const data = await res.json();
+            if (res.ok && data.status === "ok") {
+                state.localConnectorConnected = true;
+                if (localConnectorStatus) {
+                    localConnectorStatus.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i> Connected to Local MySQL (${data.host}:${data.port}, v${data.version || '8.x'})</span>`;
+                }
+                if (showAlert) alert("Successfully connected to your local MySQL connector!");
+            } else {
+                state.localConnectorConnected = false;
+                const err = data.error || "Authentication or pairing failed";
+                if (localConnectorStatus) {
+                    localConnectorStatus.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i> ${escapeHtml(err)}</span>`;
+                }
+                if (showAlert) alert(`Connection failed: ${err}`);
+            }
+        } catch (err) {
+            state.localConnectorConnected = false;
+            if (localConnectorStatus) {
+                localConnectorStatus.innerHTML = `
+                    <span class="text-danger">
+                        <i class="bi bi-exclamation-diamond me-1"></i> Cannot reach 127.0.0.1:5005.
+                        <a href="http://127.0.0.1:5005" target="_blank" class="fw-bold ms-1 text-primary">Open Companion</a>
+                    </span>
+                `;
+            }
+            if (showAlert) {
+                alert("Could not reach local connector at http://127.0.0.1:5005.\n\nPossible reasons:\n1. The connector is not running (run: python run_connector.py)\n2. Your browser blocks HTTPS-to-HTTP mixed content. Use the Local Companion at http://127.0.0.1:5005 directly.");
+            }
+        }
     }
 
     // Check Gemini API Key configuration
@@ -97,7 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const res = await fetch("/api/practical-lab/ai/status");
             const data = await res.json();
-            state.isGeminiConfigured = Boolean(data.configured);
+            state.isGeminiConfigured = Boolean(data.configured) || Boolean(state.userAIConfig.key);
             if (!state.isGeminiConfigured && geminiKeyAlert) {
                 geminiKeyAlert.classList.remove("d-none");
                 geminiKeyAlert.classList.add("d-flex");
@@ -371,34 +542,60 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        const isLocalMode = state.connectionMode === "local";
+
+        if (isLocalMode && !state.localConnectorToken) {
+            alert("Please enter your local pairing token in Section 2 before executing queries in Mode B.");
+            if (localPairingTokenInput) localPairingTokenInput.focus();
+            return;
+        }
+
         btnRunSQL.disabled = true;
         executionSpinner.classList.remove("d-none");
         badgeExecStatus.className = "badge bg-warning-subtle text-warning border border-warning-subtle small";
-        badgeExecStatus.textContent = "Executing on MySQL 8...";
-        executionOutputBody.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2 text-success"></span> Running script on local MySQL server...</div>';
+        badgeExecStatus.textContent = isLocalMode ? "Executing on Local MySQL..." : "Executing on Online DB...";
+        executionOutputBody.innerHTML = `<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2 text-primary"></span> Running script on ${isLocalMode ? 'My Local MySQL (127.0.0.1:5005)' : 'Online Practice Database'}...</div>`;
         executionOutputFooter.classList.add("d-none");
 
         try {
             const startTime = performance.now();
-            const res = await fetch("/api/practical-lab/execute", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    workspace_name: state.activeWorkspace,
-                    sql_script: sqlScript
-                })
-            });
-            const duration = Math.round(performance.now() - startTime);
-            const data = await res.json();
+            let res, data;
 
-            // Refresh table explorer immediately
-            loadWorkspaceTables(state.activeWorkspace);
+            if (isLocalMode) {
+                // Execute directly on local connector loopback service
+                res = await fetch("http://127.0.0.1:5005/api/execute", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Connector-Token": state.localConnectorToken
+                    },
+                    body: JSON.stringify({
+                        database: state.activeWorkspace || "mysql",
+                        sql_script: sqlScript
+                    })
+                });
+                data = await res.json();
+            } else {
+                // Execute on cloud/serverless MySQL
+                res = await fetch("/api/practical-lab/execute", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        workspace_name: state.activeWorkspace,
+                        sql_script: sqlScript
+                    })
+                });
+                data = await res.json();
+                loadWorkspaceTables(state.activeWorkspace);
+            }
+
+            const duration = Math.round(performance.now() - startTime);
 
             if (data.success) {
                 state.lastExecutionResult = data;
                 state.lastExecutionError = "";
                 badgeExecStatus.className = "badge bg-success-subtle text-success border border-success-subtle small";
-                badgeExecStatus.textContent = `Success (${duration}ms)`;
+                badgeExecStatus.textContent = `Success (${duration}ms) [${isLocalMode ? 'Local' : 'Online'}]`;
                 renderExecutionSuccess(data, duration);
             } else {
                 state.lastExecutionResult = null;
@@ -409,8 +606,29 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } catch (err) {
             badgeExecStatus.className = "badge bg-danger-subtle text-danger border border-danger-subtle small";
-            badgeExecStatus.textContent = "Network Error";
-            executionOutputBody.innerHTML = `<div class="alert alert-danger small mb-0">Failed to connect to backend execution API: ${escapeHtml(err.message)}</div>`;
+            badgeExecStatus.textContent = "Execution Error";
+            if (isLocalMode) {
+                executionOutputBody.innerHTML = `
+                    <div class="alert alert-danger small mb-0">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger"></i>
+                            <strong>Cannot Connect to Local MySQL Connector (127.0.0.1:5005)</strong>
+                        </div>
+                        <p class="mb-2">Your browser could not reach the local companion service on loopback. This usually happens if:</p>
+                        <ul class="mb-2 ps-3">
+                            <li>The local connector is not running. Launch it with <code>python run_connector.py</code> in your project directory.</li>
+                            <li>Your browser blocks HTTPS-to-HTTP communication (Mixed Content or Private Network Access).</li>
+                        </ul>
+                        <div class="d-flex gap-2">
+                            <a href="http://127.0.0.1:5005" target="_blank" rel="noopener" class="btn btn-sm btn-outline-danger fw-semibold">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Open Local Companion (http://127.0.0.1:5005)
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } else {
+                executionOutputBody.innerHTML = `<div class="alert alert-danger small mb-0">Failed to connect to backend execution API: ${escapeHtml(err.message)}</div>`;
+            }
         } finally {
             btnRunSQL.disabled = false;
             executionSpinner.classList.add("d-none");
@@ -581,7 +799,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const res = await fetch("/api/practical-lab/ai/analyze", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: getAiHeaders(),
                 body: JSON.stringify(payload)
             });
 
@@ -755,7 +973,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if ((action === "check" || action === "explain" || action === "suggest") && !sqlCode) {
+        if ((action === "check" || action === "explain" || action === "suggest" || action === "optimize") && !sqlCode) {
             alert("Please enter some SQL in the editor first to use this AI feature.");
             sqlEditor.focus();
             return;
@@ -777,9 +995,13 @@ document.addEventListener("DOMContentLoaded", () => {
             errors: "Analyzing syntax, runtime errors & constraints...",
             suggest: "Formulating recommended SQL correction...",
             generate: "Drafting complete MySQL 8 solution from prompt...",
-            explain_output: "Interpreting execution output and returned rows..."
+            explain_output: "Interpreting execution output and returned rows...",
+            optimize: "Analyzing query efficiency & index opportunities...",
+            explain_schema: "Examining relational design, constraints & normalization...",
+            practice: "Generating customized practice questions..."
         };
-        aiLoadingLabel.textContent = actionLabels[action] || "Consulting Gemini 2.5 Flash...";
+        const provLabel = (state.userAIConfig && state.userAIConfig.provider === "openrouter") ? "OpenRouter" : "Gemini";
+        aiLoadingLabel.textContent = actionLabels[action] || `Consulting ${provLabel}...`;
 
         try {
             const payload = {
@@ -789,12 +1011,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 sql_code: sqlCode,
                 schema_context: state.schemaContext,
                 execution_result: state.lastExecutionResult ? state.lastExecutionResult.statements : null,
-                execution_error: state.lastExecutionError
+                execution_error: state.lastExecutionError,
+                workspace_name: state.activeWorkspace
             };
 
             const res = await fetch("/api/practical-lab/ai/analyze", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: getAiHeaders(),
                 body: JSON.stringify(payload)
             });
 
@@ -1042,6 +1265,137 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
             }
         }
+        else if (action === "optimize") {
+            html += `
+                <div class="alert alert-info border-info-subtle small mb-3">
+                    <strong class="d-block mb-1"><i class="bi bi-speedometer2 text-primary me-1"></i> Optimization Assessment:</strong>
+                    <div>${escapeHtml(data.optimization_summary || '')}</div>
+                </div>
+            `;
+
+            if (data.potential_bottlenecks && data.potential_bottlenecks.length > 0) {
+                html += `
+                    <div class="mb-3">
+                        <h6 class="fw-bold small text-danger text-uppercase mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Potential Bottlenecks:</h6>
+                        <ul class="list-group list-group-flush small border rounded">
+                            ${data.potential_bottlenecks.map(b => `<li class="list-group-item py-1 px-2 text-danger"><i class="bi bi-x-circle me-1"></i> ${escapeHtml(b)}</li>`).join("")}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            if (data.recommended_indexes && data.recommended_indexes.length > 0) {
+                html += `
+                    <div class="mb-3">
+                        <h6 class="fw-bold small text-success text-uppercase mb-1"><i class="bi bi-lightning-charge me-1"></i> Recommended Indexes:</h6>
+                        <ul class="list-group list-group-flush small border rounded">
+                            ${data.recommended_indexes.map(idx => `<li class="list-group-item py-1 px-2 font-monospace text-dark bg-light">${escapeHtml(idx)}</li>`).join("")}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            if (data.performance_tips && data.performance_tips.length > 0) {
+                html += `
+                    <div class="mb-3 p-2 bg-light border rounded small">
+                        <strong class="text-secondary d-block mb-1"><i class="bi bi-lightbulb-fill text-warning me-1"></i> Performance Tips:</strong>
+                        <ul class="mb-0 ps-3">
+                            ${data.performance_tips.map(tip => `<li>${escapeHtml(tip)}</li>`).join("")}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            suggestedCode = data.optimized_sql;
+        }
+        else if (action === "explain_schema") {
+            html += `
+                <div class="alert alert-primary border-primary-subtle small mb-3">
+                    <strong class="d-block mb-1"><i class="bi bi-diagram-3-fill text-primary me-1"></i> Schema Overview:</strong>
+                    <div>${escapeHtml(data.schema_overview || '')}</div>
+                </div>
+            `;
+
+            if (data.table_explanations && data.table_explanations.length > 0) {
+                html += `
+                    <div class="mb-3">
+                        <h6 class="fw-bold small text-secondary text-uppercase mb-1">Tables &amp; Entities:</h6>
+                        <div class="accordion accordion-flush border rounded mb-2" id="schemaAccordion">
+                            ${data.table_explanations.map((t, idx) => `
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="headingTable${idx}">
+                                        <button class="accordion-button ${idx === 0 ? '' : 'collapsed'} py-2 px-3 small fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTable${idx}">
+                                            <i class="bi bi-table text-primary me-2"></i> ${escapeHtml(t.table_name || 'Table')}
+                                        </button>
+                                    </h2>
+                                    <div id="collapseTable${idx}" class="accordion-collapse collapse ${idx === 0 ? 'show' : ''}">
+                                        <div class="accordion-body small py-2 px-3 bg-light">
+                                            <div class="mb-1"><strong>Purpose:</strong> ${escapeHtml(t.purpose || '')}</div>
+                                            <div class="mb-1"><span class="badge bg-warning-subtle text-dark border me-1">PK:</span><code>${escapeHtml(t.primary_key || 'None')}</code></div>
+                                            <div><span class="badge bg-info-subtle text-dark border me-1">FK:</span><code>${escapeHtml(t.foreign_keys || 'None')}</code></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join("")}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (data.relationships_identified && data.relationships_identified.length > 0) {
+                html += `
+                    <div class="mb-2">
+                        <span class="small fw-semibold text-secondary">Identified Relationships: </span>
+                        ${data.relationships_identified.map(r => `<span class="badge bg-light text-dark border me-1 small">${escapeHtml(r)}</span>`).join("")}
+                    </div>
+                `;
+            }
+
+            if (data.design_insights) {
+                html += `
+                    <div class="p-2 border border-info-subtle bg-info-subtle rounded small text-dark mt-2">
+                        <i class="bi bi-mortarboard-fill me-1 text-primary"></i> <strong>Design &amp; Normalization Insights:</strong>
+                        <div class="mt-1">${escapeHtml(data.design_insights)}</div>
+                    </div>
+                `;
+            }
+        }
+        else if (action === "practice") {
+            html += `
+                <div class="card mb-3 border-primary-subtle shadow-sm">
+                    <div class="card-header bg-primary text-white py-2 px-3 d-flex justify-content-between align-items-center">
+                        <strong class="small text-uppercase"><i class="bi bi-mortarboard me-1"></i> Practical Practice Question</strong>
+                        <span class="badge bg-white text-primary small">Challenge</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <h6 class="fw-bold text-dark mb-2">${escapeHtml(data.problem_title || 'Database Practice Task')}</h6>
+                        <div class="p-2 bg-light border rounded small mb-3" style="white-space: pre-wrap;">${escapeHtml(data.problem_statement || '')}</div>
+
+                        <div class="mb-2 small">
+                            <strong class="text-secondary"><i class="bi bi-bullseye text-danger me-1"></i> Learning Objective:</strong>
+                            <span>${escapeHtml(data.learning_objective || '')}</span>
+                        </div>
+
+                        ${(data.progressive_hints && data.progressive_hints.length > 0) ? `
+                            <div class="mb-2">
+                                <strong class="small text-secondary d-block mb-1"><i class="bi bi-lightbulb text-warning me-1"></i> Progressive Hints:</strong>
+                                <ul class="small ps-3 mb-0">
+                                    ${data.progressive_hints.map(h => `<li>${escapeHtml(h)}</li>`).join("")}
+                                </ul>
+                            </div>
+                        ` : ''}
+
+                        ${data.expected_solution_outline ? `
+                            <div class="small p-2 bg-info-subtle border border-info-subtle rounded text-dark mt-2">
+                                <strong>Logic Outline:</strong> ${escapeHtml(data.expected_solution_outline)}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            suggestedCode = data.starter_sql;
+        }
+    }
 
         aiResponseContainer.innerHTML = html;
 
@@ -1304,10 +1658,85 @@ document.addEventListener("DOMContentLoaded", () => {
         aiSuggestedSqlPanel.classList.add("d-none");
     }
 
+    function updateModelDropdown(provider, selectedModel) {
+        if (!aiModelSelect) return;
+        aiModelSelect.innerHTML = "";
+
+        if (provider === "openrouter") {
+            const models = [
+                { id: "google/gemini-2.5-flash", name: "google/gemini-2.5-flash (Fast & Free/Low Cost)" },
+                { id: "meta-llama/llama-3.3-70b-instruct", name: "meta-llama/llama-3.3-70b-instruct (Powerful)" },
+                { id: "deepseek/deepseek-r1", name: "deepseek/deepseek-r1 (Reasoning)" },
+                { id: "anthropic/claude-3.5-sonnet", name: "anthropic/claude-3.5-sonnet (High Precision)" },
+                { id: "custom", name: "-- Custom Model ID --" }
+            ];
+            models.forEach(m => {
+                const opt = document.createElement("option");
+                opt.value = m.id;
+                opt.textContent = m.name;
+                if (m.id === selectedModel) opt.selected = true;
+                aiModelSelect.appendChild(opt);
+            });
+        } else {
+            const models = [
+                { id: "gemini-2.5-flash", name: "gemini-2.5-flash (Recommended)" },
+                { id: "gemini-1.5-flash", name: "gemini-1.5-flash" },
+                { id: "gemini-1.5-pro", name: "gemini-1.5-pro" },
+                { id: "custom", name: "-- Custom Model ID --" }
+            ];
+            models.forEach(m => {
+                const opt = document.createElement("option");
+                opt.value = m.id;
+                opt.textContent = m.name;
+                if (m.id === selectedModel) opt.selected = true;
+                aiModelSelect.appendChild(opt);
+            });
+        }
+
+        // Check if selectedModel is custom (not in predefined list)
+        const inList = Array.from(aiModelSelect.options).some(o => o.value === selectedModel);
+        if (!inList && selectedModel) {
+            aiModelSelect.value = "custom";
+            if (customModelGroup) customModelGroup.classList.remove("d-none");
+            if (aiCustomModelInput) aiCustomModelInput.value = selectedModel;
+        } else {
+            if (customModelGroup) {
+                if (aiModelSelect.value === "custom") {
+                    customModelGroup.classList.remove("d-none");
+                } else {
+                    customModelGroup.classList.add("d-none");
+                }
+            }
+        }
+    }
+
     // ====================================================================
     // EVENT LISTENERS
     // ====================================================================
     function setupEventListeners() {
+        // Mode A vs Mode B connection radio switches
+        if (modeOnline) {
+            modeOnline.addEventListener("change", () => setConnectionMode("online"));
+        }
+        if (modeLocal) {
+            modeLocal.addEventListener("change", () => setConnectionMode("local"));
+        }
+        if (btnPairConnector) {
+            btnPairConnector.addEventListener("click", () => testLocalConnector(true));
+        }
+        if (localPairingTokenInput) {
+            localPairingTokenInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    testLocalConnector(true);
+                }
+            });
+            localPairingTokenInput.addEventListener("change", () => {
+                state.localConnectorToken = localPairingTokenInput.value.trim();
+                sessionStorage.setItem("dbms_local_token", state.localConnectorToken);
+            });
+        }
+
         // Workspace select change
         workspaceSelect.addEventListener("change", () => {
             state.activeWorkspace = workspaceSelect.value;
@@ -1390,6 +1819,138 @@ SELECT * FROM course;
         btnAiErrors.addEventListener("click", () => triggerAiAction("errors"));
         btnAiSuggest.addEventListener("click", () => triggerAiAction("suggest"));
         btnAiExplainOutput.addEventListener("click", () => triggerAiAction("explain_output"));
+        if (btnAiOptimize) btnAiOptimize.addEventListener("click", () => triggerAiAction("optimize"));
+        if (btnAiSchema) btnAiSchema.addEventListener("click", () => triggerAiAction("explain_schema"));
+
+        // BYO-AI Settings Controls
+        if (aiProviderSelect) {
+            aiProviderSelect.addEventListener("change", (e) => {
+                const prov = e.target.value;
+                const defModel = prov === "openrouter" ? "google/gemini-2.5-flash" : "gemini-2.5-flash";
+                updateModelDropdown(prov, defModel);
+            });
+        }
+
+        if (aiModelSelect) {
+            aiModelSelect.addEventListener("change", (e) => {
+                if (e.target.value === "custom") {
+                    if (customModelGroup) customModelGroup.classList.remove("d-none");
+                    if (aiCustomModelInput) aiCustomModelInput.focus();
+                } else {
+                    if (customModelGroup) customModelGroup.classList.add("d-none");
+                }
+            });
+        }
+
+        if (btnToggleKeyVisibility && aiApiKeyInput) {
+            btnToggleKeyVisibility.addEventListener("click", () => {
+                const isPass = aiApiKeyInput.type === "password";
+                aiApiKeyInput.type = isPass ? "text" : "password";
+                if (toggleKeyEyeIcon) {
+                    toggleKeyEyeIcon.className = isPass ? "bi bi-eye-slash" : "bi bi-eye";
+                }
+            });
+        }
+
+        if (btnTestAiKey) {
+            btnTestAiKey.addEventListener("click", async () => {
+                const prov = aiProviderSelect ? aiProviderSelect.value : "gemini";
+                let model = aiModelSelect ? aiModelSelect.value : "gemini-2.5-flash";
+                if (model === "custom" && aiCustomModelInput) {
+                    model = aiCustomModelInput.value.trim();
+                }
+                const key = aiApiKeyInput ? aiApiKeyInput.value.trim() : "";
+
+                if (!key) {
+                    if (aiTestResult) {
+                        aiTestResult.className = "alert alert-warning py-2 px-3 small mt-2 d-block";
+                        aiTestResult.textContent = "Please enter an API key to test.";
+                    }
+                    return;
+                }
+
+                btnTestAiKey.disabled = true;
+                btnTestAiKey.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Testing...';
+                if (aiTestResult) {
+                    aiTestResult.className = "alert alert-secondary py-2 px-3 small mt-2 d-block";
+                    aiTestResult.textContent = "Validating key with provider API...";
+                }
+
+                try {
+                    const res = await fetch("/api/practical-lab/ai/test-key", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ provider: prov, api_key: key, model: model })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        if (aiTestResult) {
+                            aiTestResult.className = "alert alert-success py-2 px-3 small mt-2 d-block";
+                            aiTestResult.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> <strong>Success:</strong> ${escapeHtml(data.message)}`;
+                        }
+                    } else {
+                        if (aiTestResult) {
+                            aiTestResult.className = "alert alert-danger py-2 px-3 small mt-2 d-block";
+                            aiTestResult.innerHTML = `<i class="bi bi-exclamation-octagon-fill me-1"></i> <strong>Failed:</strong> ${escapeHtml(data.error || data.message)}`;
+                        }
+                    }
+                } catch (err) {
+                    if (aiTestResult) {
+                        aiTestResult.className = "alert alert-danger py-2 px-3 small mt-2 d-block";
+                        aiTestResult.textContent = `Error testing key: ${err.message}`;
+                    }
+                } finally {
+                    btnTestAiKey.disabled = false;
+                    btnTestAiKey.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Test Connection';
+                }
+            });
+        }
+
+        if (btnSaveAiSettings) {
+            btnSaveAiSettings.addEventListener("click", () => {
+                const prov = aiProviderSelect ? aiProviderSelect.value : "gemini";
+                let model = aiModelSelect ? aiModelSelect.value : "gemini-2.5-flash";
+                if (model === "custom" && aiCustomModelInput) {
+                    model = aiCustomModelInput.value.trim() || (prov === "openrouter" ? "google/gemini-2.5-flash" : "gemini-2.5-flash");
+                }
+                const key = aiApiKeyInput ? aiApiKeyInput.value.trim() : "";
+
+                state.userAIConfig = { provider: prov, model: model, key: key };
+                sessionStorage.setItem("dbms_ai_provider", prov);
+                sessionStorage.setItem("dbms_ai_model", model);
+                if (key) {
+                    sessionStorage.setItem("dbms_ai_key", key);
+                } else {
+                    sessionStorage.removeItem("dbms_ai_key");
+                }
+
+                initAiSettings();
+                const modalEl = document.getElementById("aiSettingsModal");
+                if (modalEl) {
+                    const inst = bootstrap.Modal.getInstance(modalEl);
+                    if (inst) inst.hide();
+                }
+                alert(`AI provider settings saved for this session:\nProvider: ${prov.toUpperCase()}\nModel: ${model}`);
+            });
+        }
+
+        if (btnClearAiSettings) {
+            btnClearAiSettings.addEventListener("click", () => {
+                if (confirm("Disconnect and clear your custom AI key? The lab will fall back to default settings if available.")) {
+                    state.userAIConfig = { provider: "gemini", model: "gemini-2.5-flash", key: "" };
+                    sessionStorage.removeItem("dbms_ai_key");
+                    sessionStorage.setItem("dbms_ai_provider", "gemini");
+                    sessionStorage.setItem("dbms_ai_model", "gemini-2.5-flash");
+                    if (aiApiKeyInput) aiApiKeyInput.value = "";
+                    if (aiKeyStatusText) {
+                        aiKeyStatusText.textContent = "No custom key set (Using system default)";
+                        aiKeyStatusText.className = "text-muted small";
+                    }
+                    if (aiTestResult) aiTestResult.className = "d-none";
+                    initAiSettings();
+                }
+            });
+        }
 
         // AI Tab Buttons
         document.querySelectorAll("[data-action]").forEach(btn => {

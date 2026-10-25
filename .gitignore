@@ -6,6 +6,7 @@
 .env
 .env.*
 !.env.example
+.connector_token
 
 # --- Python Bytecode & Cache ---
 __pycache__/
@@ -66,6 +67,7 @@ dist/
 *.egg
 node_modules/
 .npm/
+.vercel/
 
 # --- Local Databases & Backups (excluding tracked SQL scripts in database/) ---
 *.sqlite

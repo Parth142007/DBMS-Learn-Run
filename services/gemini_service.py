@@ -100,14 +100,129 @@ def sanitize_json_response(raw_text):
                 pass
         return {"raw_text": raw_text}
 
-def call_openrouter(api_key, prompt, system_instruction=SYSTEM_INSTRUCTION_BASE, expect_json=True):
+SUPPORTED_MODELS = {
+    "gemini": [
+        {"id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash (Recommended)", "default": True},
+        {"id": "gemini-1.5-flash", "name": "Gemini 1.5 Flash"},
+        {"id": "gemini-1.5-pro", "name": "Gemini 1.5 Pro"}
+    ],
+    "openrouter": [
+        {"id": "google/gemini-2.5-flash", "name": "Google: Gemini 2.5 Flash (via OpenRouter)", "default": True},
+        {"id": "meta-llama/llama-3.3-70b-instruct", "name": "Meta: Llama 3.3 70B Instruct"},
+        {"id": "anthropic/claude-3.5-sonnet", "name": "Anthropic: Claude 3.5 Sonnet"},
+        {"id": "mistralai/mistral-large-2407", "name": "Mistral: Mistral Large"}
+    ]
+}
+
+def test_ai_key(provider, api_key, model_id=None):
     """
-    Executes a model call against OpenRouter using Gemini 2.5 Flash.
+    Validates a user-supplied API key against the specified provider (gemini or openrouter)
+    and verifies that the selected model is accessible.
+    Returns (success_bool, message_string, details_dict).
+    """
+    key = str(api_key or "").strip()
+    if not key:
+        return False, "API key cannot be empty.", {}
+
+    prov = str(provider or "").strip().lower()
+    if not prov:
+        prov = "openrouter" if (key.startswith("sk-or-") or key.startswith("sk-")) else "gemini"
+
+    if prov == "openrouter":
+        target_model = model_id or "google/gemini-2.5-flash"
+        if not target_model.startswith("google/") and "/" not in target_model:
+            target_model = f"google/{target_model}"
+
+        test_payload = {
+            "model": target_model,
+            "messages": [{"role": "user", "content": "Hi"}],
+            "max_tokens": 5
+        }
+        req = urllib.request.Request(
+            "https://openrouter.ai/api/v1/chat/completions",
+            data=json.dumps(test_payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "http://localhost:5000",
+                "X-Title": "DBMS Learn & Run"
+            }
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                res_data = json.loads(resp.read().decode("utf-8"))
+                return True, f"OpenRouter API key verified successfully with model '{target_model}'.", {"provider": "openrouter", "model": target_model}
+        except urllib.error.HTTPError as e:
+            err_body = ""
+            try:
+                err_body = e.read().decode("utf-8")
+                err_json = json.loads(err_body)
+                err_msg = err_json.get("error", {}).get("message", err_body)
+            except Exception:
+                err_msg = err_body or str(e)
+            if e.code in (401, 403):
+                return False, f"Invalid OpenRouter API Key (HTTP {e.code}): {err_msg}", {}
+            if e.code == 402:
+                return False, f"OpenRouter Insufficient Credits (HTTP 402): {err_msg}", {}
+            return False, f"OpenRouter Error (HTTP {e.code}): {err_msg}", {}
+        except Exception as e:
+            return False, f"Failed to connect to OpenRouter: {str(e)}", {}
+
+    elif prov == "gemini":
+        target_model = model_id or getattr(Config, "GEMINI_MODEL", "gemini-2.5-flash") or "gemini-2.5-flash"
+        if target_model.startswith("google/"):
+            target_model = target_model.replace("google/", "")
+
+        if not GENAI_AVAILABLE:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent?key={key}"
+            req = urllib.request.Request(
+                url,
+                data=json.dumps({"contents": [{"parts": [{"text": "Hi"}]}]}).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    return True, f"Google Gemini API key verified successfully with model '{target_model}'.", {"provider": "gemini", "model": target_model}
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8")
+                try:
+                    err_json = json.loads(err_body)
+                    err_msg = err_json.get("error", {}).get("message", err_body)
+                except Exception:
+                    err_msg = err_body
+                return False, f"Gemini Error (HTTP {e.code}): {err_msg}", {}
+            except Exception as e:
+                return False, f"Failed to connect to Gemini: {str(e)}", {}
+
+        try:
+            client = genai.Client(api_key=key)
+            config = types.GenerateContentConfig(max_output_tokens=5)
+            response = client.models.generate_content(
+                model=target_model,
+                contents="Hi",
+                config=config
+            )
+            return True, f"Google Gemini API key verified successfully with model '{target_model}'.", {"provider": "gemini", "model": target_model}
+        except APIError as e:
+            msg = str(e)
+            if "RESOURCE_EXHAUSTED" in msg or "429" in msg:
+                return False, "Gemini API rate limit or quota exceeded.", {}
+            if "API_KEY_INVALID" in msg or "400" in msg:
+                return False, f"Invalid Gemini API Key: {msg}", {}
+            return False, f"Gemini API Error: {msg}", {}
+        except Exception as e:
+            return False, f"Failed to verify Gemini API key: {str(e)}", {}
+
+    else:
+        return False, f"Unsupported AI provider '{provider}'. Must be 'gemini' or 'openrouter'.", {}
+
+def call_openrouter(api_key, prompt, system_instruction=SYSTEM_INSTRUCTION_BASE, expect_json=True, model_override=None):
+    """
+    Executes a model call against OpenRouter.
     Enforces max_tokens to strictly respect user credit limits.
     """
-    model_id = getattr(Config, "GEMINI_MODEL", "gemini-2.5-flash") or "gemini-2.5-flash"
-    # Ensure openrouter model identifier format (e.g. google/gemini-2.5-flash)
-    if not model_id.startswith("google/"):
+    model_id = model_override or getattr(Config, "GEMINI_MODEL", "gemini-2.5-flash") or "gemini-2.5-flash"
+    if not model_id.startswith("google/") and "/" not in model_id:
         model_id = f"google/{model_id}"
 
     payload = {
@@ -163,25 +278,12 @@ def call_openrouter(api_key, prompt, system_instruction=SYSTEM_INSTRUCTION_BASE,
     except Exception as e:
         return None, f"AI generation error: {str(e)}"
 
-def call_gemini(prompt, system_instruction=SYSTEM_INSTRUCTION_BASE, expect_json=True):
-    """
-    Executes a model call against Gemini 2.5 Flash.
-    Automatically detects whether to use OpenRouter or direct Google Gen AI SDK.
-    Returns (data_dict, error_string).
-    """
-    api_key, is_openrouter, err = get_ai_credentials()
-    if err:
-        return None, err
-
-    # 1. Use OpenRouter if OpenRouter key is provided
-    if is_openrouter:
-        return call_openrouter(api_key, prompt, system_instruction=system_instruction, expect_json=expect_json)
-
-    # 2. Use direct Google Gen AI SDK for native Google API keys
+def call_direct_gemini(api_key, prompt, system_instruction=SYSTEM_INSTRUCTION_BASE, expect_json=True, model_override=None):
+    """Executes a model call against Google Gen AI SDK using a direct Gemini API key."""
     if not GENAI_AVAILABLE:
         return None, "google-genai Python SDK is not installed. Please run: pip install google-genai"
 
-    model_id = getattr(Config, "GEMINI_MODEL", "gemini-2.5-flash") or "gemini-2.5-flash"
+    model_id = model_override or getattr(Config, "GEMINI_MODEL", "gemini-2.5-flash") or "gemini-2.5-flash"
     if model_id.startswith("google/"):
         model_id = model_id.replace("google/", "")
 
@@ -213,10 +315,37 @@ def call_gemini(prompt, system_instruction=SYSTEM_INSTRUCTION_BASE, expect_json=
         if "RESOURCE_EXHAUSTED" in msg or "429" in msg:
             return None, "Gemini API rate limit or quota exceeded. Please wait a moment and try again."
         if "API_KEY_INVALID" in msg or "400" in msg:
-            return None, "Configured Gemini API key is invalid. Please check GEMINI_API_KEY in your .env file."
+            return None, f"Configured Gemini API key is invalid: {msg}"
         return None, f"Gemini API Error: {msg}"
     except Exception as e:
         return None, f"AI generation error: {str(e)}"
+
+def call_gemini(prompt, system_instruction=SYSTEM_INSTRUCTION_BASE, expect_json=True, custom_key=None, custom_provider=None, custom_model=None):
+    """
+    Executes a model call against Gemini or OpenRouter.
+    Supports user-supplied BYO-AI keys with zero fallback to owner key.
+    """
+    if custom_key and str(custom_key).strip():
+        api_key = str(custom_key).strip()
+        prov = str(custom_provider or "").strip().lower()
+        if not prov:
+            prov = "openrouter" if (api_key.startswith("sk-or-") or api_key.startswith("sk-")) else "gemini"
+
+        if prov == "openrouter":
+            return call_openrouter(api_key, prompt, system_instruction=system_instruction, expect_json=expect_json, model_override=custom_model)
+        else:
+            return call_direct_gemini(api_key, prompt, system_instruction=system_instruction, expect_json=expect_json, model_override=custom_model)
+
+    # If no custom key provided, use default server-configured key
+    api_key, is_openrouter, err = get_ai_credentials()
+    if err:
+        return None, err
+
+    if is_openrouter:
+        return call_openrouter(api_key, prompt, system_instruction=system_instruction, expect_json=expect_json, model_override=custom_model)
+
+    return call_direct_gemini(api_key, prompt, system_instruction=system_instruction, expect_json=expect_json, model_override=custom_model)
+
 
 # ====================================================================
 # Educational Feature Implementations
@@ -255,7 +384,12 @@ Respond with a JSON object adhering to this schema:
   "corrected_sql": "Complete corrected MySQL 8 script ready for student review"
 }}
 """
-    return call_gemini(prompt, expect_json=True)
+    return call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
 
 def explain_program(sql="", task_description="", schema_context="", practical_name="", **kwargs):
     """
@@ -290,7 +424,12 @@ Respond with a JSON object adhering to this schema:
   "educational_tip": "A helpful practical tip for diploma lab exams"
 }}
 """
-    return call_gemini(prompt, expect_json=True)
+    return call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
 
 def find_errors(sql="", task_description="", execution_error="", schema_context="", practical_name="", **kwargs):
     """
@@ -327,7 +466,12 @@ Respond with a JSON object adhering to this schema:
   "summary_advice": "Encouraging wrap-up advice for the student"
 }}
 """
-    return call_gemini(prompt, expect_json=True)
+    return call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
 
 def diagnose_error(sql="", execution_error="", workspace_name="", schema_context="", practical_name="", task_description="", **kwargs):
     """
@@ -363,7 +507,12 @@ Analyze the failure thoroughly and return ONLY a valid JSON object adhering stri
   "next_action": "Clear next action step for the student (e.g., 'Review the corrected SQL below, click Insert into Editor, and re-run your script in the workspace.')"
 }}
 """
-    res, err = call_gemini(prompt, expect_json=True)
+    res, err = call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
     if err:
         return None, err
     if isinstance(res, dict):
@@ -409,7 +558,12 @@ Respond with a JSON object adhering to this schema:
   "learning_takeaway": "Rule to remember for future lab assignments"
 }}
 """
-    return call_gemini(prompt, expect_json=True)
+    return call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
 
 def generate_sql(task_description="", practical_name="", schema_context="", **kwargs):
     """
@@ -439,7 +593,12 @@ Respond with a JSON object adhering to this schema:
   "sample_data_included": true/false
 }}
 """
-    return call_gemini(prompt, expect_json=True)
+    return call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
 
 def explain_output(sql="", execution_result=None, task_description="", **kwargs):
     """
@@ -456,7 +615,7 @@ def explain_output(sql="", execution_result=None, task_description="", **kwargs)
         exec_dict = {}
 
     is_executed = bool(exec_dict and (exec_dict.get("rows") or exec_dict.get("columns") or exec_dict.get("affected_rows") is not None))
-    
+
     result_snippet = ""
     if is_executed:
         columns = exec_dict.get("columns", [])
@@ -492,16 +651,119 @@ Respond with a JSON object adhering to this schema:
   "learning_takeaway": "Key takeaway about relational query operations"
 }}
 """
-    return call_gemini(prompt, expect_json=True)
+    return call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
 
-def is_gemini_configured():
+def optimize_query(sql="", task_description="", schema_context="", **kwargs):
+    """
+    Feature G: Query Optimization Suggestions.
+    Suggests indexing opportunities, avoids SELECT *, checks Cartesian joins,
+    and explains performance tradeoffs.
+    """
+    prompt = f"""
+Analyze and optimize the following SQL query for MySQL 8 InnoDB performance:
+SQL Query:
+{sql}
+
+Task / Context:
+{task_description or 'DBMS Query Optimization'}
+
+Active Schema Context:
+{schema_context or 'Practice workspace'}
+
+Respond with a JSON object adhering to this schema:
+{{
+  "optimization_summary": "1-2 sentence overview of performance opportunities",
+  "potential_bottlenecks": ["List potential bottlenecks like missing indexes, table scans, Cartesian product"],
+  "recommended_indexes": ["List suggested CREATE INDEX statements if applicable"],
+  "optimized_sql": "Optimized version of the query",
+  "performance_tips": ["Educational tips on query optimization for DBMS exams"]
+}}
+"""
+    return call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
+
+def explain_schema(schema_context="", workspace_name="", **kwargs):
+    """
+    Feature H: Schema and Table Explanations.
+    Explains the relational design, keys, relationships, and normal forms of workspace tables.
+    """
+    prompt = f"""
+Provide an educational breakdown of the following database schema for an undergraduate student:
+Database Workspace: {workspace_name or 'Practice Database'}
+Schema Definition:
+{schema_context or 'No schema provided'}
+
+Respond with a JSON object adhering to this schema:
+{{
+  "schema_overview": "Educational summary of the tables and domain purpose",
+  "table_explanations": [
+    {{
+      "table_name": "Table name",
+      "purpose": "What this entity represents",
+      "primary_key": "Primary key attribute",
+      "foreign_keys": "Foreign keys and referenced tables"
+    }}
+  ],
+  "relationships_identified": ["Summary of 1:1, 1:N, or M:N relationships"],
+  "design_insights": "Educational notes on normalization and constraint design"
+}}
+"""
+    return call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
+
+def generate_practice(topic="joins", schema_context="", difficulty="intermediate", **kwargs):
+    """
+    Feature I: Practice Question Generation.
+    Generates university-style practice questions with hints and expected solutions.
+    """
+    prompt = f"""
+Generate an undergraduate university DBMS lab practical problem statement:
+Topic: {topic or 'SQL Queries, Joins and Subqueries'}
+Target Difficulty: {difficulty or 'intermediate'}
+Available Workspace Schema:
+{schema_context or 'University student, course, and enrollment schema'}
+
+Respond with a JSON object adhering to this schema:
+{{
+  "problem_title": "Practical Title",
+  "problem_statement": "Clear task description as given by a teacher",
+  "learning_objective": "What core concept this practical tests",
+  "progressive_hints": ["Hint 1", "Hint 2"],
+  "expected_solution_outline": "Overview of the expected SQL logic (without giving away the exact answer immediately)",
+  "starter_sql": "Optional starter query snippet or template"
+}}
+"""
+    return call_gemini(
+        prompt, expect_json=True,
+        custom_key=kwargs.get("custom_key"),
+        custom_provider=kwargs.get("custom_provider"),
+        custom_model=kwargs.get("custom_model")
+    )
+
+def is_gemini_configured(custom_key=None):
     """Checks whether an AI API key (Gemini or OpenRouter) is configured."""
+    if custom_key and str(custom_key).strip():
+        return True
     api_key, _, err = get_ai_credentials()
     return bool(api_key and not err)
 
-def analyze_sql_with_gemini(action, practical_name="", task_description="", sql="", schema_context="", execution_result=None, execution_error="", workspace_name=""):
+def analyze_sql_with_gemini(action, practical_name="", task_description="", sql="", schema_context="", execution_result=None, execution_error="", workspace_name="", custom_key=None, custom_provider=None, custom_model=None):
     """
-    Unified entry point for Gemini 2.5 Flash educational features.
+    Unified entry point for AI-assisted SQL educational features.
+    Supports user-provided Bring-Your-Own-AI credentials with zero fallback.
     Actions supported:
     - 'check': check_sql
     - 'explain': explain_program
@@ -510,25 +772,40 @@ def analyze_sql_with_gemini(action, practical_name="", task_description="", sql=
     - 'suggest': suggest_correction
     - 'generate': generate_sql
     - 'explain_output': explain_output
+    - 'optimize': optimize_query
+    - 'explain_schema': explain_schema
+    - 'practice': generate_practice
     """
     action = (action or "").strip().lower()
     ws_name = workspace_name or practical_name
-    
+    ai_kwargs = {
+        "custom_key": custom_key,
+        "custom_provider": custom_provider,
+        "custom_model": custom_model
+    }
+
     if action == "check":
-        return check_sql(practical_name=practical_name, task_description=task_description, sql=sql, schema_context=schema_context, execution_error=execution_error)
+        return check_sql(practical_name=practical_name, task_description=task_description, sql=sql, schema_context=schema_context, execution_error=execution_error, **ai_kwargs)
     elif action == "explain":
-        return explain_program(sql=sql, task_description=task_description, schema_context=schema_context, practical_name=practical_name)
+        return explain_program(sql=sql, task_description=task_description, schema_context=schema_context, practical_name=practical_name, **ai_kwargs)
     elif action in ("diagnose", "diagnose_error", "diagnose-error", "fix"):
-        return diagnose_error(sql=sql, execution_error=execution_error, workspace_name=ws_name, schema_context=schema_context, practical_name=practical_name, task_description=task_description)
+        return diagnose_error(sql=sql, execution_error=execution_error, workspace_name=ws_name, schema_context=schema_context, practical_name=practical_name, task_description=task_description, **ai_kwargs)
     elif action == "errors":
         if execution_error:
-            return diagnose_error(sql=sql, execution_error=execution_error, workspace_name=ws_name, schema_context=schema_context, practical_name=practical_name, task_description=task_description)
-        return find_errors(sql=sql, task_description=task_description, execution_error=execution_error, schema_context=schema_context, practical_name=practical_name)
+            return diagnose_error(sql=sql, execution_error=execution_error, workspace_name=ws_name, schema_context=schema_context, practical_name=practical_name, task_description=task_description, **ai_kwargs)
+        return find_errors(sql=sql, task_description=task_description, execution_error=execution_error, schema_context=schema_context, practical_name=practical_name, **ai_kwargs)
     elif action == "suggest":
-        return suggest_correction(sql=sql, task_description=task_description, execution_error=execution_error, schema_context=schema_context, practical_name=practical_name)
+        return suggest_correction(sql=sql, task_description=task_description, execution_error=execution_error, schema_context=schema_context, practical_name=practical_name, **ai_kwargs)
     elif action == "generate":
-        return generate_sql(task_description=task_description, practical_name=practical_name, schema_context=schema_context)
+        return generate_sql(task_description=task_description, practical_name=practical_name, schema_context=schema_context, **ai_kwargs)
     elif action in ("explain_output", "explain-output", "output"):
-        return explain_output(sql=sql, execution_result=execution_result, task_description=task_description)
+        return explain_output(sql=sql, execution_result=execution_result, task_description=task_description, **ai_kwargs)
+    elif action in ("optimize", "optimization", "optimize_query"):
+        return optimize_query(sql=sql, task_description=task_description, schema_context=schema_context, **ai_kwargs)
+    elif action in ("explain_schema", "schema_explanation"):
+        return explain_schema(schema_context=schema_context, workspace_name=ws_name, **ai_kwargs)
+    elif action in ("practice", "generate_practice", "questions"):
+        return generate_practice(topic=task_description or practical_name, schema_context=schema_context, **ai_kwargs)
     else:
-        return None, f"Unknown AI action '{action}'. Supported actions: check, explain, diagnose, errors, suggest, generate, explain_output."
+        return None, f"Unknown AI action '{action}'. Supported actions: check, explain, diagnose, errors, suggest, generate, explain_output, optimize, explain_schema, practice."
+

@@ -709,29 +709,76 @@ def api_practical_delete(record_id):
 
 @app.route("/api/practical-lab/ai/status", methods=["GET"])
 def api_practical_ai_status():
-    """Check whether Gemini 2.5 Flash is configured and available."""
-    configured = gemini_service.is_gemini_configured()
+    """Check whether AI assistance (Gemini or OpenRouter) is configured and available."""
+    custom_key = request.headers.get("X-AI-Key")
+    configured = gemini_service.is_gemini_configured(custom_key=custom_key)
     return jsonify({
         "success": True,
         "configured": configured,
-        "model": Config.GEMINI_MODEL or "gemini-2.5-flash"
+        "model": Config.GEMINI_MODEL or "gemini-2.5-flash",
+        "supported_models": gemini_service.SUPPORTED_MODELS
     })
+
+@app.route("/api/practical-lab/ai/models", methods=["GET"])
+def api_practical_ai_models():
+    """List supported AI providers and models for Bring-Your-Own-Key."""
+    return jsonify({
+        "success": True,
+        "models": gemini_service.SUPPORTED_MODELS,
+        "default_gemini_model": Config.GEMINI_MODEL or "gemini-2.5-flash",
+        "default_openrouter_model": "google/gemini-2.5-flash"
+    })
+
+@app.route("/api/practical-lab/ai/test-key", methods=["POST"])
+def api_practical_ai_test_key():
+    """
+    Validate a user-supplied API key and model against the chosen provider (Gemini or OpenRouter).
+    Never logs or persists the key.
+    """
+    data = request.get_json(silent=True) or {}
+    key = request.headers.get("X-AI-Key") or data.get("api_key", "").strip()
+    provider = request.headers.get("X-AI-Provider") or data.get("provider", "gemini").strip()
+    model = request.headers.get("X-AI-Model") or data.get("model", "").strip()
+
+    if not key:
+        return jsonify({
+            "success": False,
+            "error": "API key cannot be empty. Please provide your Gemini or OpenRouter key."
+        }), 400
+
+    success, msg, details = gemini_service.test_ai_key(provider=provider, api_key=key, model_id=model)
+    status_code = 200 if success else 400
+    return jsonify({
+        "success": success,
+        "message": msg,
+        "provider": provider,
+        "model": details.get("model", model),
+        "error": None if success else msg
+    }), status_code
 
 @app.route("/api/practical-lab/ai/analyze", methods=["POST"])
 def api_practical_ai_analyze():
     """
-    Handle educational AI features with Gemini 2.5 Flash:
+    Handle educational AI features with Gemini or OpenRouter:
     - check: Check My SQL against task and schema
     - explain: Plain-English pedagogical walkthrough of the program
     - errors: Pinpoint compilation, execution, or logical errors
     - suggest: Suggest corrected SQL (never auto-executed)
     - generate: Generate SQL solution for natural language task
     - explain_output: Interpret query result rows and columns
+    - optimize: Suggest query optimizations & index opportunities
+    - explain_schema: Educational breakdown of workspace tables
+    - practice: Generate customized practice assignments
     """
     data = request.get_json() or {}
     action = data.get("action", "").strip()
     if not action:
         return jsonify({"success": False, "error": "AI action parameter is required."}), 400
+
+    # Extract user-supplied BYO-AI credentials from secure request headers or payload
+    custom_key = request.headers.get("X-AI-Key") or data.get("ai_key") or data.get("custom_key")
+    custom_provider = request.headers.get("X-AI-Provider") or data.get("ai_provider") or data.get("custom_provider")
+    custom_model = request.headers.get("X-AI-Model") or data.get("ai_model") or data.get("custom_model")
 
     data_dict, err = gemini_service.analyze_sql_with_gemini(
         action=action,
@@ -741,22 +788,28 @@ def api_practical_ai_analyze():
         schema_context=data.get("schema_context", ""),
         execution_result=data.get("execution_result"),
         execution_error=data.get("execution_error", ""),
-        workspace_name=data.get("workspace_name", "")
+        workspace_name=data.get("workspace_name", ""),
+        custom_key=custom_key,
+        custom_provider=custom_provider,
+        custom_model=custom_model
     )
 
     if err:
         return jsonify({
             "success": False,
             "error": err,
-            "is_gemini_configured": gemini_service.is_gemini_configured()
+            "is_gemini_configured": gemini_service.is_gemini_configured(custom_key=custom_key)
         }), 400
 
+    active_model = custom_model or Config.GEMINI_MODEL or "gemini-2.5-flash"
     return jsonify({
         "success": True,
         "action": action,
-        "model": Config.GEMINI_MODEL or "gemini-2.5-flash",
+        "model": active_model,
+        "provider": custom_provider or ("openrouter" if (custom_key and custom_key.startswith(("sk-or-", "sk-"))) else "gemini"),
         "data": data_dict
     })
+
 
 if __name__ == "__main__":
 

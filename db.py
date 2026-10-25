@@ -22,22 +22,37 @@ def serialize_value(val):
 def get_connection(use_database=True, password=None, user=None, host=None, port=None, database=None, connect_timeout=None):
     """
     Establish a connection to the MySQL server using PyMySQL.
-    Supports overriding credentials (useful for interactive test connection).
+    Supports overriding credentials and automatic SSL/TLS for remote cloud hosts.
     """
     target_db = database if database is not None else Config.MYSQL_DATABASE
     db_name = target_db if use_database else None
     timeout = connect_timeout if connect_timeout is not None else Config.QUERY_TIMEOUT_SECONDS
-    return pymysql.connect(
-        host=host or Config.MYSQL_HOST,
-        port=int(port) if port is not None else Config.MYSQL_PORT,
-        user=user or Config.MYSQL_USER,
-        password=password if password is not None else Config.MYSQL_PASSWORD,
-        database=db_name,
-        charset="utf8mb4",
-        cursorclass=DictCursor,
-        connect_timeout=timeout,
-        autocommit=True
-    )
+    target_host = host or Config.MYSQL_HOST
+
+    # Configure SSL for remote cloud databases (e.g. TiDB Cloud, Aiven, PlanetScale, AWS RDS)
+    ssl_options = None
+    if not getattr(Config, "MYSQL_SSL_DISABLED", False):
+        if getattr(Config, "MYSQL_SSL_CA", "") and os.path.exists(Config.MYSQL_SSL_CA):
+            ssl_options = {"ca": Config.MYSQL_SSL_CA}
+        elif target_host not in ("localhost", "127.0.0.1", ""):
+            # Enable TLS verification for external remote database hosts
+            ssl_options = {}
+
+    connect_kwargs = {
+        "host": target_host,
+        "port": int(port) if port is not None else Config.MYSQL_PORT,
+        "user": user or Config.MYSQL_USER,
+        "password": password if password is not None else Config.MYSQL_PASSWORD,
+        "database": db_name,
+        "charset": "utf8mb4",
+        "cursorclass": DictCursor,
+        "connect_timeout": timeout,
+        "autocommit": True
+    }
+    if ssl_options is not None:
+        connect_kwargs["ssl"] = ssl_options
+
+    return pymysql.connect(**connect_kwargs)
 
 def test_connection(password=None, user=None, host=None, port=None, database=None, timeout=3):
     """
@@ -263,7 +278,7 @@ def update_active_config(host=None, port=None, user=None, password=None, databas
     if database:
         Config.MYSQL_DATABASE = database.strip()
 
-    if persist:
+    if persist and not getattr(Config, "IS_VERCEL", False):
         try:
             env_path = os.path.join(os.path.dirname(__file__), ".env")
             if os.path.exists(env_path):

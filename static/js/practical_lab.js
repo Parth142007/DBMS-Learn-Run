@@ -377,10 +377,18 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.type = "button";
             btn.className = "btn btn-outline-secondary btn-sm py-1 px-2 d-flex align-items-center gap-1 table-explorer-item";
             btn.title = `Click to inspect table: ${table.name}`;
+
+            const rowCount = (table.row_count !== undefined && table.row_count !== null)
+                ? table.row_count
+                : ((table.rows !== undefined && table.rows !== null) ? table.rows : null);
+            const countBadge = (rowCount !== null && rowCount !== undefined)
+                ? `<span class="badge bg-light text-secondary border ms-1" style="font-size: 0.7rem;">${rowCount} ${rowCount === 1 ? 'row' : 'rows'}</span>`
+                : '';
+
             btn.innerHTML = `
                 <i class="bi bi-table text-primary"></i>
                 <span class="fw-semibold">${escapeHtml(table.name)}</span>
-                <span class="badge bg-light text-secondary border ms-1" style="font-size: 0.7rem;">${table.row_count} rows</span>
+                ${countBadge}
             `;
             btn.addEventListener("click", () => inspectTable(state.activeWorkspace, table.name));
             workspaceTablesContainer.appendChild(btn);
@@ -1395,7 +1403,6 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             suggestedCode = data.starter_sql;
         }
-    }
 
         aiResponseContainer.innerHTML = html;
 
@@ -2024,6 +2031,11 @@ SELECT * FROM course;
         });
         searchPracticalsInput.addEventListener("input", (e) => {
             loadPracticalsList(e.target.value.trim());
+        });
+
+        // Refresh practical workspaces and tables on successful connection change
+        window.addEventListener("dbms:connection-applied", () => {
+            loadWorkspaces();
         });
     }
 

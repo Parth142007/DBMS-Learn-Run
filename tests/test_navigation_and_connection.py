@@ -158,5 +158,110 @@ class TestNavigationAndConnection(unittest.TestCase):
         self.assertEqual(Config.MYSQL_HOST, orig_host)
         self.assertEqual(Config.MYSQL_USER, orig_user)
 
+    def test_api_tables_endpoint(self):
+        """Verify /api/tables returns structured table dictionary."""
+        response = self.client.get("/api/tables")
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.get_data(as_text=True))
+        self.assertIn("success", data)
+        self.assertIn("tables", data)
+        self.assertIsInstance(data["tables"], list)
+
+    def test_api_connection_revert_endpoint(self):
+        """Verify /api/connection/revert safely returns active defaults."""
+        response = self.client.post("/api/connection/revert")
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.get_data(as_text=True))
+        self.assertTrue(data.get("success"))
+        self.assertIn("config", data)
+        self.assertIn("status", data)
+        # Never leak password in response
+        self.assertNotIn("password", json.dumps(data))
+
+    def test_api_connection_databases_endpoint(self):
+        """Verify /api/connection/databases returns JSON response without crashing."""
+        response = self.client.post("/api/connection/databases", json={
+            "host": "127.0.0.99",
+            "port": 3399,
+            "user": "non_existent_user",
+            "password": "wrong_password"
+        })
+        self.assertIn(response.status_code, [200, 400])
+        data = json.loads(response.get_data(as_text=True))
+        self.assertIn("success", data)
+        self.assertNotIn("wrong_password", json.dumps(data))
+
+    def test_test_connection_keep_active_password_placeholder(self):
+        """Verify candidate connection handles 'Keep active password' without crash or leaking."""
+        orig_host = Config.MYSQL_HOST
+        orig_user = Config.MYSQL_USER
+
+        response = self.client.post("/api/test-connection", json={
+            "host": orig_host,
+            "port": Config.MYSQL_PORT,
+            "user": orig_user,
+            "password": "Keep active password",
+            "database": Config.MYSQL_DATABASE
+        })
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.get_data(as_text=True))
+        self.assertIn("connected", data)
+        self.assertNotIn("password", data)
+
+    def test_vercel_mode_excludes_practical_lab_route(self):
+        """Verify that when deployed on Vercel, the Practical Lab page is cleanly excluded (404)."""
+        orig_vercel = Config.IS_VERCEL
+        try:
+            Config.IS_VERCEL = True
+            response = self.client.get("/practical-lab")
+            self.assertEqual(response.status_code, 404)
+        finally:
+            Config.IS_VERCEL = orig_vercel
+
+    def test_vercel_mode_blocks_practical_lab_apis(self):
+        """Verify that when deployed on Vercel, all Practical Lab APIs return 404."""
+        orig_vercel = Config.IS_VERCEL
+        try:
+            Config.IS_VERCEL = True
+            response = self.client.get("/api/practical-lab/workspaces")
+            self.assertEqual(response.status_code, 404)
+            data = json.loads(response.get_data(as_text=True))
+            self.assertFalse(data["success"])
+            self.assertIn("disabled in cloud deployment", data["error"])
+        finally:
+            Config.IS_VERCEL = orig_vercel
+
+    def test_vercel_mode_locks_connection_mutation(self):
+        """Verify that on Vercel, runtime connection changes (/api/apply-connection, revert) are forbidden (403)."""
+        orig_vercel = Config.IS_VERCEL
+        try:
+            Config.IS_VERCEL = True
+            apply_res = self.client.post("/api/apply-connection", json={
+                "host": "remotehost",
+                "port": 3306,
+                "user": "root"
+            })
+            self.assertEqual(apply_res.status_code, 403)
+
+            revert_res = self.client.post("/api/connection/revert")
+            self.assertEqual(revert_res.status_code, 403)
+        finally:
+            Config.IS_VERCEL = orig_vercel
+
+    def test_vercel_mode_serves_core_educational_modules(self):
+        """Verify all non-Practical-Lab educational modules render correctly in Vercel mode."""
+        orig_vercel = Config.IS_VERCEL
+        try:
+            Config.IS_VERCEL = True
+            routes = ["/", "/schema", "/phase-2", "/phase-3", "/phase-4", "/phase-5", "/phase-6", "/phase-7"]
+            for r in routes:
+                res = self.client.get(r)
+                self.assertEqual(res.status_code, 200, f"Route {r} failed to render under Vercel mode")
+                # Ensure Practical Lab link is hidden from sidebar
+                self.assertNotIn('id="nav-practical-lab"', res.get_data(as_text=True))
+        finally:
+            Config.IS_VERCEL = orig_vercel
+
 if __name__ == "__main__":
     unittest.main()
+

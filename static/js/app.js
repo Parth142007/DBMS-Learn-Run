@@ -233,8 +233,38 @@ function initConnectionTester() {
                 if (portInput) portInput.value = "3306";
                 if (userInput) userInput.value = "root";
                 if (dbInput) dbInput.value = "dbms_learn_run";
-                if (passwordInput) passwordInput.value = "";
             }
+        });
+
+        // If user manually modifies connection fields, set profile to custom
+        [hostInput, portInput, userInput, dbInput].forEach(inputEl => {
+            if (inputEl) {
+                inputEl.addEventListener("input", () => {
+                    if (profileSelect) profileSelect.value = "custom";
+                });
+            }
+        });
+    }
+
+    // Refresh live connection status whenever modal is opened
+    const dbConfigModal = document.getElementById("dbConfigModal");
+    if (dbConfigModal) {
+        dbConfigModal.addEventListener("show.bs.modal", () => {
+            fetch("/api/health")
+                .then(r => r.json())
+                .then(data => {
+                    if (modalStatusBadge) {
+                        modalStatusBadge.className = data.database_connected && data.database_exists
+                            ? "badge bg-success me-2"
+                            : (data.database_connected ? "badge bg-warning text-dark me-2" : "badge bg-danger me-2");
+                        modalStatusBadge.textContent = data.database_connected && data.database_exists
+                            ? "Connected"
+                            : (data.database_connected ? "DB Missing" : "Disconnected");
+                    }
+                    if (modalStatusTarget) modalStatusTarget.textContent = `${data.host}:${data.port}/${data.database}`;
+                    if (modalStatusVer) modalStatusVer.textContent = data.database_connected ? `MySQL ${data.mysql_version}` : "";
+                })
+                .catch(() => {});
         });
     }
 
@@ -398,6 +428,7 @@ function initConnectionTester() {
                 applyBtn.innerHTML = `<i class="bi bi-check2-circle me-1"></i> Apply Connection`;
 
                 if (data.success) {
+                    window.dispatchEvent(new CustomEvent("dbms:connection-applied", { detail: data }));
                     testFeedback.innerHTML = `
                         <div class="alert alert-success mt-3 mb-0 py-2 small shadow-sm">
                             <div class="d-flex align-items-center mb-1">
@@ -409,6 +440,15 @@ function initConnectionTester() {
                                 Reloading application view to update schema and tables...
                             </div>
                         </div>`;
+                    if (data.status) {
+                        const st = data.status;
+                        if (modalStatusBadge) {
+                            modalStatusBadge.className = "badge bg-success me-2";
+                            modalStatusBadge.textContent = "Connected";
+                        }
+                        if (modalStatusTarget) modalStatusTarget.textContent = `${st.host}:${st.port}/${st.database}`;
+                        if (modalStatusVer) modalStatusVer.textContent = `MySQL ${st.mysql_version}`;
+                    }
                     initHeaderConnectionStatus();
                     setTimeout(() => window.location.reload(), 1200);
                 } else {
@@ -447,12 +487,27 @@ function initConnectionTester() {
                 revertBtn.innerHTML = `<i class="bi bi-arrow-counterclockwise me-1"></i> Revert to Default`;
 
                 if (data.success && data.config) {
+                    window.dispatchEvent(new CustomEvent("dbms:connection-applied", { detail: data }));
                     if (hostInput) hostInput.value = data.config.host || "localhost";
                     if (portInput) portInput.value = data.config.port || 3306;
                     if (userInput) userInput.value = data.config.user || "root";
                     if (dbInput) dbInput.value = data.config.database || "dbms_learn_run";
                     if (passwordInput) passwordInput.value = "";
                     if (profileSelect) profileSelect.value = "default";
+
+                    if (data.status) {
+                        const st = data.status;
+                        if (modalStatusBadge) {
+                            modalStatusBadge.className = st.connected && st.database_exists
+                                ? "badge bg-success me-2"
+                                : (st.connected ? "badge bg-warning text-dark me-2" : "badge bg-danger me-2");
+                            modalStatusBadge.textContent = st.connected && st.database_exists
+                                ? "Connected"
+                                : (st.connected ? "DB Missing" : "Disconnected");
+                        }
+                        if (modalStatusTarget) modalStatusTarget.textContent = `${st.host}:${st.port}/${st.database}`;
+                        if (modalStatusVer) modalStatusVer.textContent = st.connected ? `MySQL ${st.mysql_version}` : "";
+                    }
 
                     testFeedback.innerHTML = `
                         <div class="alert alert-info mt-3 mb-0 py-2 small shadow-sm">
@@ -469,6 +524,7 @@ function initConnectionTester() {
                 revertBtn.innerHTML = `<i class="bi bi-arrow-counterclockwise me-1"></i> Revert to Default`;
                 testFeedback.innerHTML = `<div class="alert alert-danger mt-3 mb-0 py-2 small">Error reverting connection: ${escapeHtml(err.message)}</div>`;
             });
+        });
     }
 }
 

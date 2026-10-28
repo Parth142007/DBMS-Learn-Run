@@ -1,0 +1,30 @@
+# Secrets and environment configurations
+.env
+.env.*
+!.env.example
+.connector_token
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Tests and development artifacts
+tests/
+*.log
+logs/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local-only connector and provisioning scripts
+local_connector/
+run_connector.py
+init_db.py
+
+# Scratch scripts and temporary files
+scratch/
+scratch_request.txt
+full_user_request.txt

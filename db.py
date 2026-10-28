@@ -213,7 +213,13 @@ def list_server_databases(host=None, port=None, user=None, password=None):
         target_port = int(port) if port is not None else Config.MYSQL_PORT
     except (ValueError, TypeError):
         target_port = 3306
-    target_pw = password if password is not None and password != "" else Config.MYSQL_PASSWORD
+    if password is None or password == "" or password == "Keep active password":
+        if target_host == Config.MYSQL_HOST and target_user == Config.MYSQL_USER:
+            target_pw = Config.MYSQL_PASSWORD
+        else:
+            target_pw = ""
+    else:
+        target_pw = password
 
     conn = None
     try:
@@ -2627,7 +2633,8 @@ def get_workspace_tables(workspace_name):
                 table_list.append({
                     "name": t_name,
                     "engine": engine,
-                    "rows": exact_cnt
+                    "rows": exact_cnt,
+                    "row_count": exact_cnt
                 })
         conn.close()
         return {"success": True, "workspace": clean_name, "tables": table_list}

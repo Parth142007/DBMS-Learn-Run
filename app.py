@@ -4,7 +4,7 @@ Flask Web Application & REST API Endpoints
 """
 
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, abort
 from config import Config
 import db
 from services import gemini_service
@@ -13,13 +13,30 @@ from services import gemini_service
 app = Flask(__name__)
 app.config.from_object(Config)
 
+@app.before_request
+def guard_cloud_endpoints():
+    """
+    On Vercel cloud deployment, isolate the application by excluding
+    the local Practical Lab and protecting serverless instances from
+    unrestricted connection manipulation.
+    """
+    if getattr(Config, "IS_VERCEL", False):
+        if request.path == "/practical-lab" or request.path.startswith("/practical-lab/"):
+            abort(404)
+        if request.path.startswith("/api/practical-lab"):
+            return jsonify({
+                "success": False,
+                "error": "Practical Lab endpoints are disabled in cloud deployment. This feature is available exclusively in local development."
+            }), 404
+
 @app.context_processor
 def inject_common_context():
     """Inject database connection status and config into all templates."""
     db_status = db.test_connection()
     return {
         "db_status": db_status,
-        "config": Config
+        "config": Config,
+        "is_vercel": getattr(Config, "IS_VERCEL", False)
     }
 
 @app.route("/")
@@ -424,35 +441,43 @@ def api_test_connection():
     Test MySQL connection credentials dynamically without altering active configuration.
     Performs real PyMySQL connection and executes SELECT VERSION().
     """
-    data = request.get_json() or {}
-    user = (data.get("user") or "").strip() or Config.MYSQL_USER
-    host = (data.get("host") or "").strip() or Config.MYSQL_HOST
-    database = (data.get("database") or "").strip() or Config.MYSQL_DATABASE
-    port_val = data.get("port", Config.MYSQL_PORT)
+    data = request.get_json(silent=True) or {}
+    if getattr(Config, "IS_VERCEL", False):
+        # On Vercel, lock candidate host/port/user/password to server-configured environment variables to prevent SSRF
+        host = Config.MYSQL_HOST
+        port = Config.MYSQL_PORT
+        user = Config.MYSQL_USER
+        password = Config.MYSQL_PASSWORD
+        database = (data.get("database") or "").strip() or Config.MYSQL_DATABASE
+    else:
+        user = (data.get("user") or "").strip() or Config.MYSQL_USER
+        host = (data.get("host") or "").strip() or Config.MYSQL_HOST
+        database = (data.get("database") or "").strip() or Config.MYSQL_DATABASE
+        port_val = data.get("port", Config.MYSQL_PORT)
 
-    try:
-        port = int(port_val)
-        if not (1 <= port <= 65535):
-            raise ValueError()
-    except (ValueError, TypeError):
-        return jsonify({
-            "connected": False,
-            "database_exists": False,
-            "mysql_version": "Unknown",
-            "database": database,
-            "host": host,
-            "port": port_val,
-            "user": user,
-            "table_count": 0,
-            "tables": [],
-            "error": "Port must be a valid integer between 1 and 65535."
-        }), 400
+        try:
+            port = int(port_val)
+            if not (1 <= port <= 65535):
+                raise ValueError()
+        except (ValueError, TypeError):
+            return jsonify({
+                "connected": False,
+                "database_exists": False,
+                "mysql_version": "Unknown",
+                "database": database,
+                "host": host,
+                "port": port_val,
+                "user": user,
+                "table_count": 0,
+                "tables": [],
+                "error": "Port must be a valid integer between 1 and 65535."
+            }), 400
 
-    password = data.get("password")
-    # If password was omitted or empty, and targeting active host/user, fallback to active password
-    if password is None or password == "":
-        if host == Config.MYSQL_HOST and user == Config.MYSQL_USER:
-            password = Config.MYSQL_PASSWORD
+        password = data.get("password")
+        # If password was omitted or empty, and targeting active host/user, fallback to active password
+        if password is None or password == "" or password == "Keep active password":
+            if host == Config.MYSQL_HOST and user == Config.MYSQL_USER:
+                password = Config.MYSQL_PASSWORD
 
     res = db.test_connection(password=password, user=user, host=host, port=port, database=database)
     # Ensure no secrets leak in API response
@@ -475,6 +500,11 @@ def api_apply_connection():
     Explicitly validate and apply new database connection settings.
     Requires successful verification before switching active runtime config.
     """
+    if getattr(Config, "IS_VERCEL", False):
+        return jsonify({
+            "success": False,
+            "error": "Applying runtime connection changes is disabled in cloud deployment. Use Vercel Environment Variables to manage database configuration."
+        }), 403
     data = request.get_json() or {}
     user = (data.get("user") or "").strip() or Config.MYSQL_USER
     host = (data.get("host") or "").strip() or Config.MYSQL_HOST
@@ -492,7 +522,7 @@ def api_apply_connection():
         }), 400
 
     password = data.get("password")
-    if password is None or password == "":
+    if password is None or password == "" or password == "Keep active password":
         if host == Config.MYSQL_HOST and user == Config.MYSQL_USER:
             password = Config.MYSQL_PASSWORD
         else:
@@ -538,11 +568,25 @@ def api_apply_connection():
 @app.route("/api/connection/databases", methods=["GET", "POST"])
 def api_connection_databases():
     """List databases available on the connected MySQL server."""
-    data = request.get_json(silent=True) or {}
-    host = data.get("host")
-    port = data.get("port")
-    user = data.get("user")
-    password = data.get("password")
+    if getattr(Config, "IS_VERCEL", False):
+        host = Config.MYSQL_HOST
+        port = Config.MYSQL_PORT
+        user = Config.MYSQL_USER
+        password = Config.MYSQL_PASSWORD
+    else:
+        data = request.get_json(silent=True) or {}
+        host = (data.get("host") or "").strip() or Config.MYSQL_HOST
+        try:
+            port = int(data.get("port") or Config.MYSQL_PORT)
+        except (ValueError, TypeError):
+            port = Config.MYSQL_PORT
+        user = (data.get("user") or "").strip() or Config.MYSQL_USER
+        password = data.get("password")
+        if password is None or password == "" or password == "Keep active password":
+            if host == Config.MYSQL_HOST and user == Config.MYSQL_USER:
+                password = Config.MYSQL_PASSWORD
+            else:
+                password = ""
     res = db.list_server_databases(host=host, port=port, user=user, password=password)
     status_code = 200 if res.get("success") else 400
     return jsonify(res), status_code
@@ -550,6 +594,11 @@ def api_connection_databases():
 @app.route("/api/connection/revert", methods=["POST"])
 def api_connection_revert():
     """Revert active database connection settings back to .env configuration."""
+    if getattr(Config, "IS_VERCEL", False):
+        return jsonify({
+            "success": False,
+            "error": "Connection revert is disabled in cloud deployment."
+        }), 403
     cfg = db.revert_to_default_config()
     test_res = db.test_connection()
     return jsonify({
@@ -812,9 +861,9 @@ def api_practical_ai_analyze():
 
 
 if __name__ == "__main__":
-
     port = int(os.getenv("PORT", 5000))
-    print(f" * Starting DBMS Learn & Run on http://localhost:{port}")
-    app.run(host="0.0.0.0", port=port, debug=True)
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() in ("true", "1", "yes")
+    print(f" * Starting DBMS Learn & Run on http://localhost:{port} (debug={debug_mode})")
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
 
 

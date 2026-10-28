@@ -23,29 +23,53 @@
 
 <!-- Database Connection Health Callout -->
 {% if not db_status.connected %}
-<div class="alert alert-warning border-warning shadow-sm mb-4">
-    <div class="d-flex align-items-center mb-2">
-        <i class="bi bi-exclamation-triangle-fill text-warning fs-3 me-3"></i>
-        <div>
-            <h5 class="fw-bold mb-0">MySQL Connection Action Required</h5>
-            <div class="small text-muted">The MySQL 8.0 Windows service is running, but authentication or database setup is needed.</div>
+    {% if is_vercel %}
+    <div class="alert alert-warning border-warning shadow-sm mb-4">
+        <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-cloud-slash text-warning fs-3 me-3"></i>
+            <div>
+                <h5 class="fw-bold mb-0">Cloud Database Connection Required</h5>
+                <div class="small text-muted">A network-accessible MySQL-compatible database (e.g., TiDB Cloud Serverless, Aiven, or AWS RDS) is required for Vercel deployment.</div>
+            </div>
+        </div>
+        <hr class="my-2">
+        <div class="small">
+            <p class="mb-1"><strong>Status:</strong> <code>{{ db_status.error or 'No remote database configured' }}</code></p>
+            <p class="mb-2"><strong>How to configure in Vercel:</strong></p>
+            <ol class="mb-2 ps-3">
+                <li>Create a free MySQL database on <strong>TiDB Cloud Serverless</strong> or <strong>Aiven</strong>.</li>
+                <li>Import <code>database/schema.sql</code> and <code>database/data.sql</code>.</li>
+                <li>Add these Environment Variables in your Vercel Project Settings:
+                    <code>MYSQL_HOST</code>, <code>MYSQL_PORT</code>, <code>MYSQL_USER</code>, <code>MYSQL_PASSWORD</code>, <code>MYSQL_DATABASE</code>.
+                </li>
+            </ol>
         </div>
     </div>
-    <hr class="my-2">
-    <div class="small">
-        <p class="mb-1"><strong>Error details:</strong> <code>{{ db_status.error }}</code></p>
-        <p class="mb-2"><strong>How to connect in 1 step:</strong></p>
-        <ol class="mb-2 ps-3">
-            <li>Open the <code>.env</code> file in this folder and enter your MySQL root password:
-                <code>MYSQL_PASSWORD=your_root_password</code>
-            </li>
-            <li>Run the database initialization script in PowerShell:
-                <code>python init_db.py --password your_root_password</code>
-            </li>
-            <li>Or click the <strong>Connection Settings</strong> button above to test right in this browser!</li>
-        </ol>
+    {% else %}
+    <div class="alert alert-warning border-warning shadow-sm mb-4">
+        <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-exclamation-triangle-fill text-warning fs-3 me-3"></i>
+            <div>
+                <h5 class="fw-bold mb-0">MySQL Connection Action Required</h5>
+                <div class="small text-muted">The MySQL 8.0 Windows service is running, but authentication or database setup is needed.</div>
+            </div>
+        </div>
+        <hr class="my-2">
+        <div class="small">
+            <p class="mb-1"><strong>Error details:</strong> <code>{{ db_status.error }}</code></p>
+            <p class="mb-2"><strong>How to connect in 1 step:</strong></p>
+            <ol class="mb-2 ps-3">
+                <li>Open the <code>.env</code> file in this folder and enter your MySQL root password:
+                    <code>MYSQL_PASSWORD=your_root_password</code>
+                </li>
+                <li>Run the database initialization script in PowerShell:
+                    <code>python init_db.py --password your_root_password</code>
+                </li>
+                <li>Or click the <strong>Connection Settings</strong> button above to test right in this browser!</li>
+            </ol>
+        </div>
     </div>
-</div>
+    {% endif %}
 {% else %}
 <div class="alert alert-success border-success shadow-sm mb-4 py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
     <div class="d-flex align-items-center">
